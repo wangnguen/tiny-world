@@ -12,7 +12,12 @@ try {
     }
 
     New-Item -ItemType Directory -Path $desktopIcons -Force | Out-Null
-    Get-ChildItem -LiteralPath $generatedIcons -File | Copy-Item -Destination $desktopIcons -Force
+    # App chỉ chạy Windows: bỏ icon macOS (.icns) và Microsoft Store (Square*Logo, StoreLogo).
+    # Giữ icon.ico, favicon 32x32 và các PNG mà small-icons.mjs ghép lại vào icon.ico.
+    $keep = '32x32.png', '64x64.png', '128x128.png', '128x128@2x.png', 'icon.ico', 'icon.png'
+    Get-ChildItem -LiteralPath $generatedIcons -File |
+        Where-Object { $keep -contains $_.Name } |
+        Copy-Item -Destination $desktopIcons -Force
     Write-Output 'Đã cập nhật desktop/src-tauri/icons từ assets/icon.png.'
 
     # Cỡ 16/24/32 px thu nhỏ từ logo lớn bị nhoè: vẽ lại theo lưới pixel và dựng lại icon.ico.

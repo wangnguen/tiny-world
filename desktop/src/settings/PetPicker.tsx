@@ -1,10 +1,15 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type WheelEvent } from "react";
 import { loadThumbnail, type PackInfo, type Thumbnail } from "../overlay/sprites";
+import { ChevronIcon, PawIcon } from "./icons";
 
 /** Cỡ ảnh trong mỗi ô (CSS pixel), khớp `.pet-choice canvas` trong settings.css. */
 const THUMB = 44;
 /** Hàng đặt chân nhân vật trong ảnh, để mọi nhân vật đứng trên cùng một mặt đất. */
 const THUMB_FLOOR = 42;
+/** Số ô mỗi trang: 8 cột × 2 hàng, khớp `.pets` trong settings.css. */
+const PAGE_SIZE = 16;
+/** Touchpad bắn liền nhiều sự kiện lăn: mỗi khoảng này chỉ lật một trang. */
+const WHEEL_GAP_MS = 350;
 
 interface Props {
   packs: PackInfo[];
@@ -12,28 +17,93 @@ interface Props {
   onChange: (id: string) => void;
 }
 
-/** Lưới nhân vật để chọn, mỗi ô là frame đầu của `idle`. Tên đầy đủ hiện khi rê chuột. */
+/**
+ * Mục "Nhân vật": tên nhân vật đang chọn, lưới nhân vật chia trang (mỗi ô là frame đầu của `idle`,
+ * tên đầy đủ hiện khi rê chuột). Nhiều hơn một trang thì có nút lật trang cạnh tiêu đề, lăn chuột
+ * trên lưới cũng lật được. Mở ra ở đúng trang có nhân vật đang chọn.
+ */
 export function PetPicker({ packs, value, onChange }: Props) {
+  const pages = Math.ceil(packs.length / PAGE_SIZE);
+  const [page, setPage] = useState(() =>
+    Math.max(0, Math.floor(packs.findIndex((pack) => pack.id === value) / PAGE_SIZE)),
+  );
+  const lastWheel = useRef(0);
+  const go = (next: number) => setPage(Math.min(pages - 1, Math.max(0, next)));
+  const onWheel = (event: WheelEvent) => {
+    if (pages < 2 || event.deltaY === 0) return;
+    const now = performance.now();
+    if (now - lastWheel.current < WHEEL_GAP_MS) return;
+    lastWheel.current = now;
+    go(page + Math.sign(event.deltaY));
+  };
+  const name = packs.find((pack) => pack.id === value)?.name;
+
   return (
-    <div className="pets" role="radiogroup" aria-label="Nhân vật">
-      {packs.map((pack) => {
-        const active = pack.id === value;
-        return (
-          <button
-            key={pack.id}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={pack.name}
-            title={pack.name}
-            className={active ? "pet-choice pet-choice--active" : "pet-choice"}
-            onClick={() => onChange(pack.id)}
-          >
-            <PetThumbnail id={pack.id} />
-          </button>
-        );
-      })}
-    </div>
+    <section className="field">
+      <div className="field__head">
+        <h2 className="field__label">
+          <PawIcon />
+          Nhân vật
+          {name && <span className="field__value">{name}</span>}
+        </h2>
+        {pages > 1 && <Pager page={page} pages={pages} onChange={go} />}
+      </div>
+      <div className="pets" role="radiogroup" aria-label="Nhân vật" onWheel={onWheel}>
+        {packs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((pack) => {
+          const active = pack.id === value;
+          return (
+            <button
+              key={pack.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={pack.name}
+              title={pack.name}
+              className={active ? "pet-choice pet-choice--active" : "pet-choice"}
+              onClick={() => onChange(pack.id)}
+            >
+              <PetThumbnail id={pack.id} />
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/** Mũi tên trước/sau và một chấm cho mỗi trang (chấm trang hiện tại dài hơn, bấm chấm để nhảy tới). */
+function Pager({ page, pages, onChange }: { page: number; pages: number; onChange: (page: number) => void }) {
+  return (
+    <nav className="pager" aria-label="Trang nhân vật">
+      <button
+        type="button"
+        className="pager__arrow"
+        aria-label="Trang trước"
+        disabled={page === 0}
+        onClick={() => onChange(page - 1)}
+      >
+        <ChevronIcon direction="left" />
+      </button>
+      {Array.from({ length: pages }, (_, i) => (
+        <button
+          key={i}
+          type="button"
+          className={i === page ? "pager__dot pager__dot--active" : "pager__dot"}
+          aria-label={`Trang ${i + 1}`}
+          aria-current={i === page ? "page" : undefined}
+          onClick={() => onChange(i)}
+        />
+      ))}
+      <button
+        type="button"
+        className="pager__arrow"
+        aria-label="Trang sau"
+        disabled={page === pages - 1}
+        onClick={() => onChange(page + 1)}
+      >
+        <ChevronIcon direction="right" />
+      </button>
+    </nav>
   );
 }
 

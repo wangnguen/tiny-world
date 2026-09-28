@@ -87,6 +87,34 @@ describe("click", () => {
     expect([...after].sort()).toEqual(["run", "walk"]);
   });
 
+  it("click dồn dập chỉ nhảy một lần, cú nhảy không bị bắt đầu lại", () => {
+    const { world, pet } = setup();
+    let hops = 0;
+    let previous = pet.state;
+    // Spam 5 click mỗi giây trong 3 giây.
+    for (let step = 0; step < 90; step++) {
+      if (step % 6 === 0) {
+        const hopping = pet.state === "react" ? pet.stateTime : null;
+        pet.poke();
+        if (hopping !== null) expect(pet.stateTime).toBe(hopping);
+      }
+      if (pet.state === "react" && previous !== "react") hops++;
+      previous = pet.state;
+      world.step(DT);
+    }
+    expect(hops).toBe(1);
+    expect(pet.sinceInteraction).toBeLessThan(TUNING.pokeCooldown);
+  });
+
+  it("ngừng click một lúc rồi click tiếp thì lại nhảy", () => {
+    const { world, pet } = setup();
+    pet.poke();
+    simulate(world, TUNING.reactTime + TUNING.pokeCooldown);
+    expect(pet.state).not.toBe("react");
+    pet.poke();
+    expect(pet.state).toBe("react");
+  });
+
   it("không phản ứng khi đang bị kéo hoặc đang rơi", () => {
     const { pet } = setup();
     pet.grab();
@@ -181,6 +209,25 @@ describe("ngủ", () => {
     pet.grab();
     expect(pet.state).toBe("dragged");
     expect(pet.sinceInteraction).toBe(0);
+  });
+
+  it("click ở chỗ khác trên màn hình thì pet đang ngủ thức dậy", () => {
+    const { world, pet } = setup(5);
+    simulate(world, TUNING.sleepAfter + 10);
+    pet.wake();
+    expect(pet.state).toBe("react");
+    expect(pet.sinceInteraction).toBe(0);
+    expect(world.resting).toBe(false);
+  });
+
+  it("click ở chỗ khác không làm gì pet đang thức", () => {
+    const { world, pet } = setup(5);
+    simulate(world, 5);
+    const before = pet.state;
+    const since = pet.sinceInteraction;
+    pet.wake();
+    expect(pet.state).toBe(before);
+    expect(pet.sinceInteraction).toBe(since);
   });
 });
 

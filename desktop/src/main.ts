@@ -67,6 +67,11 @@ async function start(): Promise<void> {
   const refreshClickThrough = () =>
     clickThrough.update(!paused && cursor !== null && !cursor.passThrough && view.hitTest(cursor));
   await api.onCursorMoved((info) => {
+    // Vừa bấm chuột ở bất kỳ đâu (kể cả ngoài pet): pet đang ngủ thì thức dậy.
+    if (info.pressed && !cursor?.pressed && !paused && pet.state === "sleep") {
+      pet.wake();
+      wake();
+    }
     cursor = info;
     refreshClickThrough();
   });

@@ -1,4 +1,4 @@
-// Slice the generated atlases into real, bottom-aligned 48px sprite strips.
+// Normalize generated atlases into bottom-aligned 48px sprite strips or one sheet.
 // No image library or service is needed. Originals stay in assets/sprite-sources.
 // Usage: node scripts/prepare-sprites.mjs [--check] [--only-new] [--pet=source]
 import assert from "node:assert/strict";
@@ -35,6 +35,13 @@ const PETS = [
   { source: "dua", folder: "c-dua", name: "Dứa — Pineapple" },
   { source: "su", folder: "c-su", name: "Su — Astronaut" },
   { source: "bap", folder: "c-bap", name: "Bắp — Bumblebee" },
+  { source: "boggo", folder: "c-boggo", name: "Boggo — Coder Frog" },
+  { source: "wobi", folder: "c-wobi", name: "Wobi — Clown Frog", singleSheet: true },
+  { source: "gloop", folder: "c-gloop", name: "Gloop — Chaos Frog" },
+  { source: "bep", folder: "c-bep", name: "Bẹp — Grumpy Toad" },
+  { source: "frobu", folder: "c-frobu", name: "Frobu — Night Frog" },
+  { source: "byte", folder: "c-byte", name: "Byte — Coder Penguin", singleSheet: true },
+  { source: "patch", folder: "c-patch", name: "Patch — Coder Red Panda", singleSheet: true },
 ];
 
 // RGBA PNG decoding, including all five PNG scanline filters. Generated input
@@ -365,28 +372,40 @@ function prepareFrames(pet) {
   return cells.map((c) => normalizeFrame(c, scale));
 }
 
+function animationSpec(pet, row) {
+  const [name, fps, loop = true] = ROWS[row];
+  return {
+    image: pet.singleSheet ? "atlas.png" : `${row >= 9 ? "phase2/" : ""}${name}.png`,
+    frames: COLUMNS,
+    fps,
+    loop,
+    ...(pet.singleSheet ? { row } : {}),
+  };
+}
+
 function prepare(pet) {
   const frames = prepareFrames(pet);
   const palette = quantize(frames);
   const dir = join(PACKS, pet.folder);
   mkdirSync(dir, { recursive: true });
   const animations = {};
-  const preview = emptyImage(SIZE * COLUMNS, SIZE * ROWS.length);
-  for (const [row, [name, fps, loop = true]] of ROWS.entries()) {
+  const sheet = emptyImage(SIZE * COLUMNS, SIZE * ROWS.length);
+  for (const [row, [name]] of ROWS.entries()) {
     const strip = emptyImage(SIZE * COLUMNS, SIZE);
     for (let col = 0; col < COLUMNS; col++) {
       blit(strip, frames[row * COLUMNS + col], col * SIZE, 0);
-      blit(preview, frames[row * COLUMNS + col], col * SIZE, row * SIZE);
+      blit(sheet, frames[row * COLUMNS + col], col * SIZE, row * SIZE);
     }
-    const image = `${name}.png`;
-    savePng(join(dir, row < 9 ? image : `phase2/${image}`), strip);
-    if (row < 9) animations[name] = { image, frames: COLUMNS, fps, loop };
+    const spec = animationSpec(pet, row);
+    if (!pet.singleSheet) savePng(join(dir, spec.image), strip);
+    if (row < 9) animations[name] = spec;
   }
   const manifest = { name: pet.name, frameWidth: SIZE, frameHeight: SIZE, scale: 2, pixelArt: true, facing: "right", anchor: { x: SIZE / 2, y: BASELINE + 1 }, outline: false, animations };
   writeFileSync(join(dir, "pet.json"), JSON.stringify(manifest, null, 2) + "\n");
-  savePng(join(SOURCES, pet.source, "preview.png"), preview);
+  // Pack dải riêng không cần sheet gộp: trang xem thử (index.html) đọc thẳng các dải trong pack.
+  if (pet.singleSheet) savePng(join(dir, "atlas.png"), sheet);
   writeFileSync(join(SOURCES, pet.source, "palette.json"), JSON.stringify(palette.map((c) => "#" + c.map((v) => v.toString(16).padStart(2, "0")).join("")), null, 2) + "\n");
-  console.log(`${pet.folder}: 12 strips, ${COLUMNS} frames each, 48×48, ${palette.length} colors`);
+  console.log(`${pet.folder}: ${pet.singleSheet ? "1 sheet, 12 rows" : "12 strips"}, ${COLUMNS} frames each, 48×48, ${palette.length} colors`);
 }
 
 async function check(pets = PETS) {
@@ -403,20 +422,26 @@ async function check(pets = PETS) {
     assert.equal(manifest.frameWidth, SIZE);
     assert.equal(manifest.frameHeight, SIZE);
     assert.deepEqual(Object.keys(manifest.animations).sort(), [...ANIMATION_NAMES].sort());
+    if (pet.singleSheet) {
+      assert.deepEqual(readdirSync(dir, { recursive: true }).filter((file) => /\.png$/i.test(file)).sort(), ["atlas.png"], `${pet.folder}: keep only the shared sheet`);
+    }
     const colors = new Set();
     for (const [row, [name]] of ROWS.entries()) {
-      const path = row < 9 ? manifest.animations[name].image : `phase2/${name}.png`;
+      const spec = row < 9 ? manifest.animations[name] : animationSpec(pet, row);
+      const path = spec.image;
       const image = decodePng(join(dir, path));
       assert.equal(image.width, SIZE * COLUMNS, path);
-      assert.equal(image.height, SIZE, path);
-      if (row < 9) assert.equal(frameRects(manifest.animations[name], SIZE, SIZE, image.width, image.height).length, COLUMNS);
+      assert.equal(image.height, SIZE * (pet.singleSheet ? ROWS.length : 1), path);
+      const rects = frameRects({ start: 0, row: 0, ...spec }, SIZE, SIZE, image.width, image.height);
+      assert.equal(rects.length, COLUMNS);
       for (let p = 0; p < image.pixels.length; p += 4) {
         assert.ok(image.pixels[p + 3] === 0 || image.pixels[p + 3] === 255, `${path}: partial alpha`);
         if (image.pixels[p + 3]) colors.add(image.pixels.subarray(p, p + 3).toString("hex"));
       }
       for (let col = 0; col < COLUMNS; col++) {
         const frame = emptyImage(SIZE, SIZE);
-        for (let y = 0; y < SIZE; y++) image.pixels.copy(frame.pixels, y * SIZE * 4, (y * image.width + col * SIZE) * 4, (y * image.width + (col + 1) * SIZE) * 4);
+        const rect = rects[col];
+        for (let y = 0; y < SIZE; y++) image.pixels.copy(frame.pixels, y * SIZE * 4, ((rect.y + y) * image.width + rect.x) * 4, ((rect.y + y) * image.width + rect.x + SIZE) * 4);
         const b = boundsOf(frame);
         const expected = expectedFrames[row * COLUMNS + col];
         for (let p = 3; p < frame.pixels.length; p += 4) {
@@ -450,10 +475,14 @@ async function main() {
       name: pet.name,
       folder: pet.folder,
       source: pet.source,
-      animations: ROWS.map(([name, fps, loop = true], row) => ({
-        name, fps, loop, phase2: row >= 9,
-        image: `../sprites/${pet.folder}/${row >= 9 ? "phase2/" : ""}${name}.png`,
-      })),
+      animations: ROWS.map(([name], row) => {
+        const spec = animationSpec(pet, row);
+        return {
+          name, fps: spec.fps, loop: spec.loop, phase2: row >= 9,
+          row: spec.row ?? 0,
+          image: `../sprites/${pet.folder}/${spec.image}`,
+        };
+      }),
     }));
     writeFileSync(join(SOURCES, "gallery-data.js"), "// Generated by scripts/prepare-sprites.mjs\nwindow.SPRITE_PETS = " + JSON.stringify(gallery, null, 2) + ";\n");
     await check(selectedPets);

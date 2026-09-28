@@ -52,7 +52,7 @@
   </div>
   <nav class="animations" aria-label="Animation"></nav>
   <main class="cards"></main>
-  <div class="note" id="note">Frame thật 48×48 · 4 frame/dải · alpha 0/255 · chân ở y=44. Bấm một thumbnail để dừng và xem frame đó.</div>
+  <div class="note" id="note">Frame thật 48×48 · 4 frame/animation · alpha 0/255 · chân ở y=44. Bấm một thumbnail để dừng và xem frame đó.</div>
   <p class="info">Ảnh gốc và prompt: <a href="README.md">README</a>. Các pose Phase 2 chỉ là ảnh chuẩn bị sẵn; chưa được khai báo trong pet.json.</p>
   <script src="gallery-data.js"></script>
   <script>
@@ -63,17 +63,17 @@
     const cards = [];
     let animation = 'idle', running = true, time = 0, last = 0, fixed = null;
     let loaded = 0;
-    window.__spriteGallery = { expected: pets.length * 12, loaded: 0, errors: [] };
+    window.__spriteGallery = { expected: new Set(pets.flatMap(pet => pet.animations.map(spec => spec.image))).size, loaded: 0, errors: [] };
     function setRunning(value) {
       running = value;
       document.querySelector('#play').textContent = running ? 'Tạm dừng' : 'Phát';
       document.querySelector('#play').setAttribute('aria-pressed', String(running));
       if (running) fixed = null;
     }
-    function draw(ctx, image, frame, scale) {
+    function draw(ctx, image, frame, scale, row = 0) {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(image, frame * 48, 0, 48, 48, 0, 0, 48 * scale, 48 * scale);
+      ctx.drawImage(image, frame * 48, row * 48, 48, 48, 0, 0, 48 * scale, 48 * scale);
     }
     function renderNav() {
       const future = document.querySelector('#future').checked;
@@ -96,8 +96,8 @@
         // Replay single-shot actions after a brief hold so they can be inspected.
         const phase = time % (4 / spec.fps + (spec.loop ? 0 : .8));
         const frame = fixed ?? (spec.loop ? Math.floor(phase * spec.fps) % 4 : Math.min(3, Math.floor(phase * spec.fps)));
-        draw(card.hero.getContext('2d'), image, frame, 4);
-        card.thumbs.forEach((canvas, n) => draw(canvas.getContext('2d'), image, n, 1));
+        draw(card.hero.getContext('2d'), image, frame, 4, spec.row);
+        card.thumbs.forEach((canvas, n) => draw(canvas.getContext('2d'), image, n, 1, spec.row));
         card.info.textContent = `${animation} · ${spec.fps} fps · frame ${frame + 1}/4${spec.phase2 ? ' · Phase 2' : ''}`;
         card.buttons.forEach((button, n) => button.setAttribute('aria-pressed', String(n === frame)));
       }
@@ -108,6 +108,7 @@
       option.textContent = pet.name;
       document.querySelector('#character').append(option);
       for (const spec of pet.animations) {
+        if (images.has(spec.image)) continue;
         const image = new Image();
         image.onload = () => { window.__spriteGallery.loaded = ++loaded; refresh(); };
         image.onerror = () => window.__spriteGallery.errors.push(spec.image);

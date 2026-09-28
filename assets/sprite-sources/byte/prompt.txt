@@ -1,0 +1,55 @@
+Use case: stylized-concept.
+Asset type: production pixel-art desktop pet sprite atlas for TinyWorld.
+Primary request: create a NEW NON-HUMAN animal developer mascot. Absolutely no human character, no human hair, no human face, no human hands. This is a complete usable game animation sprite sheet, not concept art. Match the repo's small round frog/fox/robot pets: pudgy side-view animal silhouette, dark warm pixel outline, flat limited colors and expressive simple face.
+
+Output: one RGBA PNG with a GENUINELY TRANSPARENT alpha background. No white background and no painted checkerboard.
+Canvas: EXACTLY 4 columns x 12 rows = 48 isolated complete animal sprites on a tall 1:3 canvas, preferably 768x2304. Each row has exactly FOUR poses. Leave generous fully transparent margins around every pose and clear full-width transparent gaps between all twelve rows. NO labels, title, text, borders or visible grid. Never crop or overlap a foot, ear, tail, paw or headphone.
+
+Pixel art requirements: actual crisp hand-pixelled 48x48 game-sprite design enlarged with nearest-neighbor; visible square pixel clusters, one-pixel dark outline, 12-18 SOLID flat colors, no gradients, blur, antialiasing, glossy rendering or complicated outlines. Compact round body, large ANIMAL head, stubby limbs, cute but unmistakably an animal. Keep one fixed body/head size, costume, colors and accessories across all 48 poses. Same right-facing side-view in every frame: nose/beak points RIGHT, back/tail to LEFT. Show clear readable limb motion, not four nearly identical standing stickers. Keep the center of the torso stable from frame to frame; legs and arms supply movement. Four-frame action cycles must connect cleanly back to the first pose.
+
+Critical anatomy: every paw/flipper is attached at the shoulder on the sides of the BODY, never to the ears or head. Exactly two arms/flippers and two feet, no extra limbs. Outfits move with the body. Feet and support contact are bottom-aligned in each cell; engine supplies translation, jumping and falling.
+
+Rows top to bottom, exact order and exact pose timing:
+1 IDLE: relaxed upright neutral, slight inhale, eyes blink CLOSED, return neutral. Head/body same scale.
+2 WALK: a proper four-frame right-facing walk cycle: frame1 near foot FORWARD and far foot BACK; frame2 feet pass under body; frame3 near foot BACK and far foot FORWARD; frame4 reverse passing pose. Opposite small arm swings. Obvious alternating feet, same height and facing, no sliding copied stance.
+3 RUN: four different right-facing fast strides, torso leans slightly forward as a WHOLE, arms alternate opposite feet: long stride A, compressed passing A, long stride B, compressed passing B. Distinct from walk, no front-facing poses.
+4 SLEEP: curled/seated animal at bottom, eyes CLOSED in all four frames, gentle breathing only. No bed, pillow or sleep symbols.
+5 REACT: neutral/squat preparation, delighted startled pop with raised shoulder-attached paws/flippers, settle, neutral. All art bottom-aligned; engine supplies upward hop.
+6 FALL: upright falling animal, startled open eyes and small open mouth, knees/feet TUCK, partially extend, extend, tuck. NOT walking or running. No horizontal sprint pose.
+7 DRAGGED: being lifted by the cursor, BOTH paws/flippers clearly RAISED UP from BODY SHOULDER JOINTS toward the sides of the head; legs extend downward and dangle visibly with no weight on them. Four small dangling limb-swing poses, consistent long hanging silhouette and startled face. No human hand lifting the pet. No feet crouched on a floor. Arms never sprout from the head.
+8 LAND: strong low impact squash, half recovery, taller recovery, normal standing. Four clearly distinct progressive poses. No new costume or change of character.
+9 DIZZY: low seated/unsteady, spiral or narrowed eyes, small left lean, small right lean, recover. NO stars/particles; app draws them.
+10 CLIMB: attached paws/flippers alternate reaching UP toward an invisible wall on the RIGHT; knees alternate. No wall drawn.
+11 PERCH: sitting low at invisible ledge, feet hanging, small breathe, blink closed, recover. No ledge or floor drawn.
+12 JUMP: crouch, elongated spring with legs extended, compact legs-tucked airborne pose, recover. No motion trails. Bottom-align drawings; engine supplies jump height.
+
+Constraints: 48 whole sprites, strict 4x12 layout, correct state ordering, clearly distinguish walk vs run vs dangling dragged vs falling vs impact land. Accessories remain attached and identical in every pose, including sleep and dragged. Tiny round mascot like existing TinyWorld pets, never a human chibi. Flat pixel colors and simple details survive 48x48/24-color production normalization.
+Avoid: humans, human hair, realistic hands, portraits, anime people, big smooth vector stickers, shaded illustration, 3D, realism, desks/laptops as detached props, scenery, floors, steam, particles, speech bubbles, music notes, floating objects, duplicate limbs, extra rows or columns, clipped accessories, white sticker borders, colored halos, shadows and watermark.
+Subject identity: BYTE, an ORIGINAL tiny chubby BLUE PENGUIN coder, unmistakably a bird: round midnight-blue penguin head and back, soft ivory penguin face patch and rounded belly, short attached amber-yellow pointed BEAK facing right, tiny amber WEBBED FEET, and small wing-shaped FLIPPERS instead of human hands. Simple round charcoal glasses with a bridge sit over two small sleepy dark eyes. A compact teal hoodie with hood DOWN hugs the round torso and has one tiny ivory paired code-chevron SYMBOL on chest (no words). No trousers and no human shoes: preserve the natural webbed penguin feet and little wings. Penguin character has no hair or external ears. Cute thoughtful sleepy dev personality, tiny closed smile line near beak. Glasses/teal hoodie/beak stay consistent. Raise the wing-flippers from the shoulders in dragged poses, with both webbed feet dangling distinctly. Never turn the penguin into a human wearing a bird hat.
+
+
+Final walk/run correction (built-in imagegen). Only these eight corrected poses were merged into the canonical atlas; the other 40 source poses were preserved. Discarded drafts stay outside the repository.
+
+Use case: precise-object-edit.
+Edit target: the attached exact approved TinyWorld NON-HUMAN coder animal sprite atlas.
+Primary request: correct ONLY row 2 WALK and row 3 RUN to show a real alternating four-frame leg cycle. The current feet/arms in these two rows look almost the same in all four frames and do not visibly alternate. Redraw these eight poses to make the cycle clear at 48x48.
+Preserve EVERYTHING in rows 1 and 4 through 12: the character design, head, face, clothing, accessories, all other animations, pixel style, exact four columns and twelve rows, tall 1:3 canvas and genuine transparent alpha. Same original animal, never a human.
+Preserve SAME character size, head/body proportions and right-facing side view throughout. Head faces RIGHT in all eight edited poses. Keep the torso and head stable in the center of each cell; do not shift the whole character left/right to fake movement. All body parts stay fully inside their cell with transparent margins. Preserve the same crisp dark pixel outline, solid flat colors and no effects.
+
+Essential readability: distinguish NEAR leg with the character's brighter natural foot color and FAR leg with a darker shade of that same color. Near and far feet must visibly exchange FRONT and BACK positions across the cycle. Animate limbs at their proper hip/shoulder joints. No human shoes or fingers. No extra limbs. Four CLEARLY different poses, not four duplicate stickers with tiny face changes. Make the strides wider and explicit enough to read after 48x48 reduction.
+
+Row 2 WALK, four phases left to right, ALL right-facing:
+A: NEAR foot stretches FORWARD to the RIGHT and touches the ground heel-first; FAR foot extends BACK to the LEFT. NEAR arm/flipper swings BACK toward LEFT; FAR arm swings FORWARD. The two feet have a visibly wide gap.
+B: passing/down pose: NEAR foot planted directly under body; FAR foot is raised and passes forward under the body with knee bent; NEAR arm down midway. Feet are at clearly different heights.
+C: opposite of A: NEAR foot stretches BACK to the LEFT, FAR foot stretches FORWARD to the RIGHT and touches the ground. NEAR arm/flipper swings FORWARD toward RIGHT; FAR arm back. Two feet visibly far apart, brighter near foot on the LEFT, darker far foot on the RIGHT.
+D: reverse passing/up pose: FAR foot supports under body, NEAR foot lifted and swings forward with bent knee; NEAR arm down midway. Four poses return smoothly to A.
+
+Row 3 RUN, four phases left to right:
+A: whole torso leans 15 degrees FORWARD toward RIGHT; NEAR foot reaches far FORWARD RIGHT, FAR leg extends far BACK LEFT, NEAR arm BACK and FAR arm FORWARD. Strong long diagonal stride.
+B: airborne passing with NEAR foot tucked up under belly and FAR foot folding back, arms pass beneath shoulders.
+C: opposite long stride: brighter NEAR foot now extends far BACK LEFT, darker FAR foot reaches FORWARD RIGHT, NEAR arm FORWARD and FAR arm BACK.
+D: opposite airborne passing: FAR leg tucked under belly, NEAR foot folded back, arms reverse passing. Keep same forward lean and connect back to A.
+Running must look faster and wider than walking and have four distinct limb silhouettes. Do not substitute crouching, falling or four identical flying poses.
+
+Output: same complete 4-column x 12-row RGBA sprite atlas, ideally exact 724x2172 pixels; clear transparent gaps between every row and column. Keep all existing poses outside rows 2/3 unchanged. No background, grid, labels, numbers, extra props, ground, shadows, motion lines or particles.
+Subject invariants: Byte stays a blue penguin with natural yellow webbed feet and blue wing flippers, round dark glasses and teal hoodie. No hair, no ears, no shoes. Use bright amber-yellow for the near foot and dark ochre for the far foot to show the alternating phase. Arms remain real penguin flippers connected to the torso.

@@ -1,0 +1,22 @@
+Use case: stylized-concept.
+Asset type: original pixel-art desktop pet production sprite atlas for TinyWorld, not a poster or large sticker illustration.
+Input images: Image 1 (Mam atlas) and Image 2 (Reu atlas) are style and layout references from this exact repository. Match their tiny chibi proportions, cute compact side-view silhouette, warm dark outline, limited colors, restrained flat pixel shading and 4-column by 12-row production sprite layout. Create the NEW frog/toad described below, do not copy the sprout, dragon horns, wings or tail.
+Output: PNG with REAL transparent alpha background. Empty space must have alpha 0. NO white backdrop, NO checkerboard painted into the image.
+Canvas layout: EXACTLY FOUR columns and TWELVE rows, 48 total isolated poses. Tall 1:3 aspect ratio, ideally 768x2304 pixels. Four poses per row, never five. No title, text, row numbers, borders, labels or visible grid. Each logical cell is a true 48x48 sprite displayed at integer enlargement. Generous transparent padding around every pose, clear full-width transparent gaps between all twelve rows, and clear transparent gaps between the four characters within every row. No touching, no overlap, no cropped feet, head, hand or accessory.
+Art direction: very cute small chibi SIDE-VIEW cartoon frog/toad, like the existing TinyWorld pets. Compact rounded head and pudgy body, stubby arms and tiny webbed feet. Readable at 48x48. Hand-pixelled retro game sprite style, 12-18 flat colors, crisp one-pixel dark warm outline, solid opaque pixel clusters, no gradients, no antialiasing, no blur, no airbrush. Simple expressive meme personality translated into tiny side-view pixel sprites, NOT a detailed huge meme-face drawing. All frames face RIGHT: snout and eyes right, back left. Same individual, same scale, same markings and same accessories throughout. Center character in each logical cell with its body wholly inside x=5..42, y=4..44, feet/support contact baseline y=44; action silhouettes stay bottom-aligned for engine-driven movement.
+Rows top to bottom, EXACTLY four distinct frames left to right for each:
+1 idle: standing, subtle breathing, blink, recover.
+2 walk: alternating short steps, four distinct walk poses.
+3 run: four energetic running poses, small arms and legs alternate, still right-facing.
+4 sleep: curled or seated asleep at bottom, shut eyes, subtle breathing.
+5 react: clicked surprise, small squat, open eyes/mouth, recover.
+6 fall: startled, legs tucked then extended, right-facing.
+7 dragged: dangling with arms raised and legs hanging, small limb swing, no hand holding the pet. Arms originate from the shoulders on the body, never from the head.
+8 land: squash then rise and return to standing.
+9 dizzy: seated or unsteady standing, narrowed/spiral eyes, lean then recover; NO stars or particles.
+10 climb: climbing invisible wall on RIGHT, alternate raised arms, NO actual wall.
+11 perch: seated on invisible window ledge, feet near baseline, blink, NO actual ledge.
+12 jump: crouch, spring with stretched legs, compact airborne pose, recover; each drawing remains bottom-aligned, no camera shifts.
+Constraints: strict 4x12 atlas, 48 complete isolated sprites, original frog/toad, not identical to Pepe or any existing branded mascot. This new pet must look at home alongside Momo, Mam and Reu in the repository. Keep the final sprite simple enough to share the repo's 24-color production palette limit. Preserve all limbs and accessories within their own cells and provide generous transparent gaps.
+Avoid: large vector-sticker artwork, 3D, photographic textures, realistic anatomy, overly large protruding lips, complicated clothing folds, floor, scenery, other characters, free-floating props, music notes, steam, FX, red/yellow/green halo, white sticker border, shadows, watermark, labels, missing rows, extra columns.
+Subject identity: Boggo, an original moss-green tired coder frog. Big rounded frog head with raised eye bumps and sleepy half-open small cream eyes, a tiny soft unimpressed mouth and one simple darker under-eye pixel patch. Short upright body, oversized charcoal hoodie, hood DOWN, beige belly visible just below the hoodie hem, tiny moss-green webbed feet. One very small warm brown coffee cup held by the near hand and kept connected to the hand in all poses; the cup has NO steam, NO saucer, NO floating pieces. Keep hoodie and cup simple and readable, no detailed folds or drawstrings. Lovably exhausted, quiet, mildly confused reaction meme personality. Every pose faces RIGHT, never front-facing.

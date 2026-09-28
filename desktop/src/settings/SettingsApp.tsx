@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { errorMessage, type Settings } from "@tinyworld/core";
 import { api } from "../api";
 import { listPacks, resolvePack } from "../overlay/sprites";
-import { CubeIcon, InfoIcon, PawIcon, RunnerIcon, WindowsIcon } from "./icons";
+import { CubeIcon, InfoIcon, RunnerIcon, WindowsIcon } from "./icons";
 import { PetPicker } from "./PetPicker";
 import { PetPreview } from "./PetPreview";
 import { CornerDecor, HILL_SPOT, NightScene, PineDecor } from "./scenery";
@@ -67,7 +67,6 @@ export function SettingsApp() {
 
   // Pack đã chọn không còn thì overlay dùng pack đầu tiên, ở đây cũng đánh dấu đúng pack đó.
   const pet = settings ? resolvePack(settings.pet) : null;
-  const petName = PACKS.find((pack) => pack.id === pet)?.name;
 
   return (
     <main className="page">
@@ -82,14 +81,7 @@ export function SettingsApp() {
       ) : (
         <>
           {PACKS.length > 1 && (
-            <section className="field">
-              <h2 className="field__label">
-                <PawIcon />
-                Nhân vật
-                {petName && <span className="field__value">{petName}</span>}
-              </h2>
-              <PetPicker packs={PACKS} value={pet} onChange={(id) => update({ pet: id })} />
-            </section>
+            <PetPicker packs={PACKS} value={pet} onChange={(id) => update({ pet: id })} />
           )}
           <section className="field">
             <h2 className="field__label">

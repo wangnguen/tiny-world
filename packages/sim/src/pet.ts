@@ -48,6 +48,8 @@ export const TUNING = {
   wallBounce: 0.5,
   maxThrowSpeed: 3000,
   reactTime: 0.5,
+  /** Click cách lần click trước ít hơn khoảng này là click dồn dập: không nhảy thêm. */
+  pokeCooldown: 0.4,
   /** Độ cao cú nhảy khi bị click. */
   hopHeight: 20,
   /** Nhảy xong thì chạy (còn lại là đi) với xác suất này. */
@@ -121,6 +123,8 @@ export class Pet {
   facing: Facing = 1;
   /** Số giây kể từ lần cuối người dùng click hoặc kéo pet. */
   sinceInteraction = 0;
+  /** Số giây kể từ lần click trước, kể cả click bị bỏ qua. */
+  private sincePoke = Number.POSITIVE_INFINITY;
   /** Thời lượng đã chọn cho lượt đứng / đi / chạy hiện tại. */
   planned = 0;
   private readonly brain = new StateMachine<PetState, Pet>(STATES, "idle");
@@ -152,11 +156,22 @@ export class Pet {
     return this.state !== "dragged" && this.state !== "fall";
   }
 
-  /** Người dùng click vào pet: phản ứng, đang ngủ thì thức dậy. */
+  /**
+   * Người dùng click vào pet: phản ứng, đang ngủ thì thức dậy. Đang nhảy hoặc click dồn dập thì chỉ
+   * nhảy một lần: cú nhảy không bị bắt đầu lại, phải ngừng click một lúc mới nhảy tiếp.
+   */
   poke(): void {
     if (!this.grounded) return;
+    const spam = this.sincePoke < TUNING.pokeCooldown;
+    this.sincePoke = 0;
     this.sinceInteraction = 0;
+    if (spam || this.state === "react") return;
     this.brain.go(this, "react");
+  }
+
+  /** Người dùng click ở chỗ khác trên màn hình: đang ngủ thì giật mình thức dậy như bị click. */
+  wake(): void {
+    if (this.state === "sleep") this.poke();
   }
 
   /** Người dùng bắt đầu kéo pet, bắt được cả khi pet đang rơi. */
@@ -188,6 +203,7 @@ export class Pet {
 
   step(dt: number): void {
     this.sinceInteraction += dt;
+    this.sincePoke += dt;
     this.brain.update(this, dt);
   }
 

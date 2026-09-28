@@ -104,10 +104,26 @@ h2 {
 }
 
 .field__value {
+  min-width: 0;
   margin-left: auto;
+  overflow: hidden;
   color: var(--muted);
   font-size: 14px;
   font-weight: 400;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Tiêu đề mục kèm điều khiển bên phải (nút lật trang nhân vật), cùng một hàng. */
+.field__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.field__head .field__label {
+  flex: 1;
+  min-width: 0;
 }
 
 .icon--paw {
@@ -200,14 +216,82 @@ h2 {
     center / contain no-repeat;
 }
 
-/* Lưới nhân vật: 8 cột vừa khít bề ngang, 2 hàng; nhiều nhân vật hơn thì cuộn dọc. */
+/* Lưới nhân vật: 8 cột vừa khít bề ngang, 2 hàng mỗi trang (PAGE_SIZE trong PetPicker.tsx). Hàng cố
+   định nên trang cuối ít nhân vật hơn cũng không làm cửa sổ co lại. */
 .pets {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(2, 46px);
   gap: 4px;
-  max-height: calc(2 * 46px + 4px);
-  overflow-y: auto;
-  scrollbar-width: thin;
+}
+
+/* Lật trang nhân vật: hai nút mũi tên cùng kiểu ô nhân vật, chấm trang hiện tại là viên xanh như nút đang chọn. */
+.pager {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.pager__arrow {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #16223d 0%, #111b31 100%);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    opacity 0.15s;
+}
+
+.pager__arrow:hover:not(:disabled) {
+  border-color: #3f5f9f;
+}
+
+.pager__arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pager__arrow:focus-visible,
+.pager__dot:focus-visible {
+  outline: 2px solid #9cc0ff;
+  outline-offset: 2px;
+}
+
+.icon--chevron {
+  width: 16px;
+  height: 16px;
+  stroke: var(--text-2);
+  stroke-width: 2.2;
+}
+
+.pager__dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #2a3a5c;
+  cursor: pointer;
+  transition:
+    width 0.2s,
+    background 0.2s;
+}
+
+.pager__dot:hover {
+  background: #3f5f9f;
+}
+
+.pager__dot--active,
+.pager__dot--active:hover {
+  width: 16px;
+  background: linear-gradient(90deg, #6194ff 0%, #3b6cf5 100%);
+  box-shadow: 0 0 8px rgba(59, 108, 245, 0.55);
 }
 
 .pet-choice {
