@@ -27,6 +27,9 @@ Mỗi thư mục nguồn có `atlas.png` (ảnh gốc 724×2172), `prompt.txt` (
 Nguồn đặt ngoài `assets/sprites/` để Vite không nhúng atlas lớn và ảnh xem thử vào app.
 Riêng Cục có thêm `atlas-v2.png` và `edit-prompt.txt`: sửa chi tiết màu tay/tinh thể ở pose
 bị nhấc để giữ thiết kế đồng nhất. Script chọn bản v2; bản gốc vẫn được giữ lại.
+Bíp có thêm `dragged-v2.png` (4 pose xếp 2×2) và `edit-prompt.txt`: sửa tay giơ lên để
+nối vào vai ở thân, thay vì mọc từ đỉnh đầu. Script chỉ thay hàng `dragged` bằng sheet này,
+đưa về cùng tỉ lệ pixel nguồn rồi chuẩn hóa chung với các pose còn lại.
 
 ## Xem trước
 
@@ -34,6 +37,7 @@ Mở `index.html` bằng trình duyệt. Trang này hoạt động trực tiếp
 Tauri. Có phát/dừng, chọn animation, chọn nền, đổi tốc độ và xem riêng từng frame.
 Animation một lần được phát lại sau một khoảng dừng để tiện xem.
 Ảnh xem nhanh trên [nền sáng](preview-light.png) và [nền tối](preview-dark.png).
+Pose bị nhấc sau khi sửa: [nền sáng](dragged-preview-light.png), [nền tối](dragged-preview-dark.png).
 
 ## Tạo lại các dải ảnh
 
@@ -44,13 +48,18 @@ node scripts/prepare-sprites.mjs
 node scripts/prepare-sprites.mjs --check
 node scripts/prepare-sprites.mjs --only-new
 node scripts/prepare-sprites.mjs --pet=cuc
+pnpm test:sprites
+pnpm test:overlay
 ```
 
 `--only-new` chỉ chuẩn hóa pack chưa có `pet.json`; `--pet=<source>` xử lý một nhân vật.
 Trang xem thử luôn lấy danh sách đầy đủ. Có 180 dải ảnh, tổng cộng 720 frame, trong 15 pack.
 
-Script không gọi AI và không cần cài thư viện ảnh. Nó cắt atlas 4 cột × 12 hàng, bỏ alpha
-nhỏ hơn 128 và điểm nhiễu rời, dùng nearest-neighbor về lưới pixel, dùng chung một hệ số
+Script không gọi AI và không cần cài thư viện ảnh. Nó tìm khoảng trong suốt giữa 12 hàng
+và giữa 4 pose của từng hàng để cắt atlas, vì ảnh nguồn có hàng/cột không cách đều.
+Pose chạm ranh giới cắt sẽ bị báo lỗi trước khi thu nhỏ; bố cục không rõ đủ hàng/cột cũng
+bị từ chối. Script bỏ alpha nhỏ hơn 128 và điểm nhiễu rời nhỏ, giữ các bộ phận rời đủ lớn,
+dùng nearest-neighbor về lưới pixel, dùng chung một hệ số
 thu nhỏ cho cả pack, giới hạn bảng màu chung 24 màu và căn pixel thấp nhất về y=44.
 Không thêm pixel, không nội suy mờ, không kéo giãn riêng từng pose. Ảnh đầu ra có alpha
 0 hoặc 255; mỗi dải 192×48 gồm 4 frame 48×48. `anchor` là `(24,45)`.
@@ -65,4 +74,7 @@ vào manifest vì engine hiện chưa nhận tên đó.
 
 Lệnh `--check` dùng chính `parseSpriteManifest` và `frameRects` của app để kiểm tra manifest,
 kích thước dải, đủ animation, frame không trống/không bị cắt, alpha nhị phân, bảng màu chung
-và hàng chân. Các kiểm tra này không chứng minh thử nghiệm RAM 8 tiếng đã hoàn tất.
+và hàng chân. Nó cũng so từng silhouette đầu ra với pose đầy đủ được cắt lại từ nguồn,
+để bắt các pack cũ mất đầu/phụ kiện dù vẫn có kích thước và alpha hợp lệ.
+Test hồi quy bao gồm hàng/cột lệch, nhiễu, bộ phận rời, pose chạm ranh giới và mất bắt chuột
+khi kéo. Các kiểm tra này không chứng minh thử nghiệm RAM 8 tiếng đã hoàn tất.

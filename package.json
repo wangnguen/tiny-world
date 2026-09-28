@@ -7,7 +7,9 @@
     "build:desktop": "pnpm --filter desktop tauri build",
     "icons:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-icons.ps1",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm test:sprites && pnpm test:overlay && pnpm -r test",
+    "test:sprites": "node --test scripts/prepare-sprites.test.mjs",
+    "test:overlay": "node --test scripts/interaction.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

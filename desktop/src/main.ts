@@ -104,14 +104,21 @@ async function start(): Promise<void> {
     requestAnimationFrame(frame);
   };
 
+  const interaction = new PetInteraction(pet, view, {
+    onHold: (held) => clickThrough.hold(held),
+    onActivity: wake,
+  });
+
   // Overlay ẩn (tray, app fullscreen) thì dừng hẳn, pet đứng nguyên chỗ cũ; hiện lại thì chạy tiếp.
   await api.onVisibilityChanged((visible) => {
     hidden = !visible;
+    if (hidden) interaction.cancel();
     if (visible) wake();
   });
   // Tạm dừng: pet đứng yên và chuột đi xuyên qua pet, bỏ tạm dừng thì sống tiếp.
   await api.onPaused((value) => {
     paused = value;
+    if (paused) interaction.cancel();
     refreshClickThrough();
     if (!paused) wake();
   });
@@ -139,10 +146,6 @@ async function start(): Promise<void> {
     await api.quit();
   });
 
-  new PetInteraction(pet, view, {
-    onHold: (held) => clickThrough.hold(held),
-    onActivity: wake,
-  });
   view.update(pet);
   wake();
 

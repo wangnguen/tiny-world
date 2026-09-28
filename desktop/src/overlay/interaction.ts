@@ -42,7 +42,17 @@ export class PetInteraction {
     window.addEventListener("pointermove", this.onMove);
     window.addEventListener("pointerup", this.onUp);
     window.addEventListener("pointercancel", this.onCancel);
+    window.addEventListener("lostpointercapture", this.onCancel);
+    window.addEventListener("blur", this.cancel);
   }
+
+  /** Ẩn/tạm dừng overlay hoặc mất capture thì thả nhẹ, tránh kẹt ở state bị kéo. */
+  readonly cancel = (): void => {
+    const press = this.press;
+    if (!press) return;
+    this.finish(press.id);
+    if (press.dragging) this.pet.release(0, 0);
+  };
 
   private readonly onDown = (event: PointerEvent) => {
     if (event.button !== 0 || this.press) return;
@@ -76,21 +86,21 @@ export class PetInteraction {
   };
 
   private readonly onUp = (event: PointerEvent) => {
-    const press = this.finish(event);
+    const press = this.finish(event.pointerId);
     if (!press) return;
     if (press.dragging) this.pet.release(...throwVelocity(press.samples, event.timeStamp));
     else this.pet.poke();
   };
 
   private readonly onCancel = (event: PointerEvent) => {
-    const press = this.finish(event);
-    if (press?.dragging) this.pet.release(0, 0);
+    if (event.pointerId === this.press?.id) this.cancel();
   };
 
-  private finish(event: PointerEvent): Press | null {
+  private finish(pointerId: number): Press | null {
     const press = this.press;
-    if (!press || event.pointerId !== press.id) return null;
+    if (!press || pointerId !== press.id) return null;
     this.press = null;
+    if (this.view.element.hasPointerCapture(press.id)) this.view.element.releasePointerCapture(press.id);
     this.hooks.onHold(false);
     this.hooks.onActivity();
     return press;

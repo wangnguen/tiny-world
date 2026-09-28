@@ -3,7 +3,7 @@
 // Usage: node scripts/prepare-sprites.mjs [--check] [--only-new] [--pet=source]
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateSync, inflateSync } from "node:zlib";
 
@@ -24,7 +24,7 @@ const PETS = [
   { source: "bong", folder: "b-bong", name: "Bông — Bunny" },
   { source: "kitsu", folder: "b-kitsu", name: "Kitsu — Fox" },
   { source: "mam", folder: "c-mam", name: "Mầm — Sprout" },
-  { source: "bip", folder: "c-bip", name: "Bíp — Robot" },
+  { source: "bip", folder: "c-bip", name: "Bíp — Robot", overrides: { dragged: "dragged-v2.png" } },
   { source: "lumi", folder: "c-lumi", name: "Lumi — Star Spirit" },
   { source: "nam", folder: "c-nam", name: "Nấm — Mushroom" },
   { source: "may", folder: "c-may", name: "Mây — Cloud" },
@@ -122,45 +122,104 @@ function emptyImage(width, height) {
   return { width, height, pixels: Buffer.alloc(width * height * 4) };
 }
 
-// Ignore the near-transparent colored fringe from generation and detached noise.
-// Keep the animal's largest 8-connected component, preserving its actual colors.
-function extractCell(atlas, column, row) {
-  const cell = atlas.width / COLUMNS;
-  const pixels = Buffer.alloc(cell * cell * 4);
-  for (let y = 0; y < cell; y++) {
-    for (let x = 0; x < cell; x++) {
-      const from = ((row * cell + y) * atlas.width + column * cell + x) * 4;
-      const to = (y * cell + x) * 4;
+// Generated atlases have four columns, but their pose rows are not necessarily
+// evenly spaced. Find the transparent gaps before cutting, or a later row can
+// contain the previous pose's feet and lose its own head.
+function rowBoundaries(atlas, rowCount = ROWS.length, columnCount = COLUMNS) {
+  const bands = [];
+  let start = -1;
+  for (let y = 0; y <= atlas.height; y++) {
+    let solid = 0;
+    if (y < atlas.height) {
+      for (let x = 0; x < atlas.width; x++) {
+        if (atlas.pixels[(y * atlas.width + x) * 4 + 3] >= 128) solid++;
+      }
+    }
+    if (solid >= 3) {
+      if (start < 0) start = y;
+    } else if (start >= 0) {
+      // Isolated speckles must not become extra animation rows. Crop boundaries
+      // go in the gaps, rather than at the bands, to retain thin toes/antennae.
+      if (y - start >= atlas.width / columnCount / 4) bands.push({ top: start, bottom: y - 1 });
+      start = -1;
+    }
+  }
+  assert.equal(bands.length, rowCount, `atlas: expected ${rowCount} distinct pose rows, found ${bands.length}`);
+  return [0, ...bands.slice(1).map((band, i) => Math.floor((bands[i].bottom + band.top + 1) / 2)), atlas.height];
+}
+
+// A wide tail or extended hand can also cross an evenly spaced column boundary.
+// Find each row's horizontal gaps separately, including those edge poses.
+function columnBoundaries(atlas, top, bottom, columnCount = COLUMNS) {
+  const bands = [];
+  let start = -1;
+  for (let x = 0; x <= atlas.width; x++) {
+    let solid = 0;
+    if (x < atlas.width) {
+      for (let y = top; y < bottom; y++) {
+        if (atlas.pixels[(y * atlas.width + x) * 4 + 3] >= 128) solid++;
+      }
+    }
+    if (solid >= 3) {
+      if (start < 0) start = x;
+    } else if (start >= 0) {
+      if (x - start >= atlas.width / columnCount / 4) bands.push({ left: start, right: x - 1 });
+      start = -1;
+    }
+  }
+  assert.equal(bands.length, columnCount, `atlas: expected ${columnCount} poses in row, found ${bands.length}`);
+  return [0, ...bands.slice(1).map((band, i) => Math.floor((bands[i].right + band.left + 1) / 2)), atlas.width];
+}
+
+// Ignore near-transparent fringes and tiny detached noise, while preserving
+// meaningful disconnected parts (ears, hands, antennae) as well as the body.
+function extractCell(atlas, column, row, boundaries = rowBoundaries(atlas), columns = columnBoundaries(atlas, boundaries[row], boundaries[row + 1])) {
+  const width = columns[column + 1] - columns[column];
+  const height = boundaries[row + 1] - boundaries[row];
+  const pixels = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const from = ((boundaries[row] + y) * atlas.width + columns[column] + x) * 4;
+      const to = (y * width + x) * 4;
       if (atlas.pixels[from + 3] >= 128) {
         atlas.pixels.copy(pixels, to, from, from + 3);
         pixels[to + 3] = 255;
       }
     }
   }
-  const visited = new Uint8Array(cell * cell);
+  const visited = new Uint8Array(width * height);
+  const components = [];
   let largest = [];
   for (let i = 0; i < visited.length; i++) {
     if (visited[i] || !pixels[i * 4 + 3]) continue;
     const connected = [i];
     visited[i] = 1;
     for (let p = 0; p < connected.length; p++) {
-      const x = connected[p] % cell, y = Math.floor(connected[p] / cell);
+      const x = connected[p] % width, y = Math.floor(connected[p] / width);
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
-          const nx = x + dx, ny = y + dy, n = ny * cell + nx;
-          if (nx < 0 || ny < 0 || nx >= cell || ny >= cell || visited[n] || !pixels[n * 4 + 3]) continue;
+          const nx = x + dx, ny = y + dy, n = ny * width + nx;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height || visited[n] || !pixels[n * 4 + 3]) continue;
           visited[n] = 1;
           connected.push(n);
         }
       }
     }
+    components.push(connected);
     if (connected.length > largest.length) largest = connected;
   }
-  assert.ok(largest.length > cell, `row ${row}, column ${column}: empty or invalid pose`);
+  assert.ok(largest.length > atlas.width / (columns.length - 1), `row ${row}, column ${column}: empty or invalid pose`);
   const clean = Buffer.alloc(pixels.length);
-  for (const i of largest) pixels.copy(clean, i * 4, i * 4, i * 4 + 4);
-  const image = { width: cell, height: cell, pixels: clean };
-  return { ...image, bounds: boundsOf(image) };
+  const minimum = Math.max(4, Math.round(width * height / 4096), largest.length * 0.002);
+  for (const component of components) {
+    if (component !== largest && component.length < minimum) continue;
+    for (const i of component) pixels.copy(clean, i * 4, i * 4, i * 4 + 4);
+  }
+  const image = { width, height, pixels: clean };
+  const bounds = boundsOf(image);
+  assert.ok(bounds.left > 0 && bounds.right < width - 1 && bounds.top > 0 && bounds.bottom < height - 1,
+    `row ${row}, column ${column}: source pose touches crop boundary`);
+  return { ...image, bounds };
 }
 
 function boundsOf(image) {
@@ -268,13 +327,46 @@ function quantize(frames, count = 24) {
   return palette;
 }
 
-function prepare(pet) {
+// Imagegen pose edits use a separate 2×2 sheet; resize it to the original atlas's
+// source-pixel scale before applying the single scale shared by the entire pack.
+function resizeSource(image, width, height) {
+  const resized = emptyImage(width, height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const sx = Math.min(image.width - 1, Math.floor((x + 0.5) * image.width / width));
+      const sy = Math.min(image.height - 1, Math.floor((y + 0.5) * image.height / height));
+      const from = (sy * image.width + sx) * 4;
+      image.pixels.copy(resized.pixels, (y * width + x) * 4, from, from + 4);
+    }
+  }
+  return resized;
+}
+
+function prepareFrames(pet) {
   const atlas = decodePng(join(SOURCES, pet.source, pet.atlas ?? "atlas.png"));
   assert.equal(atlas.width % COLUMNS, 0, "atlas columns");
-  assert.equal(atlas.height, atlas.width / COLUMNS * ROWS.length, "atlas square cells");
-  const cells = ROWS.flatMap((_, row) => Array.from({ length: COLUMNS }, (_, col) => extractCell(atlas, col, row)));
+  const boundaries = rowBoundaries(atlas);
+  const cells = ROWS.flatMap(([name], row) => {
+    const override = pet.overrides?.[name];
+    if (override) {
+      const edited = decodePng(join(SOURCES, pet.source, override));
+      assert.equal(edited.width, edited.height, `${override}: expected a 2×2 pose sheet`);
+      const sheet = resizeSource(edited, atlas.width / 2, atlas.width / 2);
+      const rows = rowBoundaries(sheet, 2, 2);
+      return Array.from({ length: COLUMNS }, (_, col) => {
+        const r = Math.floor(col / 2);
+        return extractCell(sheet, col % 2, r, rows, columnBoundaries(sheet, rows[r], rows[r + 1], 2));
+      });
+    }
+    const columns = columnBoundaries(atlas, boundaries[row], boundaries[row + 1]);
+    return Array.from({ length: COLUMNS }, (_, col) => extractCell(atlas, col, row, boundaries, columns));
+  });
   const scale = Math.min(40 / Math.max(...cells.map((c) => c.bounds.width)), 40 / Math.max(...cells.map((c) => c.bounds.height)));
-  const frames = cells.map((c) => normalizeFrame(c, scale));
+  return cells.map((c) => normalizeFrame(c, scale));
+}
+
+function prepare(pet) {
+  const frames = prepareFrames(pet);
   const palette = quantize(frames);
   const dir = join(PACKS, pet.folder);
   mkdirSync(dir, { recursive: true });
@@ -304,6 +396,7 @@ async function check(pets = PETS) {
   const { ANIMATION_NAMES, parseSpriteManifest, frameRects } = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
   for (const pet of pets) {
     const dir = join(PACKS, pet.folder);
+    const expectedFrames = prepareFrames(pet);
     const manifest = parseSpriteManifest(JSON.parse(readFileSync(join(dir, "pet.json"), "utf8")));
     assert.equal(manifest.facing, "right");
     assert.equal(manifest.pixelArt, true);
@@ -325,6 +418,10 @@ async function check(pets = PETS) {
         const frame = emptyImage(SIZE, SIZE);
         for (let y = 0; y < SIZE; y++) image.pixels.copy(frame.pixels, y * SIZE * 4, (y * image.width + col * SIZE) * 4, (y * image.width + (col + 1) * SIZE) * 4);
         const b = boundsOf(frame);
+        const expected = expectedFrames[row * COLUMNS + col];
+        for (let p = 3; p < frame.pixels.length; p += 4) {
+          assert.equal(frame.pixels[p], expected.pixels[p], `${pet.folder}/${path}: source silhouette mismatch in frame ${col}; regenerate sprites`);
+        }
         assert.ok(b.width > 0 && b.height > 0, `${path}: empty frame ${col}`);
         assert.equal(b.bottom, BASELINE, `${path}: foot baseline ${col}`);
         assert.ok(b.left >= 2 && b.right < SIZE - 2 && b.top >= 2, `${path}: clipped frame ${col}`);
@@ -332,31 +429,37 @@ async function check(pets = PETS) {
       }
     }
     assert.ok(colors.size <= 24, `${pet.folder}: inconsistent palette`);
-    console.log(`${pet.folder}: manifest, 48 frames, binary alpha, 24-color palette and y=${BASELINE} baseline OK`);
+    console.log(`${pet.folder}: source silhouettes, manifest, 48 frames, binary alpha, 24-color palette and y=${BASELINE} baseline OK`);
   }
   const first = readdirSync(PACKS).filter((dir) => PETS.some((p) => p.folder === dir) || dir === "cat").sort()[0];
   assert.equal(first, PETS[0].folder);
   console.log(`Default pack: ${first}`);
 }
 
-const source = process.argv.find((arg) => arg.startsWith("--pet="))?.slice(6);
-const selectedPets = source === undefined ? PETS : PETS.filter((pet) => pet.source === source);
-assert.ok(selectedPets.length, `Unknown pet source: ${source}`);
-if (process.argv.includes("--check")) await check(selectedPets);
-else {
-  for (const pet of selectedPets) {
-    if (process.argv.includes("--only-new") && existsSync(join(PACKS, pet.folder, "pet.json"))) continue;
-    prepare(pet);
+async function main() {
+  const source = process.argv.find((arg) => arg.startsWith("--pet="))?.slice(6);
+  const selectedPets = source === undefined ? PETS : PETS.filter((pet) => pet.source === source);
+  assert.ok(selectedPets.length, `Unknown pet source: ${source}`);
+  if (process.argv.includes("--check")) await check(selectedPets);
+  else {
+    for (const pet of selectedPets) {
+      if (process.argv.includes("--only-new") && existsSync(join(PACKS, pet.folder, "pet.json"))) continue;
+      prepare(pet);
+    }
+    const gallery = PETS.map((pet) => ({
+      name: pet.name,
+      folder: pet.folder,
+      source: pet.source,
+      animations: ROWS.map(([name, fps, loop = true], row) => ({
+        name, fps, loop, phase2: row >= 9,
+        image: `../sprites/${pet.folder}/${row >= 9 ? "phase2/" : ""}${name}.png`,
+      })),
+    }));
+    writeFileSync(join(SOURCES, "gallery-data.js"), "// Generated by scripts/prepare-sprites.mjs\nwindow.SPRITE_PETS = " + JSON.stringify(gallery, null, 2) + ";\n");
+    await check(selectedPets);
   }
-  const gallery = PETS.map((pet) => ({
-    name: pet.name,
-    folder: pet.folder,
-    source: pet.source,
-    animations: ROWS.map(([name, fps, loop = true], row) => ({
-      name, fps, loop, phase2: row >= 9,
-      image: `../sprites/${pet.folder}/${row >= 9 ? "phase2/" : ""}${name}.png`,
-    })),
-  }));
-  writeFileSync(join(SOURCES, "gallery-data.js"), "// Generated by scripts/prepare-sprites.mjs\nwindow.SPRITE_PETS = " + JSON.stringify(gallery, null, 2) + ";\n");
-  await check(selectedPets);
 }
+
+export { PETS, ROWS, boundsOf, columnBoundaries, decodePng, emptyImage, extractCell, normalizeFrame, prepareFrames, rowBoundaries, savePng };
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
