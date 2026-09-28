@@ -1,0 +1,285 @@
+/* Cửa sổ cài đặt: nền xanh đêm, làng nhỏ trên đồi ở đầu trang. Cửa sổ cố định 440 px chiều ngang. */
+:root {
+  --bg: #0d1628;
+  --line: #26344f;
+  --line-soft: #1c2840;
+  --text: #eef2fd;
+  --text-2: #dbe3f6;
+  --muted: #8da3d4;
+  --accent: #4f86ff;
+  --danger: #ff6b6b;
+  color-scheme: dark;
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  user-select: none;
+  background:
+    radial-gradient(95% 60% at 82% 0%, #1f3a70 0%, transparent 70%),
+    linear-gradient(180deg, #12203f 0%, #0c1529 100%);
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100vh;
+  padding: 0 22px 16px;
+}
+
+/* Đầu trang: tiêu đề bên trái, cảnh đêm và pet bên phải, tràn ra sát mép cửa sổ. */
+.hero {
+  position: relative;
+  flex-shrink: 0;
+  height: 150px;
+  margin: 0 -22px -4px;
+}
+
+.hero h1 {
+  position: absolute;
+  left: 22px;
+  top: 30px;
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.hero__scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero__pet {
+  position: absolute;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 10px rgba(255, 200, 120, 0.25));
+}
+
+.loading {
+  margin: 0;
+}
+
+.field {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon--cube {
+  stroke: #5aa7ff;
+}
+
+.icon--runner {
+  stroke: #43d6aa;
+}
+
+.icon--runner circle {
+  fill: #43d6aa;
+  stroke: none;
+}
+
+.icon--runner .icon__speed {
+  stroke-width: 1.6;
+}
+
+.icon--windows {
+  width: 34px;
+  height: 34px;
+  fill: #4b9dff;
+  stroke: none;
+  filter: drop-shadow(0 0 6px rgba(75, 157, 255, 0.45));
+}
+
+.icon--info {
+  stroke: var(--muted);
+}
+
+.choices {
+  display: flex;
+  gap: 8px;
+}
+
+.choice {
+  position: relative;
+  flex: 1;
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #16223d 0%, #111b31 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.choice:hover {
+  border-color: #3f5f9f;
+}
+
+.choice:focus-visible,
+.checkbox:focus-visible {
+  outline: 2px solid #9cc0ff;
+  outline-offset: 2px;
+}
+
+.choice--active,
+.choice--active:hover {
+  border-color: #7ea8ff;
+  background: linear-gradient(180deg, #6194ff 0%, #3b6cf5 100%);
+  box-shadow:
+    0 0 0 1px rgba(126, 168, 255, 0.3),
+    0 6px 18px rgba(59, 108, 245, 0.5);
+  color: #fff;
+}
+
+/* Ba tia sáng nhỏ trên nút đang chọn. */
+.choices--sparkle .choice--active::before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  width: 22px;
+  height: 11px;
+  transform: translateX(-50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 11'%3E%3Cg stroke='%236ea0ff' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M11 1.5v6M4 3.5l2 4.5M18 3.5l-2 4.5'/%3E%3C/g%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+/* Ô "Chạy cùng Windows". */
+.startup {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(23, 34, 62, 0.92) 0%, rgba(14, 22, 41, 0.92) 100%);
+  cursor: pointer;
+}
+
+.startup__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.startup__text strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.startup__text small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.startup__decor {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+}
+
+.checkbox {
+  appearance: none;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 2px solid #5b6b8f;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.checkbox:checked {
+  border-color: var(--accent);
+  background: var(--accent)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 16px no-repeat;
+}
+
+.error {
+  position: relative;
+  z-index: 1;
+  margin: -8px 0 0;
+  color: var(--danger);
+}
+
+/* Dòng ghi chú cuối trang. */
+.note {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.page__decor {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 150px;
+  height: 90px;
+  pointer-events: none;
+}
+
+.muted {
+  color: var(--muted);
+}

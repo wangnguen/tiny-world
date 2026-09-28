@@ -1,0 +1,11 @@
+Tool: built-in image_gen
+Use case: logo-brand.
+Asset type: final Windows application logo and app icon for TinyWorld, a lightweight cozy desktop-pet app with pixel-art companions living along the taskbar.
+
+Create ONE polished original square icon, 1024x1024, genuinely transparent background with alpha. Main mark: a friendly round cream-colored blob pet with two dark expressive eyes and a tiny smile, soft coral cheeks, perched on the top edge of a miniature rounded mint/teal green planet. The cream pet should be the dominant shape, approximately the top 55 percent of the mark, with the teal globe occupying the lower 45 percent. A very simple tiny two-leaf sprout atop the pet suggests a living little world.
+
+Style: charming refined pixel-art logo, bold clean stepped contours, warm deep espresso outlines, large simple geometric shapes, restrained flat color blocks, enough detail to feel intentional but readable at 16x16 and 32x32. Palette inspired by the existing app pet: warm cream #FFE3B3, peach shade #F5C98A, coral #FF9AA2, dark espresso #372B2A; planet mint #A7E0BD with deeper teal #3F8B79.
+
+Center the single compact connected silhouette in the square, occupying about 85% width and height, with safe transparent margins on every side. Planet has only one or two broad darker land/curved shapes, no tiny continents. Overall mood cozy, playful, approachable.
+
+No lettering, no wordmark, no text, no watermark, no mockup, no multiple options, no background tile, no white backdrop, no gradients, no 3D, no glossy lighting, no floating stars, no orbit rings. Deliver only the finished standalone logo mark with real transparent surroundings.

@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Quyền cho cửa sổ overlay và cửa sổ cài đặt",
+  "windows": ["overlay", "settings"],
+  "permissions": ["core:default"]
+}

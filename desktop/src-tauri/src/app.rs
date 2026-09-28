@@ -1,0 +1,54 @@
+use crate::settings::SettingsStore;
+use crate::storage::Storage;
+use crate::{commands, cursor, events, fullscreen, overlay, tray};
+use std::time::Duration;
+use tauri::{AppHandle, Emitter, Manager};
+
+/// Overlay có chừng này thời gian để lưu trạng thái trước khi app tự thoát.
+const QUIT_TIMEOUT: Duration = Duration::from_millis(1500);
+
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // Mở app lần nữa khi đang chạy: hiện lại pet nếu đang ẩn.
+            overlay::set_user_hidden(app, false);
+        }))
+        .setup(|app| {
+            let data_dir = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&data_dir)?;
+            app.manage(SettingsStore::load(&data_dir));
+            app.manage(Storage::new(data_dir));
+            overlay::setup(app.handle())?;
+            tray::setup(app.handle())?;
+            cursor::spawn(app.handle().clone());
+            fullscreen::spawn(app.handle().clone());
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            commands::screen_info,
+            commands::set_click_through,
+            commands::load_state,
+            commands::save_state,
+            commands::get_settings,
+            commands::set_settings,
+            commands::get_autostart,
+            commands::set_autostart,
+            commands::quit,
+        ])
+        .run(tauri::generate_context!())
+        .expect("không khởi động được ứng dụng");
+}
+
+/// Tray bấm Thoát: nhờ overlay lưu trạng thái, overlay lưu xong thì gọi command `quit`. Overlay không
+/// trả lời (trang lỗi...) thì vẫn thoát sau `QUIT_TIMEOUT`.
+pub fn request_quit(app: &AppHandle) {
+    if app.emit_to(overlay::LABEL, events::QUIT_REQUESTED, ()).is_err() {
+        app.exit(0);
+        return;
+    }
+    let app = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(QUIT_TIMEOUT);
+        app.exit(0);
+    });
+}

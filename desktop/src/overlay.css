@@ -1,0 +1,71 @@
+/* Overlay phủ cả vùng làm việc nên nền phải trong suốt hoàn toàn. */
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#world {
+  position: fixed;
+  inset: 0;
+}
+
+.pet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.pet--pixel {
+  image-rendering: pixelated;
+}
+
+/* 💤 / 💫 ngay trên đầu pet. Khung ngoài đặt vị trí (transform), phần tử con chạy animation. */
+.pet-effect {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.pet-effect > span {
+  display: block;
+}
+
+/* Bay lên nhẹ. Chỉ 4 bước mỗi 2 giây để overlay gần như không phải vẽ lại khi pet ngủ. */
+.pet-effect--sleep > span {
+  animation: pet-float 2s steps(4) infinite;
+}
+
+/* Lắc tại chỗ như sao quay quanh đầu. */
+.pet-effect--dizzy > span {
+  animation: pet-wobble 0.4s ease-in-out infinite alternate;
+}
+
+@keyframes pet-float {
+  from {
+    translate: 0 0;
+    opacity: 1;
+  }
+  to {
+    translate: 3px -6px;
+    opacity: 0.4;
+  }
+}
+
+@keyframes pet-wobble {
+  from {
+    rotate: -20deg;
+  }
+  to {
+    rotate: 20deg;
+  }
+}
