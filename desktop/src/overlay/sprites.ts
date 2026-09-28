@@ -1,4 +1,11 @@
-import { ANIMATION_NAMES, frameRects, parseSpriteManifest, type AnimationName } from "@tinyworld/core";
+import {
+  ANIMATION_NAMES,
+  frameRects,
+  parseSpriteManifest,
+  type AnimationName,
+  type Rect,
+  type SpriteManifest,
+} from "@tinyworld/core";
 import { createPlaceholderSprite } from "./placeholder";
 import { buildAnimation, withFallback, type Animation, type SpriteSet } from "./spriteSet";
 
@@ -16,21 +23,75 @@ const imageFiles = import.meta.glob<string>("../../../assets/sprites/**/*.{png,w
 // Windows không phân biệt hoa thường, nên pet.json ghi "idle.png" cho file "Idle.png" vẫn phải chạy.
 const imageUrls = new Map(Object.entries(imageFiles).map(([path, url]) => [path.toLowerCase(), url]));
 
-/** Pack đầu tiên theo tên thư mục. Chưa có pack hoặc pack lỗi thì dùng pet tạm. */
-export async function loadSpriteSet(): Promise<SpriteSet> {
-  const [path] = Object.keys(manifests).sort();
-  if (path === undefined) return createPlaceholderSprite();
+/** Một nhân vật chọn được trong Settings. */
+export interface PackInfo {
+  /** Tên thư mục trong assets/sprites/, lưu vào `Settings.pet`. */
+  id: string;
+  /** `name` trong pet.json. */
+  name: string;
+}
+
+/** Pack đọc được `pet.json`, xếp theo tên thư mục; pack lỗi bị bỏ qua (in lý do ra console). */
+const packs: { info: PackInfo; path: string; manifest: SpriteManifest }[] = Object.keys(manifests)
+  .sort()
+  .flatMap((path) => {
+    const id = packName(path);
+    try {
+      const manifest = parseSpriteManifest(manifests[path]);
+      return [{ info: { id, name: manifest.name }, path, manifest }];
+    } catch (error) {
+      console.warn(`Sprite pack ${id} lỗi, bỏ qua:`, error);
+      return [];
+    }
+  });
+
+export function listPacks(): PackInfo[] {
+  return packs.map((pack) => pack.info);
+}
+
+/** Pack sẽ được dùng cho `Settings.pet`: đúng pack đó nếu còn, không thì pack đầu tiên; không có pack nào thì `null`. */
+export function resolvePack(id: string | null | undefined): string | null {
+  return (packs.find((pack) => pack.info.id === id) ?? packs[0])?.info.id ?? null;
+}
+
+/** Nạp pack `id` (xem `resolvePack`). Chưa có pack hoặc pack lỗi thì dùng pet tạm. */
+export async function loadSpriteSet(id?: string | null): Promise<SpriteSet> {
+  const pack = packs.find((p) => p.info.id === resolvePack(id));
+  if (!pack) return createPlaceholderSprite();
   try {
-    return await loadPack(path);
+    return await loadPack(pack.path, pack.manifest);
   } catch (error) {
-    console.warn(`Sprite pack ${packName(path)} lỗi, dùng pet tạm:`, error);
+    console.warn(`Sprite pack ${pack.info.id} lỗi, dùng pet tạm:`, error);
     return createPlaceholderSprite();
   }
 }
 
-async function loadPack(manifestPath: string): Promise<SpriteSet> {
-  const manifest = parseSpriteManifest(manifests[manifestPath]);
-  const dir = manifestPath.slice(0, manifestPath.lastIndexOf("/") + 1);
+/** Frame đầu của `idle` để làm ảnh nhỏ trong Settings, không nạp cả pack. */
+export interface Thumbnail {
+  image: HTMLImageElement;
+  frame: Rect;
+  pixelArt: boolean;
+  facing: "left" | "right";
+}
+
+export async function loadThumbnail(id: string): Promise<Thumbnail> {
+  const pack = packs.find((p) => p.info.id === id);
+  if (!pack) throw new Error(`Không có sprite pack ${id}.`);
+  const { manifest } = pack;
+  const idle = manifest.animations.idle;
+  const image = await decodeImage(dirOf(pack.path), idle.image);
+  const [frame] = frameRects(
+    idle,
+    manifest.frameWidth,
+    manifest.frameHeight,
+    image.naturalWidth,
+    image.naturalHeight,
+  );
+  return { image, frame, pixelArt: manifest.pixelArt, facing: manifest.facing };
+}
+
+async function loadPack(manifestPath: string, manifest: SpriteManifest): Promise<SpriteSet> {
+  const dir = dirOf(manifestPath);
   const images = new Map<string, Promise<HTMLImageElement>>();
   const loadImage = (file: string) => {
     let image = images.get(file);
@@ -77,6 +138,10 @@ async function decodeImage(dir: string, file: string): Promise<HTMLImageElement>
   image.src = url;
   await image.decode();
   return image;
+}
+
+function dirOf(path: string): string {
+  return path.slice(0, path.lastIndexOf("/") + 1);
 }
 
 /** "../../../assets/sprites/cat/pet.json" -> "cat". */

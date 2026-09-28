@@ -36,6 +36,11 @@ export interface Settings {
   size: number;
   /** Hệ số tốc độ đi/chạy, 0.5–2. */
   speed: number;
+  /**
+   * Nhân vật đang chọn: tên thư mục sprite pack trong `assets/sprites/`. `null` (hoặc pack không còn)
+   * là pack đầu tiên theo tên thư mục.
+   */
+  pet: string | null;
 }
 
 export interface AppError {

@@ -48,7 +48,7 @@ pub fn set_settings(
     settings: Settings,
 ) -> AppResult<Settings> {
     let settings = store.set(settings)?;
-    app.emit_to(overlay::LABEL, events::SETTINGS_CHANGED, settings)?;
+    app.emit_to(overlay::LABEL, events::SETTINGS_CHANGED, &settings)?;
     Ok(settings)
 }
 

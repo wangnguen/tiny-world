@@ -1,0 +1,22 @@
+Use case: stylized-concept.
+Asset type: original pixel-art cartoon desktop companion production sprite atlas for TinyWorld, not a poster.
+Output: PNG with REAL transparent alpha background. Empty space must have alpha 0. NO white backdrop, NO checkerboard painted into the image.
+Canvas layout is EXACTLY FOUR equal columns and TWELVE equal rows, 48 total isolated character poses. Tall 1:3 aspect ratio, ideally 768x2304 pixels. All 48 cells are identical square dimensions, and fill the canvas edge to edge with no outer margins, no gutters, no text, no borders, no labels. Each cell corresponds to a true 48x48 sprite displayed at integer enlargement; every pixel block is perfectly square and on the same underlying 48x48 grid. Only four poses per row; never five.
+Art direction: very cute small chibi side-view cartoon character, recognizably expressive with excellent legibility when reduced to 48x48, compact cohesive silhouette. Hand-pixelled retro game sprite style, 12-18 flat palette colors, crisp one-pixel dark warm outline, solid opaque pixel clusters, no gradients, no anti-aliasing, no blur or shadows. No ground plane, no props, no background objects, no particles or text. Character must face RIGHT in EVERY frame, face and small nose point right, and any back details are on the left. Same individual character, same size, same proportions, same markings and accessories throughout. Center character at x=24 in each logical 48x48 cell, all body/ears/tail within x=5..42 and y=4..44. Feet/support contact baseline EXACTLY y=44 in every frame including action poses; no per-frame camera moves or zoom. Each cell has generous transparent padding.
+Rows top to bottom, exactly 4 frames left to right:
+1 idle: relaxed standing, slight breathing then blink, body identity fixed.
+2 walk: four distinct alternating short walking leg poses, walk cycle.
+3 run: four distinct energetic stretched running leg poses, run cycle, right-facing.
+4 sleep: curled asleep resting near bottom of cell, shut eyes, four subtle breathing poses.
+5 react: cheerful clicked reaction, squat then open mouth/ears perk then recover, no airborne position change.
+6 fall: startled falling pose with feet tucked then extended, looking right.
+7 dragged: dangling held-up pose, arms raised, legs hanging, nervous face, slight limb swing, no hand holding it.
+8 land: compressed landing squash then gradual recovery to normal standing.
+9 dizzy: unsteady seated/standing with narrowed or spiral eyes, tiny lean then recover; no stars or effects because app supplies effects.
+10 climb: climbing an invisible wall on the RIGHT, alternating raised arms, right-facing profile, no actual wall.
+11 perch: relaxed seated on an invisible window ledge, feet at baseline, eyes blinking, no actual ledge.
+12 jump: crouch, spring with stretched legs, compact airborne body, recover; all poses stay bottom-aligned so engine can move sprite.
+No legends, numbers, captions, watermark, extra characters, or scenery. Strict transparent background. Do NOT render a mockup: produce the actual sprite atlas.
+
+Subject identity: Dua (Pineapple), a NEW ORIGINAL chibi pineapple child. An upright short golden-yellow oval fruit body and head blended together, topped by a small crown of exactly THREE dark sage/teal green spear-shaped leaves, firmly connected to head. Face on RIGHT half with a small amber button nose pointing RIGHT, dark brown eyes with tiny cream highlights, soft peach cheeks, small smile. Two short orange feet and two stubby golden mitten arms. Subtle simple amber diamond-grid markings across lower half of fruit body ONLY, same pattern in every frame, face clean without texture. No actual realistic fruit texture, no complex individual scales. Flat golden yellow base, cream highlights, amber shadows, sage leaves and warm dark olive-brown outline. Single connected silhouette, no fruit props, no juice, no scenery. Crown leaf count, body proportions and diamond marks fixed. Original cheerful tropical cartoon.
+IMPORTANT: retain a FOUR-column by TWELVE-row atlas, no extra frames. All sprite silhouettes must stay wholly inside their own square cell with transparent margins; never overlap rows. Four different motion poses per animation, with stable identity.

@@ -15,7 +15,12 @@ desktop-pet/
     └── src-tauri/     # Rust: overlay, click-through, đọc con trỏ, tray, cài đặt, lưu trạng thái
 ```
 
-**Thêm nhân vật:** bỏ sprite pack (ví dụ tải từ itch.io) vào `assets/sprites/<tên-pack>/` kèm
+**15 nhân vật có sẵn**, chọn trong **Cài đặt… → Nhân vật**: Momo (axolotl hồng, mặc định), Bông,
+Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su và Bắp. Mỗi nhân vật đủ 9 animation
+Phase 1. Xem chuyển động tại
+[sprite studio](assets/sprite-sources/index.html) hoặc [danh mục nhân vật](assets/sprite-sources/README.md).
+
+**Thêm nhân vật:** bỏ sprite pack vào `assets/sprites/<tên-pack>/` kèm
 `pet.json` (định dạng và cách làm: [assets/README.md](assets/README.md)). Chưa có pack thì app dùng
 pet tạm vẽ bằng code.
 
@@ -41,7 +46,7 @@ tray:
 |---|---|
 | **Tạm dừng** | Pet đứng yên, chuột đi xuyên qua pet; bấm lần nữa để pet sống tiếp |
 | **Ẩn / hiện pet** | Ẩn hẳn pet (app dừng vòng lặp, không tốn CPU) |
-| **Cài đặt…** | Cỡ nhân vật (50–200%), tốc độ đi lại, chạy cùng Windows. Đổi là áp dụng ngay |
+| **Cài đặt…** | Chọn nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chạy cùng Windows. Đổi là áp dụng ngay |
 | **Thoát** | Lưu trạng thái pet rồi thoát |
 | **Mở DevTools** | Chỉ khi chạy dev (overlay để chuột đi xuyên nên không bấm F12 được) |
 
@@ -55,7 +60,7 @@ Tương tác với pet:
 |---|---|
 | Để yên | Tự đứng, đi, chạy; chạm mép màn hình thì quay đầu |
 | Click | Nhảy lên một cái rồi đi hoặc chạy tiếp; đang ngủ thì thức dậy |
-| Kéo lên rồi thả | Rơi xuống, nảy nhẹ khi chạm đất; thả từ cao thì choáng 💫 |
+| Kéo lên rồi thả | Rơi xuống, nảy nhẹ khi chạm đất; thả từ cao thì choáng: lảo đảo, sao bay quanh đầu |
 | Kéo rồi vung chuột và buông | Bị ném bay theo quán tính, đập tường thì bật lại |
 | 3 phút không đụng tới | Ngủ 💤, ngủ tới khi được click hoặc kéo |
 | Giữ **Ctrl** khi click | Click xuyên qua pet xuống app bên dưới |
@@ -138,7 +143,8 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
 - **Dữ liệu** trong `%APPDATA%\com.tinyworld.app\`, ghi ra file tạm rồi đổi tên:
   - `world.json`: vị trí, hướng, đang ngủ hay không của pet. Lưu 30 giây một lần (chỉ khi có thay
     đổi) và khi bấm **Thoát**; tắt máy ngang thì mất tối đa 30 giây.
-  - `settings.json`: cỡ nhân vật, tốc độ. Sửa tay sai thì app kẹp về khoảng cho phép.
+  - `settings.json`: nhân vật đang chọn (tên thư mục pack), cỡ nhân vật, tốc độ. Sửa tay sai thì app
+    kẹp về khoảng cho phép; pack không còn thì dùng pack đầu tiên.
   - **Chạy cùng Windows** không lưu ở đây mà là giá trị `TinyWorld` trong
     `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (trỏ tới exe đang chạy).
 

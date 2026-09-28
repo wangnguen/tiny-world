@@ -8,21 +8,39 @@ thay file gốc ở đây rồi chạy lại lệnh tạo icon.
 | `icon.png` | Logo TinyWorld nền trong suốt: pet màu kem ôm hành tinh xanh, có mầm cây; dùng cho app, tray, setup và portable |
 | `branding/logo-prompt.txt` | Prompt gốc để tạo logo bằng imagegen |
 | `sprites/<pack>/` | Sprite pack của nhân vật: `pet.json` + ảnh PNG/WebP |
+| `sprite-sources/` | Atlas và prompt gốc của 15 nhân vật tự tạo, script chuẩn hóa và trang xem animation |
 
 ## Sprite pack
 
-Mỗi pack là một thư mục trong `sprites/`, có file `pet.json` mô tả các animation. App dùng pack
-**đầu tiên theo tên thư mục**; chưa có pack nào (hoặc pack bị lỗi) thì dùng pet tạm (cục blob
+Mỗi pack là một thư mục trong `sprites/`, có file `pet.json` mô tả các animation. Người dùng chọn
+nhân vật trong tray → **Cài đặt…** → **Nhân vật** (lưu tên thư mục vào `settings.json`). Chưa chọn,
+hoặc pack đã chọn không còn, thì dùng pack **đầu tiên theo tên thư mục**. Pack có `pet.json` lỗi
+không hiện trong danh sách; chưa có pack nào (hoặc pack lỗi khi nạp) thì dùng pet tạm (cục blob
 16×16 vẽ bằng code) và in lý do lỗi ra console (tray → **Mở DevTools** khi chạy dev).
 
 ```
-assets/sprites/cat/
+assets/sprites/a-momo/
 ├── pet.json
-├── Idle.png
-├── Walk.png
-├── Run.png
-└── LICENSE.txt      # license / credit của tác giả, giữ nguyên khi tải về
+├── idle.png
+├── walk.png
+├── run.png
+├── ...              # đủ 9 animation Phase 1
+└── phase2/          # climb, perch, jump; chưa ghi vào pet.json
 ```
+
+### Các pet tự tạo của TinyWorld
+
+Có 15 nhân vật: Momo, Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa,
+Su và Bắp. [Danh mục thiết kế và thư mục pack](sprite-sources/README.md). Tất cả đủ 9 animation Phase 1,
+mỗi animation là một dải 4 frame **48×48**, alpha trong suốt thật, chân cùng hàng y=44,
+quay sang phải. Mặc định là `a-momo`; đổi nhân vật trong **Cài đặt… → Nhân vật**, pet đổi ngay tại
+chỗ. Thêm pack mới thì chạy lại `pnpm dev:desktop` để pack hiện trong danh sách.
+
+Xem tất cả chuyển động bằng [`sprite-sources/index.html`](sprite-sources/index.html), mở
+trực tiếp bằng trình duyệt. Ảnh gốc, prompt và cách tạo lại: [sprite-sources/README.md](sprite-sources/README.md).
+Pack Cat demo cũ của OboroPixel đã được gỡ khỏi cây mã nguồn hiện tại.
+Chạy `node scripts/prepare-sprites.mjs --check` để kiểm tra các pack. Ba animation Phase 2
+để riêng trong `phase2/`; không thêm vào `pet.json` trước khi engine hỗ trợ.
 
 ### Lấy pack từ itch.io
 
@@ -91,7 +109,8 @@ animation vẫn chạy được, animation thiếu được thay như sau:
 | `sleep`, `dizzy` | đứng yên ở frame đầu của `idle` |
 | khác | `idle` |
 
-Lúc ngủ và lúc choáng luôn có 💤 / 💫 hiện trên đầu pet, kể cả khi pack không có animation riêng.
+Lúc ngủ luôn có 💤 trên đầu pet; lúc choáng app tự cho pet lảo đảo và vẽ sao bay vòng quanh đầu. Có cả khi
+pack không có animation riêng, nên `dizzy.png` không cần vẽ sao hay nghiêng người, chỉ cần mặt choáng.
 Pack chung một sheet nhiều hàng thì dùng `row` / `start` / `frames`:
 
 ```json

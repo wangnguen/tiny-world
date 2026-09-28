@@ -16,15 +16,19 @@ pub const WINDOW_LABEL: &str = "settings";
 
 const SIZE_RANGE: (f64, f64) = (0.5, 2.0);
 const SPEED_RANGE: (f64, f64) = (0.5, 2.0);
+const PET_ID_MAX_LEN: usize = 64;
 
 /// Khớp `Settings` trong packages/core.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
     /// Cỡ nhân vật so với cỡ gốc của sprite pack (`scale` trong pet.json).
     pub size: f64,
     /// Hệ số tốc độ đi/chạy.
     pub speed: f64,
+    /// Nhân vật đang chọn: tên thư mục sprite pack trong `assets/sprites/`. `None` là pack đầu tiên.
+    /// Pack không còn trong bản build thì overlay tự dùng pack đầu tiên, nên ở đây chỉ kiểm tra dạng tên.
+    pub pet: Option<String>,
 }
 
 impl Default for Settings {
@@ -32,6 +36,7 @@ impl Default for Settings {
         Self {
             size: 1.0,
             speed: 1.0,
+            pet: None,
         }
     }
 }
@@ -50,8 +55,19 @@ impl Settings {
         Self {
             size: clamp(self.size, SIZE_RANGE, default.size),
             speed: clamp(self.speed, SPEED_RANGE, default.speed),
+            pet: self.pet.filter(|id| is_pet_id(id)),
         }
     }
+}
+
+/// Tên thư mục pack: chữ, số, `-`, `_`, `.`, không bắt đầu bằng `.` (không chứa đường dẫn).
+fn is_pet_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= PET_ID_MAX_LEN
+        && !id.starts_with('.')
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
 }
 
 pub struct SettingsStore {
@@ -81,14 +97,14 @@ impl SettingsStore {
     }
 
     pub fn get(&self) -> Settings {
-        *self.current.lock().unwrap_or_else(|e| e.into_inner())
+        self.current.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     /// Lưu và trả về giá trị thật sự được dùng (đã kẹp lại).
     pub fn set(&self, settings: Settings) -> AppResult<Settings> {
         let settings = settings.sanitized();
         write_atomic(&self.path, &serde_json::to_vec_pretty(&settings)?)?;
-        *self.current.lock().unwrap_or_else(|e| e.into_inner()) = settings;
+        *self.current.lock().unwrap_or_else(|e| e.into_inner()) = settings.clone();
         Ok(settings)
     }
 }
@@ -115,7 +131,7 @@ fn show_or_create(app: &AppHandle) -> tauri::Result<()> {
     // Nền và thanh tiêu đề tối, trùng màu trang (settings.css) để lúc mở không bị loé trắng.
     let window = WebviewWindowBuilder::new(app, WINDOW_LABEL, WebviewUrl::App("settings.html".into()))
         .title("TinyWorld")
-        .inner_size(440.0, 540.0)
+        .inner_size(440.0, 690.0)
         .resizable(false)
         .maximizable(false)
         .theme(Some(Theme::Dark))
@@ -150,6 +166,7 @@ mod tests {
             .set(Settings {
                 size: 1.5,
                 speed: 0.5,
+                pet: Some("b-kitsu".into()),
             })
             .unwrap();
         assert_eq!(SettingsStore::load(&dir).get(), saved);
@@ -163,13 +180,15 @@ mod tests {
             .set(Settings {
                 size: 10.0,
                 speed: 0.0,
+                pet: None,
             })
             .unwrap();
         assert_eq!(
             saved,
             Settings {
                 size: 2.0,
-                speed: 0.5
+                speed: 0.5,
+                pet: None,
             }
         );
         fs::remove_dir_all(dir).unwrap();
@@ -185,9 +204,29 @@ mod tests {
             SettingsStore::load(&dir).get(),
             Settings {
                 size: 1.0,
-                speed: 1.5
+                speed: 1.5,
+                pet: None,
             }
         );
         fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn ten_pack_khong_hop_le_thi_ve_mac_dinh() {
+        let pet = |id: &str| {
+            Settings {
+                pet: Some(id.into()),
+                ..Settings::default()
+            }
+            .sanitized()
+            .pet
+        };
+        assert_eq!(pet("c-lumi"), Some("c-lumi".into()));
+        assert_eq!(pet("Cat_v2.1"), Some("Cat_v2.1".into()));
+        let long = "x".repeat(PET_ID_MAX_LEN + 1);
+        let bad: [&str; 7] = ["", "../world", "a/b", "a\\b", ".hidden", "mèo", &long];
+        for id in bad {
+            assert_eq!(pet(id), None, "{id}");
+        }
     }
 }
