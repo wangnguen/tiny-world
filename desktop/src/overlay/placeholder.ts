@@ -38,14 +38,23 @@ const replaceRows = (rows: string[], changes: Record<number, string>) =>
   rows.map((row, i) => changes[i] ?? row);
 
 /** Thở: bớt một hàng giữa thân, chân vẫn chạm đất. */
-const BREATHE = [EMPTY, ...BASE.slice(0, 6), ...BASE.slice(7)];
+const breathe = (rows: string[]) => [EMPTY, ...rows.slice(0, 6), ...rows.slice(7)];
+const BREATHE = breathe(BASE);
+/** Nhắm mắt: chớp mắt khi đứng, và lúc ngủ. */
 const BLINK = replaceRows(BASE, { 7: BASE[6], 8: "owwkkkwwwwkkkwwo" });
-/** Bị click: bẹp xuống, mắt cười ^ ^. */
+/** Bị click hoặc tiếp đất: bẹp xuống, mắt cười ^ ^. */
 const HAPPY = replaceRows(BASE, { 8: "owwkwkwwwwkwkwwo" });
 const SQUASH = [EMPTY, EMPTY, ...HAPPY.slice(0, 6), ...HAPPY.slice(7, 11), ...HAPPY.slice(12)];
+/** Đang rơi hoặc bị nhấc lên: miệng há tròn. */
+const SURPRISED = replaceRows(BASE, { 11: "owwwwwwkkwwwwwwo" });
+/** Choáng: mắt ✕. */
+const DIZZY = replaceRows(BASE, {
+  6: ".owkwkwwwwkwkwo.",
+  8: "owwkwkwwwwkwkwwo",
+});
 
-const FRAMES = [BASE, BREATHE, BLINK, SQUASH];
-const [F_BASE, F_BREATHE, F_BLINK, F_SQUASH] = [0, 1, 2, 3];
+const FRAMES = [BASE, BREATHE, BLINK, SQUASH, breathe(BLINK), SURPRISED, DIZZY];
+const [F_BASE, F_BREATHE, F_BLINK, F_SQUASH, F_SLEEP, F_SURPRISED, F_DIZZY] = FRAMES.keys();
 
 function drawSheet(): OffscreenCanvas {
   const sheet = new OffscreenCanvas(SIZE * FRAMES.length, SIZE);
@@ -68,6 +77,9 @@ const rect = (frame: number): Rect => ({ x: frame * SIZE, y: 0, width: SIZE, hei
 
 export function createPlaceholderSprite(): SpriteSet {
   const sheet = drawSheet();
+  // Lưới pixel đã có viền (màu "o") nên không thêm viền nữa.
+  const anim = (frames: number[], fps: number, loop = true) =>
+    buildAnimation(sheet, frames.map(rect), fps, loop);
   const idleFrames = [F_BASE, F_BASE, F_BREATHE, F_BREATHE, F_BASE, F_BASE, F_BREATHE, F_BLINK];
   return {
     name: "placeholder",
@@ -78,8 +90,16 @@ export function createPlaceholderSprite(): SpriteSet {
     facing: "right",
     anchor: { x: SIZE / 2, y: SIZE },
     animations: withFallback({
-      idle: buildAnimation(sheet, idleFrames.map(rect), 4, true),
-      react: buildAnimation(sheet, [F_SQUASH, F_SQUASH, F_BASE].map(rect), 6, false),
+      idle: anim(idleFrames, 4),
+      // Blob không có chân: đi và chạy là nảy tưng tưng.
+      walk: anim([F_BASE, F_BREATHE], 6),
+      run: anim([F_BASE, F_BREATHE], 12),
+      sleep: anim([F_BLINK, F_SLEEP], 1),
+      react: anim([F_SQUASH, F_SQUASH, F_BASE], 6, false),
+      fall: anim([F_SURPRISED], 1),
+      dragged: anim([F_SURPRISED], 1),
+      land: anim([F_SQUASH], 1, false),
+      dizzy: anim([F_DIZZY], 1),
     }),
   };
 }

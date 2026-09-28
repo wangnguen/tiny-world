@@ -6,13 +6,13 @@ Lộ trình và các hướng đã chốt: [PLAN.md](PLAN.md).
 
 ```
 desktop-pet/
-├── assets/            # logo (icon.svg) và sprite pack của nhân vật (sprites/<pack>/pet.json)
+├── assets/            # logo (icon.png) và sprite pack của nhân vật (sprites/<pack>/pet.json)
 ├── packages/
 │   ├── core/          # types dùng chung Rust <-> TS, tên event, đọc/kiểm tra pet.json
 │   └── sim/           # engine mô phỏng TS thuần: FSM, bước thời gian cố định, RNG có seed
 └── desktop/           # Tauri v2
-    ├── src/           # overlay: vẽ pet bằng canvas, vòng lặp requestAnimationFrame
-    └── src-tauri/     # Rust: overlay, click-through, đọc con trỏ, tray, lưu trạng thái
+    ├── src/           # overlay (vẽ pet bằng canvas, TS thuần) và src/settings/ (cửa sổ cài đặt, React)
+    └── src-tauri/     # Rust: overlay, click-through, đọc con trỏ, tray, cài đặt, lưu trạng thái
 ```
 
 **Thêm nhân vật:** bỏ sprite pack (ví dụ tải từ itch.io) vào `assets/sprites/<tên-pack>/` kèm
@@ -33,15 +33,46 @@ pnpm install
 pnpm dev:desktop   # lần đầu compile Rust mất vài phút
 ```
 
-App không có cửa sổ trên taskbar: pet xuất hiện ở góc phải dưới, đứng trên mép taskbar. Điều khiển
-bằng icon **TinyWorld** ở system tray: **Ẩn / hiện pet**, **Thoát**, và **Mở DevTools** khi chạy dev
-(overlay để chuột đi xuyên nên không bấm F12 được).
+App không có cửa sổ trên taskbar: lần đầu pet xuất hiện ở góc phải dưới, đứng trên mép taskbar; các
+lần sau pet ở đúng chỗ lúc tắt app (đang ngủ thì vẫn ngủ). Điều khiển bằng icon **TinyWorld** ở system
+tray:
+
+| Mục | Tác dụng |
+|---|---|
+| **Tạm dừng** | Pet đứng yên, chuột đi xuyên qua pet; bấm lần nữa để pet sống tiếp |
+| **Ẩn / hiện pet** | Ẩn hẳn pet (app dừng vòng lặp, không tốn CPU) |
+| **Cài đặt…** | Cỡ nhân vật (50–200%), tốc độ đi lại, chạy cùng Windows. Đổi là áp dụng ngay |
+| **Thoát** | Lưu trạng thái pet rồi thoát |
+| **Mở DevTools** | Chỉ khi chạy dev (overlay để chuột đi xuyên nên không bấm F12 được) |
+
+Khi chạy dev, `window.__tinyworld` trong DevTools cho xem và chỉnh pet, ví dụ
+`__tinyworld.pet.sinceInteraction = 1e6` để pet đi ngủ ngay. Bật **Chạy cùng Windows** trong lúc chạy dev
+sẽ ghi đường dẫn exe bản debug, nhớ tắt lại.
+
+Tương tác với pet:
+
+| Thao tác | Pet |
+|---|---|
+| Để yên | Tự đứng, đi, chạy; chạm mép màn hình thì quay đầu |
+| Click | Nhảy lên một cái rồi đi hoặc chạy tiếp; đang ngủ thì thức dậy |
+| Kéo lên rồi thả | Rơi xuống, nảy nhẹ khi chạm đất; thả từ cao thì choáng 💫 |
+| Kéo rồi vung chuột và buông | Bị ném bay theo quán tính, đập tường thì bật lại |
+| 3 phút không đụng tới | Ngủ 💤, ngủ tới khi được click hoặc kéo |
+| Giữ **Ctrl** khi click | Click xuyên qua pet xuống app bên dưới |
+
+Click pet không làm mất focus của app đang dùng. Có app fullscreen (video, game, trình chiếu) thì pet
+tự ẩn, thoát fullscreen thì hiện lại. Lúc ẩn (kể cả ẩn từ tray) app dừng hẳn vòng lặp, pet đứng nguyên
+chỗ cũ chờ hiện lại.
 
 ## Build bản phát hành
 
 ```bash
+pnpm icons:desktop   # tạo lại icon nếu vừa thay assets/icon.png
 pnpm build:desktop   # installer NSIS trong desktop/src-tauri/target/release/bundle/nsis
 ```
+
+Logo nguồn ở [`assets/icon.png`](assets/icon.png), dùng chung cho app, system tray, setup và portable.
+Build và Release trên GitHub tự tạo bộ icon từ logo này trước khi compile.
 
 ### Tự build khi push lên `main`
 
@@ -65,8 +96,9 @@ Muốn build lại mà không push: tab **Actions → Build → Run workflow**.
 ### Release bằng GitHub Actions (chạy tay)
 
 Khi muốn phát hành chính thức lên trang **Releases**, workflow
-[`.github/workflows/release.yml`](.github/workflows/release.yml) chạy test, build installer
-`TinyWorld_<version>_x64-setup.exe` và gắn vào GitHub Release `v<version>`.
+[`.github/workflows/release.yml`](.github/workflows/release.yml) chạy test, build
+`TinyWorld_<version>_x64-setup.exe` và `TinyWorld_<version>_x64-portable.exe`, rồi gắn cả hai vào
+GitHub Release `v<version>`.
 
 1. Push code cần phát hành lên GitHub.
 2. GitHub → **Actions → Release → Run workflow** → nhập **version** (dạng `x.y.z`, ví dụ `0.2.0`).
@@ -93,18 +125,27 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
 ```
 
 - **Overlay** (`src-tauri/src/overlay.rs`): cửa sổ trong suốt, không viền, luôn trên cùng, không có
-  nút taskbar, phủ màn hình chính. Toạ độ gửi cho frontend đều là CSS pixel của overlay; Rust đổi
-  từ pixel vật lý theo DPI.
+  nút taskbar, phủ vùng làm việc (trừ taskbar) của màn hình chính. Không phủ kín cả màn hình vì
+  Windows sẽ coi đó là app fullscreen: tắt thông báo, và pet tự ẩn rồi hiện liên tục. Toạ độ gửi cho
+  frontend đều là CSS pixel của overlay; Rust đổi từ pixel vật lý theo DPI.
 - **Pet**: mỗi pet là một `<canvas>` nhỏ đúng bằng một frame, di chuyển bằng CSS transform, chỉ vẽ
   lại khi đổi frame. Vòng lặp tối đa 30 fps.
 - **Logic** (`packages/sim`): không phụ thuộc DOM hay Tauri, test bằng vitest. Bước thời gian cố
   định nên hành vi không phụ thuộc fps; RNG có seed để test được hành vi ngẫu nhiên.
-- **Lưu trạng thái**: `%APPDATA%\com.tinyworld.app\world.json`, ghi ra file tạm rồi đổi tên.
+- **Cửa sổ cài đặt** (`src/settings/`, `src-tauri/src/settings.rs`): trang React riêng
+  (`settings.html`), chỉ tạo khi bấm **Cài đặt…** và huỷ khi đóng để đỡ tốn RAM. Overlay không kéo
+  React theo.
+- **Dữ liệu** trong `%APPDATA%\com.tinyworld.app\`, ghi ra file tạm rồi đổi tên:
+  - `world.json`: vị trí, hướng, đang ngủ hay không của pet. Lưu 30 giây một lần (chỉ khi có thay
+    đổi) và khi bấm **Thoát**; tắt máy ngang thì mất tối đa 30 giây.
+  - `settings.json`: cỡ nhân vật, tốc độ. Sửa tay sai thì app kẹp về khoảng cho phép.
+  - **Chạy cùng Windows** không lưu ở đây mà là giá trị `TinyWorld` trong
+    `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (trỏ tới exe đang chạy).
 
 ## Kiểm thử
 
 ```bash
 pnpm typecheck
-pnpm test                               # pet.json, frame, FSM, bước thời gian, World/Pet
-cd desktop/src-tauri && cargo test      # đổi toạ độ theo DPI, lưu/đọc trạng thái
+pnpm test                               # pet.json, frame, FSM, World/Pet, lưu/đọc world.json
+cd desktop/src-tauri && cargo test      # toạ độ theo DPI, lưu trạng thái, cài đặt, registry
 ```

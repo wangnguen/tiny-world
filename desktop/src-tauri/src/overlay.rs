@@ -1,10 +1,14 @@
-//! Cửa sổ overlay trong suốt phủ màn hình chính, nơi vẽ pet. Luôn nằm trên cùng, không có nút
-//! trên taskbar, mặc định để chuột đi xuyên qua (frontend tắt khi con trỏ nằm trên pet).
+//! Cửa sổ overlay trong suốt phủ vùng làm việc của màn hình chính, nơi vẽ pet. Luôn nằm trên cùng,
+//! không có nút trên taskbar, mặc định để chuột đi xuyên qua (frontend tắt khi con trỏ nằm trên pet).
+//!
+//! Overlay không được phủ kín cả màn hình: cửa sổ luôn nằm trên mà che hết màn hình thì Windows coi
+//! là app fullscreen (tắt thông báo, fullscreen.rs tưởng đang xem video nên ẩn pet rồi lại hiện).
 
 use crate::error::{AppError, AppResult};
+use crate::events;
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, PhysicalSize};
+use tauri::{AppHandle, Emitter, Manager, Monitor, PhysicalPosition, PhysicalSize};
 
 pub const LABEL: &str = "overlay";
 
@@ -35,27 +39,33 @@ pub struct PhysicalRect {
     pub height: u32,
 }
 
-/// Màn hình overlay đang phủ.
+/// Màn hình và vùng overlay phủ.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Geometry {
-    pub monitor: PhysicalRect,
+    /// Vị trí, kích thước cửa sổ overlay (pixel vật lý).
+    pub window: PhysicalRect,
     pub screen: ScreenInfo,
 }
 
 impl Geometry {
     pub fn new(monitor: PhysicalRect, work_area: PhysicalRect, scale_factor: f64) -> Self {
+        let mut window = work_area;
+        // Taskbar tự ẩn thì vùng làm việc trùng cả màn hình: bớt 1 pixel để không bị coi là fullscreen.
+        if window == monitor {
+            window.height = window.height.saturating_sub(1);
+        }
         let to_css = |r: PhysicalRect| Rect {
-            x: f64::from(r.x - monitor.x) / scale_factor,
-            y: f64::from(r.y - monitor.y) / scale_factor,
+            x: f64::from(r.x - window.x) / scale_factor,
+            y: f64::from(r.y - window.y) / scale_factor,
             width: f64::from(r.width) / scale_factor,
             height: f64::from(r.height) / scale_factor,
         };
         Self {
-            monitor,
+            window,
             screen: ScreenInfo {
                 scale_factor,
                 bounds: to_css(monitor),
-                work_area: to_css(work_area),
+                work_area: to_css(window),
             },
         }
     }
@@ -83,16 +93,21 @@ impl Geometry {
     pub fn to_local(&self, x: f64, y: f64) -> (f64, f64) {
         let scale = self.screen.scale_factor;
         (
-            (x - f64::from(self.monitor.x)) / scale,
-            (y - f64::from(self.monitor.y)) / scale,
+            (x - f64::from(self.window.x)) / scale,
+            (y - f64::from(self.window.y)) / scale,
         )
     }
 }
 
-/// State dùng chung giữa command, tray và luồng đọc con trỏ.
+/// State dùng chung giữa command, tray và các luồng nền.
 pub struct Overlay {
     geometry: Geometry,
-    visible: AtomicBool,
+    /// Người dùng ẩn pet từ tray.
+    user_hidden: AtomicBool,
+    /// Đang có app fullscreen (fullscreen.rs).
+    auto_hidden: AtomicBool,
+    /// Tray bật Tạm dừng: pet đứng yên, chuột đi xuyên qua pet.
+    paused: AtomicBool,
 }
 
 impl Overlay {
@@ -101,11 +116,12 @@ impl Overlay {
     }
 
     pub fn is_visible(&self) -> bool {
-        self.visible.load(Ordering::Relaxed)
+        !self.user_hidden.load(Ordering::Relaxed) && !self.auto_hidden.load(Ordering::Relaxed)
     }
 }
 
-/// Đặt overlay phủ màn hình chính, bật click-through rồi mới hiện (cửa sổ tạo sẵn ở dạng ẩn).
+/// Đặt overlay phủ vùng làm việc của màn hình chính, bật click-through rồi mới hiện (cửa sổ tạo sẵn
+/// ở dạng ẩn).
 pub fn setup(app: &AppHandle) -> AppResult<()> {
     let window = app.get_webview_window(LABEL).ok_or_else(AppError::no_window)?;
     let monitor = match app.primary_monitor()? {
@@ -115,33 +131,67 @@ pub fn setup(app: &AppHandle) -> AppResult<()> {
             .ok_or_else(|| AppError::internal("Không tìm thấy màn hình."))?,
     };
     let geometry = Geometry::from_monitor(&monitor);
-    let m = geometry.monitor;
-    window.set_position(PhysicalPosition::new(m.x, m.y))?;
-    window.set_size(PhysicalSize::new(m.width, m.height))?;
+    let w = geometry.window;
+    window.set_position(PhysicalPosition::new(w.x, w.y))?;
+    window.set_size(PhysicalSize::new(w.width, w.height))?;
     window.set_ignore_cursor_events(true)?;
     window.show()?;
     app.manage(Overlay {
         geometry,
-        visible: AtomicBool::new(true),
+        user_hidden: AtomicBool::new(false),
+        auto_hidden: AtomicBool::new(false),
+        paused: AtomicBool::new(false),
     });
     Ok(())
 }
 
-pub fn set_visible(app: &AppHandle, visible: bool) {
-    let (Some(window), Some(overlay)) = (app.get_webview_window(LABEL), app.try_state::<Overlay>())
-    else {
-        return;
+/// Bật/tắt Tạm dừng, trả về trạng thái mới.
+pub fn toggle_paused(app: &AppHandle) -> bool {
+    let Some(overlay) = app.try_state::<Overlay>() else {
+        return false;
     };
-    let result = if visible { window.show() } else { window.hide() };
-    match result {
-        Ok(()) => overlay.visible.store(visible, Ordering::Relaxed),
-        Err(e) => eprintln!("Không đổi được trạng thái ẩn/hiện của overlay: {e}"),
+    let paused = !overlay.paused.fetch_xor(true, Ordering::Relaxed);
+    if let Err(e) = app.emit_to(LABEL, events::PAUSED, paused) {
+        eprintln!("Không báo được trạng thái tạm dừng cho overlay: {e}");
+    }
+    paused
+}
+
+/// Ẩn/hiện theo lựa chọn của người dùng (tray, mở app lần nữa).
+pub fn set_user_hidden(app: &AppHandle, hidden: bool) {
+    if let Some(overlay) = app.try_state::<Overlay>() {
+        overlay.user_hidden.store(hidden, Ordering::Relaxed);
+        apply_visibility(app, &overlay);
     }
 }
 
 pub fn toggle(app: &AppHandle) {
     if let Some(overlay) = app.try_state::<Overlay>() {
-        set_visible(app, !overlay.is_visible());
+        let hidden = overlay.user_hidden.load(Ordering::Relaxed);
+        set_user_hidden(app, !hidden);
+    }
+}
+
+/// Ẩn khi có app fullscreen, hiện lại khi hết (trừ khi người dùng đang tự ẩn).
+pub fn set_auto_hidden(app: &AppHandle, hidden: bool) {
+    if let Some(overlay) = app.try_state::<Overlay>() {
+        overlay.auto_hidden.store(hidden, Ordering::Relaxed);
+        apply_visibility(app, &overlay);
+    }
+}
+
+fn apply_visibility(app: &AppHandle, overlay: &Overlay) {
+    let Some(window) = app.get_webview_window(LABEL) else {
+        return;
+    };
+    let visible = overlay.is_visible();
+    let result = if visible { window.show() } else { window.hide() };
+    if let Err(e) = result {
+        eprintln!("Không đổi được trạng thái ẩn/hiện của overlay: {e}");
+    }
+    // Cửa sổ ẩn nhưng trang vẫn chạy như đang hiện, báo để frontend dừng vòng lặp vẽ.
+    if let Err(e) = app.emit_to(LABEL, events::OVERLAY_VISIBILITY, visible) {
+        eprintln!("Không báo được trạng thái ẩn/hiện cho overlay: {e}");
     }
 }
 
@@ -163,6 +213,7 @@ mod tests {
             ..monitor
         };
         let g = Geometry::new(monitor, work, 1.5);
+        assert_eq!(g.window, work);
         assert_eq!(
             g.screen.bounds,
             Rect {
@@ -177,7 +228,7 @@ mod tests {
     }
 
     #[test]
-    fn taskbar_ben_trai_day_vung_lam_viec_sang_phai() {
+    fn taskbar_ben_trai_thi_goc_toa_do_la_mep_vung_lam_viec() {
         let monitor = PhysicalRect {
             x: 0,
             y: 0,
@@ -190,7 +241,24 @@ mod tests {
             ..monitor
         };
         let g = Geometry::new(monitor, work, 1.0);
-        assert_eq!(g.screen.work_area.x, 62.0);
+        assert_eq!(g.window, work);
+        assert_eq!(g.screen.work_area.x, 0.0);
         assert_eq!(g.screen.work_area.width, 1858.0);
+        assert_eq!(g.screen.bounds.x, -62.0);
+        assert_eq!(g.to_local(62.0 + 100.0, 50.0), (100.0, 50.0));
+    }
+
+    #[test]
+    fn taskbar_tu_an_thi_overlay_khong_phu_kin_man_hinh() {
+        let monitor = PhysicalRect {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+        let g = Geometry::new(monitor, monitor, 1.0);
+        assert_ne!(g.window, monitor);
+        assert_eq!(g.window.height, 1079);
+        assert_eq!(g.screen.work_area.height, 1079.0);
     }
 }

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { frameIndex, frameRects, parseSpriteManifest, type AnimationSpec } from "./sprite";
+import {
+  DEFAULT_OUTLINE,
+  frameIndex,
+  frameRects,
+  parseSpriteManifest,
+  type AnimationSpec,
+} from "./sprite";
 
 const minimal = {
   frameWidth: 32,
@@ -20,8 +26,17 @@ describe("parseSpriteManifest", () => {
       pixelArt: true,
       facing: "right",
       anchor: { x: 16, y: 32 },
+      outline: DEFAULT_OUTLINE,
     });
     expect(manifest.animations.idle).toEqual(spec({ image: "Idle.png" }));
+  });
+
+  it("viền: đổi màu, tắt bằng false, báo lỗi màu sai", () => {
+    expect(parseSpriteManifest({ ...minimal, outline: "#FFFFFF80" }).outline).toBe("#FFFFFF80");
+    expect(parseSpriteManifest({ ...minimal, outline: false }).outline).toBeNull();
+    for (const outline of [true, "black", "#fff", "rgb(0,0,0)"]) {
+      expect(() => parseSpriteManifest({ ...minimal, outline })).toThrow("outline");
+    }
   });
 
   it("chuẩn hoá đường dẫn ảnh", () => {

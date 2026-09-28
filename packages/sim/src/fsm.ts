@@ -3,7 +3,8 @@ export interface StateDef<S extends string, C> {
   enter?(ctx: C): void;
   /**
    * Gọi mỗi bước mô phỏng. `time`: số giây đã ở state này, tính cả bước hiện tại.
-   * Trả về state tiếp theo để chuyển, hoặc `undefined` để ở lại.
+   * Trả về state tiếp theo để chuyển (trả về chính state này thì chạy lại từ đầu),
+   * hoặc `undefined` để ở lại.
    */
   update?(ctx: C, time: number, dt: number): S | undefined;
   exit?(ctx: C): void;
@@ -35,7 +36,7 @@ export class StateMachine<S extends string, C> {
   update(ctx: C, dt: number): void {
     this.elapsed += dt;
     const next = this.table[this.current].update?.(ctx, this.elapsed, dt);
-    if (next !== undefined && next !== this.current) this.go(ctx, next);
+    if (next !== undefined) this.go(ctx, next);
   }
 
   /** Chuyển state ngay. Chuyển sang chính state đang ở thì chạy lại state đó từ đầu. */

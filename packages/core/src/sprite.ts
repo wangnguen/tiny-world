@@ -45,8 +45,16 @@ export interface SpriteManifest {
   facing: "left" | "right";
   /** Điểm chân nhân vật trong frame (pixel của frame), dùng để đặt pet lên mặt đất. */
   anchor: Point;
+  /**
+   * Màu viền 1 pixel quanh nhân vật (`#rrggbb` hoặc `#rrggbbaa`) để không chìm vào nền cùng màu,
+   * `null` nếu tắt (pack đã có viền sẵn).
+   */
+  outline: string | null;
   animations: { idle: AnimationSpec } & Partial<Record<AnimationName, AnimationSpec>>;
 }
+
+/** Viền mặc định: gần đen, thấy rõ trên nền sáng mà nền tối cũng không bị lộ. */
+export const DEFAULT_OUTLINE = "#1b1622";
 
 const MAX_FRAME_SIZE = 1024;
 const MAX_FRAMES = 256;
@@ -87,6 +95,7 @@ export function parseSpriteManifest(value: unknown): SpriteManifest {
     pixelArt: optional(root.pixelArt, true, (v) => boolean(v, "pixelArt")),
     facing: optional(root.facing, "right", (v) => oneOf(v, "facing", ["left", "right"] as const)),
     anchor,
+    outline: optional(root.outline, DEFAULT_OUTLINE, (v) => (v === false ? null : color(v, "outline"))),
     animations: { ...animations, idle },
   };
 }
@@ -185,6 +194,13 @@ function string(value: unknown, path: string): string {
     throw new Error(`${path}: phải là chuỗi không rỗng.`);
   }
   return value.trim();
+}
+
+function color(value: unknown, path: string): string {
+  if (typeof value !== "string" || !/^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
+    throw new Error(`${path}: phải là màu dạng "#rrggbb" / "#rrggbbaa", hoặc false để tắt.`);
+  }
+  return value;
 }
 
 function oneOf<T extends string>(value: unknown, path: string, options: readonly T[]): T {

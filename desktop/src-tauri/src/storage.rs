@@ -5,7 +5,7 @@ use crate::error::{AppError, AppResult};
 use serde_json::Value;
 use std::fs;
 use std::io::ErrorKind;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Giới hạn kích thước trạng thái nhận từ frontend.
 const MAX_STATE_BYTES: usize = 1024 * 1024;
@@ -30,17 +30,21 @@ impl Storage {
         }
     }
 
-    /// Ghi ra file tạm rồi đổi tên, để tắt máy ngang lúc đang ghi cũng không hỏng file cũ.
     pub fn save(&self, state: &Value) -> AppResult<()> {
         let bytes = serde_json::to_vec_pretty(state)?;
         if bytes.len() > MAX_STATE_BYTES {
             return Err(AppError::bad_request("Trạng thái cần lưu quá lớn."));
         }
-        let tmp = self.path.with_extension("json.tmp");
-        fs::write(&tmp, &bytes)?;
-        fs::rename(&tmp, &self.path)?;
-        Ok(())
+        write_atomic(&self.path, &bytes)
     }
+}
+
+/// Ghi ra file tạm rồi đổi tên, để tắt máy ngang lúc đang ghi cũng không hỏng file cũ.
+pub fn write_atomic(path: &Path, bytes: &[u8]) -> AppResult<()> {
+    let tmp = path.with_extension("json.tmp");
+    fs::write(&tmp, bytes)?;
+    fs::rename(&tmp, path)?;
+    Ok(())
 }
 
 #[cfg(test)]

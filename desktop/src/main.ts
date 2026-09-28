@@ -1,56 +1,84 @@
 import "./overlay.css";
-import { errorMessage, type Point, type ScreenInfo } from "@tinyworld/core";
-import { FixedStep, World, type Floor } from "@tinyworld/sim";
+import { errorMessage, type CursorInfo, type ScreenInfo, type Settings } from "@tinyworld/core";
+import { FixedStep, World, parseWorldSnapshot, type Bounds } from "@tinyworld/sim";
 import { api } from "./api";
+import { AutoSave } from "./overlay/autosave";
 import { ClickThrough } from "./overlay/clickThrough";
+import { PetInteraction } from "./overlay/interaction";
 import { PetView } from "./overlay/petView";
 import { loadSpriteSet } from "./overlay/sprites";
 
 /** Tần số mô phỏng và vẽ tối đa: sprite thường chỉ 8–12 fps nên 30 là đủ mượt mà vẫn nhẹ. */
 const FPS = 30;
-/** Khoảng cách từ mép phải vùng làm việc tới pet lúc xuất hiện (CSS pixel). */
+/** Khoảng cách từ mép phải vùng làm việc tới pet lúc xuất hiện lần đầu (CSS pixel). */
 const SPAWN_MARGIN = 48;
+/** Chu kỳ lưu world.json (chỉ ghi khi có thay đổi). */
+const SAVE_INTERVAL_MS = 30_000;
 
-/** Pet đứng trên mép dưới vùng làm việc, tức là mép trên taskbar. */
-function floorOf(screen: ScreenInfo): Floor {
+/** Pet sống trong vùng làm việc; mặt đất là mép dưới, tức là mép trên taskbar. */
+function boundsOf(screen: ScreenInfo): Bounds {
   const { x, y, width, height } = screen.workArea;
-  return { left: x, right: x + width, y: y + height };
+  return { left: x, right: x + width, top: y, floor: y + height };
+}
+
+/** File hỏng hay đọc lỗi thì bắt đầu lại từ đầu, lần lưu sau sẽ ghi đè. */
+async function loadSaved(): Promise<unknown> {
+  try {
+    return await api.loadState();
+  } catch (error) {
+    console.warn("Không đọc được trạng thái đã lưu, bắt đầu lại:", errorMessage(error));
+    return null;
+  }
 }
 
 async function start(): Promise<void> {
   const container = document.getElementById("world");
   if (!container) throw new Error("Thiếu phần tử #world.");
-  const [screen, sprite] = await Promise.all([api.screenInfo(), loadSpriteSet()]);
+  const [screen, sprite, settings, saved] = await Promise.all([
+    api.screenInfo(),
+    loadSpriteSet(),
+    api.getSettings(),
+    loadSaved(),
+  ]);
 
-  const world = new World(floorOf(screen), Date.now());
-  const width = sprite.frameWidth * sprite.scale;
-  const height = sprite.frameHeight * sprite.scale;
+  const world = new World(boundsOf(screen), Date.now());
+  world.speed = settings.speed;
+  const view = new PetView(sprite, container, settings.size);
   const pet = world.spawn({
     id: "pet-1",
-    x: world.floor.right - SPAWN_MARGIN - width / 2,
-    width,
-    height,
+    x: world.bounds.right - SPAWN_MARGIN - view.width / 2,
+    width: view.width,
+    height: view.height,
   });
-  const view = new PetView(sprite, container);
+  const previous = parseWorldSnapshot(saved)?.pets.find((p) => p.id === pet.id);
+  if (previous) pet.restore(previous);
 
+  const autosave = new AutoSave(world, api.saveState);
+  autosave.markSaved();
+  autosave.start(SAVE_INTERVAL_MS);
+
+  let paused = false;
   // Overlay để chuột đi xuyên nên không tự nhận được sự kiện chuột: Rust gửi vị trí con trỏ sang,
-  // con trỏ nằm trên phần có hình của pet thì overlay nhận chuột để click được.
+  // con trỏ nằm trên phần có hình của pet (và không giữ Ctrl) thì overlay nhận chuột.
   const clickThrough = new ClickThrough(api.setClickThrough);
-  let cursor: Point | null = null;
-  const refreshClickThrough = () => clickThrough.update(cursor !== null && view.hitTest(cursor));
-  await api.onCursorMoved((position) => {
-    cursor = position;
+  let cursor: CursorInfo | null = null;
+  const refreshClickThrough = () =>
+    clickThrough.update(!paused && cursor !== null && !cursor.passThrough && view.hitTest(cursor));
+  await api.onCursorMoved((info) => {
+    cursor = info;
     refreshClickThrough();
-  });
-
-  window.addEventListener("pointerdown", (event) => {
-    if (event.button === 0 && view.hitTest({ x: event.clientX, y: event.clientY })) pet.poke();
   });
   window.addEventListener("contextmenu", (event) => event.preventDefault());
 
   const step = new FixedStep(1 / FPS);
-  let last = performance.now();
+  let last = 0;
+  let running = false;
+  let hidden = false;
   const frame = (now: number) => {
+    if (hidden || paused) {
+      running = false;
+      return;
+    }
     const elapsed = (now - last) / 1000;
     // rAF chạy theo tần số màn hình (60–144 Hz), bỏ bớt lượt để giữ tối đa FPS.
     if (elapsed >= 1 / FPS - 0.002) {
@@ -59,11 +87,57 @@ async function start(): Promise<void> {
       view.update(pet);
       // Pet đổi frame hoặc đi dưới con trỏ đang đứng yên thì cũng phải tính lại.
       refreshClickThrough();
+      // Pet ngủ thì dừng hẳn vòng lặp; click hoặc kéo sẽ chạy lại.
+      if (world.resting) {
+        running = false;
+        return;
+      }
     }
     requestAnimationFrame(frame);
   };
+  const wake = () => {
+    if (running || hidden || paused) return;
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(frame);
+  };
+
+  // Overlay ẩn (tray, app fullscreen) thì dừng hẳn, pet đứng nguyên chỗ cũ; hiện lại thì chạy tiếp.
+  await api.onVisibilityChanged((visible) => {
+    hidden = !visible;
+    if (visible) wake();
+  });
+  // Tạm dừng: pet đứng yên và chuột đi xuyên qua pet, bỏ tạm dừng thì sống tiếp.
+  await api.onPaused((value) => {
+    paused = value;
+    refreshClickThrough();
+    if (!paused) wake();
+  });
+  const applySettings = (next: Settings) => {
+    world.speed = next.speed;
+    view.setSize(next.size);
+    pet.resize(view.width, view.height);
+    view.update(pet);
+    refreshClickThrough();
+  };
+  await api.onSettingsChanged(applySettings);
+  await api.onQuitRequested(async () => {
+    await autosave.flush();
+    await api.quit();
+  });
+
+  new PetInteraction(pet, view, {
+    onHold: (held) => clickThrough.hold(held),
+    onActivity: wake,
+  });
   view.update(pet);
-  requestAnimationFrame(frame);
+  wake();
+
+  // Chỉ khi chạy dev: xem và chỉnh pet từ DevTools (tray → Mở DevTools), ví dụ
+  // `__tinyworld.pet.sinceInteraction = 1e6` để pet đi ngủ ngay. Bản build không có dòng này.
+  if (import.meta.env.DEV) {
+    Object.assign(window, { __tinyworld: { world, pet, view, wake, autosave } });
+  }
 }
 
 start().catch((error) => console.error("Không khởi động được overlay:", errorMessage(error)));

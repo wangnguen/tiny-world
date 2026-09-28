@@ -5,7 +5,8 @@ thay file gốc ở đây rồi chạy lại lệnh tạo icon.
 
 | File | Dùng cho |
 |---|---|
-| `icon.svg` | Logo app (icon cửa sổ, tray, installer). Vẽ từ lưới pixel của pet tạm trong `desktop/src/overlay/placeholder.ts` |
+| `icon.png` | Logo TinyWorld nền trong suốt: pet màu kem ôm hành tinh xanh, có mầm cây; dùng cho app, tray, setup và portable |
+| `branding/logo-prompt.txt` | Prompt gốc để tạo logo bằng imagegen |
 | `sprites/<pack>/` | Sprite pack của nhân vật: `pet.json` + ảnh PNG/WebP |
 
 ## Sprite pack
@@ -65,6 +66,7 @@ Pack itch.io thường để **mỗi animation một file PNG dải ngang**, fra
 | `pixelArt` | | `true` | Phóng to kiểu pixel art, không làm mờ. Hình vẽ mượt thì đặt `false` |
 | `facing` | | `"right"` | Hướng nhân vật nhìn trong ảnh gốc; đi ngược hướng thì app tự lật |
 | `anchor` | | giữa mép dưới frame | Điểm chân nhân vật trong frame. Frame có khoảng trống dưới chân thì giảm `y` cho pet chạm đất |
+| `outline` | | `"#1b1622"` | Viền 1 pixel quanh nhân vật để nhân vật màu sáng không chìm vào nền trắng. Nhận màu `"#rrggbb"` / `"#rrggbbaa"`; pack đã vẽ viền sẵn thì đặt `false` |
 | `animations` | có | | Mỗi animation của engine ứng với một ảnh |
 
 Mỗi animation:
@@ -78,24 +80,32 @@ Mỗi animation:
 | `row` | | `0` | Hàng bắt đầu, khi nhiều animation nằm chung một sheet |
 | `loop` | | `true` | `false`: chạy một lần rồi dừng ở frame cuối |
 
-Tên animation engine dùng: `idle` (bắt buộc), `walk`, `run`, `sleep`, `dragged`, `fall`, `land`,
-`react` (bị click), `dizzy`. **Thiếu animation nào thì dùng `idle` thay**, nên pack chỉ có vài
-animation vẫn chạy được. Pack chung một sheet nhiều hàng thì dùng `row` / `start` / `frames`:
+Tên animation engine dùng: `idle` (bắt buộc), `walk`, `run`, `sleep`, `dragged` (bị nhấc lên),
+`fall`, `land` (vừa tiếp đất), `react` (bị click), `dizzy` (choáng khi rơi từ cao). Pack chỉ có vài
+animation vẫn chạy được, animation thiếu được thay như sau:
+
+| Thiếu | Dùng thay |
+|---|---|
+| `walk` / `run` | cái còn lại trong hai cái, không có thì `idle` |
+| `dragged` / `fall` | cái còn lại trong hai cái, không có thì `idle` |
+| `sleep`, `dizzy` | đứng yên ở frame đầu của `idle` |
+| khác | `idle` |
+
+Lúc ngủ và lúc choáng luôn có 💤 / 💫 hiện trên đầu pet, kể cả khi pack không có animation riêng.
+Pack chung một sheet nhiều hàng thì dùng `row` / `start` / `frames`:
 
 ```json
 "walk": { "image": "cat-sheet.png", "row": 2, "frames": 8, "fps": 10 }
 ```
 
-Hiện tại (Phase 0) pet mới dùng `idle` và `react`; các animation khác dùng từ Phase 1.
-
 ## Thay logo
 
-1. Thay `assets/icon.svg` (giữ nguyên tên file). Có thể dùng `assets/icon.png` vuông, tối thiểu
-   1024×1024; nếu có cả hai thì nên xoá file cũ đi.
-2. Tạo lại icon (Git Bash, trong thư mục `desktop/`):
-   ```bash
-   cd desktop
-   pnpm tauri icon ../assets/icon.svg
-   rm -rf src-tauri/icons/android src-tauri/icons/ios
+1. Thay `assets/icon.png` bằng PNG vuông, nền trong suốt, tối thiểu 1024×1024.
+2. Tạo lại icon từ thư mục gốc repo (PowerShell):
+   ```powershell
+   pnpm icons:desktop
    ```
-3. Build lại app.
+   Script dùng Tauri CLI, cập nhật `.ico`, `.icns` và các PNG trong `desktop/src-tauri/icons/`.
+   Icon Android/iOS được tạo trong `target/`, không đưa vào repo.
+3. Build lại app bằng `pnpm build:desktop`. Setup và uninstaller dùng `icons/icon.ico`;
+   executable và tray dùng bộ icon cùng nguồn. Workflow Build và Release tự tạo lại icon trước khi build.

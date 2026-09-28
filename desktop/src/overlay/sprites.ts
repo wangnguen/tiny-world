@@ -53,7 +53,7 @@ async function loadPack(manifestPath: string): Promise<SpriteSet> {
       image.naturalWidth,
       image.naturalHeight,
     );
-    animations[name] = buildAnimation(image, frames, spec.fps, spec.loop);
+    animations[name] = buildAnimation(image, frames, spec.fps, spec.loop, manifest.outline);
   }
   const idle = animations.idle;
   if (!idle) throw new Error("Thiếu animation idle.");
