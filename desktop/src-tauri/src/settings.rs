@@ -1,6 +1,7 @@
 //! Cài đặt người dùng chỉnh trong cửa sổ Settings, lưu ở `settings.json` cạnh `world.json`.
 //! "Chạy cùng Windows" không nằm ở đây mà đọc thẳng từ registry (autostart.rs).
 
+use crate::app_icon;
 use crate::error::AppResult;
 use crate::storage::write_atomic;
 use serde::{Deserialize, Serialize};
@@ -8,7 +9,8 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::window::Color;
+use tauri::{AppHandle, Manager, Theme, WebviewUrl, WebviewWindowBuilder};
 
 pub const WINDOW_LABEL: &str = "settings";
 
@@ -110,14 +112,18 @@ fn show_or_create(app: &AppHandle) -> tauri::Result<()> {
         window.show()?;
         return window.set_focus();
     }
-    WebviewWindowBuilder::new(app, WINDOW_LABEL, WebviewUrl::App("settings.html".into()))
-        .title("Cài đặt TinyWorld")
-        .inner_size(400.0, 360.0)
+    // Nền và thanh tiêu đề tối, trùng màu trang (settings.css) để lúc mở không bị loé trắng.
+    let window = WebviewWindowBuilder::new(app, WINDOW_LABEL, WebviewUrl::App("settings.html".into()))
+        .title("TinyWorld")
+        .inner_size(440.0, 540.0)
         .resizable(false)
         .maximizable(false)
+        .theme(Some(Theme::Dark))
+        .background_color(Color(13, 22, 40, 255))
         .center()
         .focused(true)
         .build()?;
+    app_icon::set_small_icon(&window);
     Ok(())
 }
 

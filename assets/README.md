@@ -107,5 +107,11 @@ Pack chung một sheet nhiều hàng thì dùng `row` / `start` / `frames`:
    ```
    Script dùng Tauri CLI, cập nhật `.ico`, `.icns` và các PNG trong `desktop/src-tauri/icons/`.
    Icon Android/iOS được tạo trong `target/`, không đưa vào repo.
+   Sau đó [`scripts/small-icons.mjs`](../scripts/small-icons.mjs) vẽ lại cỡ **16, 24, 32 px** theo lưới
+   pixel và dựng lại `icon.ico`: thu nhỏ logo lớn xuống các cỡ này thì mắt, miệng nhoè hết, mà tray và
+   thanh tiêu đề lại dùng đúng các cỡ đó. Đổi hẳn hình logo thì sửa luôn hình vẽ trong script này
+   (`node scripts/small-icons.mjs --preview xem.png` để xem thử).
 3. Build lại app bằng `pnpm build:desktop`. Setup và uninstaller dùng `icons/icon.ico`;
    executable và tray dùng bộ icon cùng nguồn. Workflow Build và Release tự tạo lại icon trước khi build.
+   Khi đang chạy dev, sửa `icon.ico` không tự nhúng lại vào exe: chạm vào `desktop/src-tauri/build.rs`
+   (hoặc chạy lại `pnpm dev:desktop` sau `cargo clean`) để build script chạy lại.

@@ -1,6 +1,6 @@
 //! Icon ở system tray. Overlay không có nút trên taskbar nên mọi điều khiển của app nằm ở đây.
 
-use crate::{app, overlay, settings};
+use crate::{app, app_icon, overlay, settings};
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri::AppHandle;
@@ -50,8 +50,8 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
             }
             _ => {}
         });
-    if let Some(icon) = app.default_window_icon() {
-        tray = tray.icon(icon.clone());
+    if let Some(icon) = app_icon::tray(app) {
+        tray = tray.icon(icon);
     }
     tray.build(app)?;
     Ok(())

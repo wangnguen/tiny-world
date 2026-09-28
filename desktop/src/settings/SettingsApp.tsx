@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { errorMessage, type Settings } from "@tinyworld/core";
 import { api } from "../api";
+import { CubeIcon, InfoIcon, RunnerIcon, WindowsIcon } from "./icons";
+import { PetPreview } from "./PetPreview";
+import { CornerDecor, HILL_SPOT, NightScene, PineDecor } from "./scenery";
 
 interface Option {
   value: number;
@@ -58,36 +61,60 @@ export function SettingsApp() {
     }
   };
 
-  if (!settings || autostart === null) {
-    return <main className="page page--center muted">{error ?? "Đang tải..."}</main>;
-  }
-
   return (
     <main className="page">
-      <h1>Cài đặt</h1>
-      <section className="field">
-        <h2>Cỡ nhân vật</h2>
-        <Choices options={SIZES} value={settings.size} onChange={(size) => update({ size })} />
-      </section>
-      <section className="field">
-        <h2>Tốc độ đi lại</h2>
-        <Choices options={SPEEDS} value={settings.speed} onChange={(speed) => update({ speed })} />
-      </section>
-      <section className="field">
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={autostart}
-            onChange={(event) => toggleAutostart(event.target.checked)}
-          />
-          <span>
-            Chạy cùng Windows
-            <small>Tự mở TinyWorld khi đăng nhập Windows</small>
-          </span>
-        </label>
-      </section>
-      {error && <p className="error">{error}</p>}
-      <p className="muted hint">Thay đổi được áp dụng ngay.</p>
+      <header className="hero">
+        <NightScene />
+        <PetPreview footX={HILL_SPOT.x} footY={HILL_SPOT.y} scale={3} />
+        <h1>Cài đặt</h1>
+      </header>
+
+      {!settings || autostart === null ? (
+        <p className="muted loading">{error ?? "Đang tải..."}</p>
+      ) : (
+        <>
+          <section className="field">
+            <h2 className="field__label">
+              <CubeIcon />
+              Cỡ nhân vật
+            </h2>
+            <Choices
+              options={SIZES}
+              value={settings.size}
+              onChange={(size) => update({ size })}
+              sparkle
+            />
+          </section>
+          <section className="field">
+            <h2 className="field__label">
+              <RunnerIcon />
+              Tốc độ đi lại
+            </h2>
+            <Choices options={SPEEDS} value={settings.speed} onChange={(speed) => update({ speed })} />
+          </section>
+          <label className="startup">
+            <WindowsIcon />
+            <input
+              className="checkbox"
+              type="checkbox"
+              checked={autostart}
+              onChange={(event) => toggleAutostart(event.target.checked)}
+            />
+            <span className="startup__text">
+              <strong>Chạy cùng Windows</strong>
+              <small>Tự mở TinyWorld khi đăng nhập Windows</small>
+            </span>
+            <PineDecor />
+          </label>
+          {error && <p className="error">{error}</p>}
+        </>
+      )}
+
+      <footer className="note">
+        <InfoIcon />
+        Thay đổi được áp dụng ngay.
+      </footer>
+      <CornerDecor />
     </main>
   );
 }
@@ -96,13 +123,16 @@ function Choices({
   options,
   value,
   onChange,
+  sparkle = false,
 }: {
   options: Option[];
   value: number;
   onChange: (value: number) => void;
+  /** Vài tia sáng nhỏ trên nút đang chọn. */
+  sparkle?: boolean;
 }) {
   return (
-    <div className="choices" role="radiogroup">
+    <div className={sparkle ? "choices choices--sparkle" : "choices"} role="radiogroup">
       {options.map((option) => {
         const active = option.value === value;
         return (
