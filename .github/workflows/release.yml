@@ -1,0 +1,159 @@
+# Release thủ công: vào tab Actions → Release → Run workflow.
+# Build installer Windows (NSIS) và gắn vào GitHub Release có tag v<version>. Version nhập lúc chạy,
+# được ghi vào tauri.conf.json ngay trên máy build (không sửa file trong repo).
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version phát hành, dạng x.y.z (ví dụ 0.2.0)"
+        type: string
+        required: true
+      draft:
+        description: "Để ở dạng nháp (xem lại rồi tự bấm Publish trên GitHub)"
+        type: boolean
+        default: true
+      prerelease:
+        description: "Đánh dấu là pre-release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Kiểm tra
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+      # Tauri cần thư mục dist của frontend lúc compile.
+      - run: pnpm --filter desktop build
+      - run: cargo test --locked
+        working-directory: desktop/src-tauri
+
+  create-release:
+    name: Tạo release nháp
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      release-id: ${{ steps.release.outputs.result }}
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kiểm tra version
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # Installer Windows chỉ nhận version dạng số, nên không dùng hậu tố kiểu -beta.
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version \"$VERSION\" không hợp lệ, cần dạng x.y.z (ví dụ 0.2.0)."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+      - uses: actions/github-script@v7
+        id: release
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const tag = process.env.TAG;
+            const prerelease = process.env.PRERELEASE === "true";
+            const body = [
+              "## Cài đặt",
+              "",
+              "Tải `TinyWorld_*_x64-setup.exe` (Windows 10/11) và chạy.",
+              "",
+              "- App chưa ký số: Windows báo SmartScreen thì chọn **More info → Run anyway**.",
+              "- Pet chạy nền, điều khiển bằng icon TinyWorld ở system tray (góc phải taskbar).",
+            ].join("\n");
+
+            // Release nháp không tìm được bằng API theo tag, nên duyệt danh sách.
+            const releases = await github.paginate(github.rest.repos.listReleases, { owner, repo, per_page: 100 });
+            const existing = releases.find((r) => r.tag_name === tag);
+            if (existing && !existing.draft) {
+              core.setFailed(`Release ${tag} đã phát hành. Chạy lại với version mới hơn.`);
+              return;
+            }
+            if (existing) {
+              // Chạy lại workflow: dùng lại bản nháp, file build mới sẽ ghi đè file cũ.
+              await github.rest.repos.updateRelease({
+                owner, repo, release_id: existing.id, target_commitish: context.sha, prerelease, body,
+              });
+              return existing.id;
+            }
+            const { data } = await github.rest.repos.createRelease({
+              owner, repo, tag_name: tag, target_commitish: context.sha,
+              name: `TinyWorld ${tag}`, body, draft: true, prerelease,
+            });
+            return data.id;
+
+  build-desktop:
+    name: Desktop (Windows)
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+      - run: pnpm install --frozen-lockfile
+      - name: Ghi version
+        shell: bash
+        env:
+          VERSION: ${{ needs.create-release.outputs.version }}
+        run: |
+          conf=desktop/src-tauri/tauri.conf.json
+          jq --arg v "$VERSION" '.version = $v' "$conf" > "$conf.tmp" && mv "$conf.tmp" "$conf"
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          tauriScript: pnpm tauri
+          releaseId: ${{ needs.create-release.outputs.release-id }}
+          args: --bundles nsis
+
+  publish:
+    name: Phát hành
+    needs: [create-release, build-desktop]
+    if: ${{ !inputs.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release-id }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            await github.rest.repos.updateRelease({
+              owner, repo, release_id: Number(process.env.RELEASE_ID), draft: false,
+            });

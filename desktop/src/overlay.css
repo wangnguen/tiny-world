@@ -1,0 +1,27 @@
+/* Overlay phủ cả màn hình nên nền phải trong suốt hoàn toàn. */
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#world {
+  position: fixed;
+  inset: 0;
+}
+
+.pet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.pet--pixel {
+  image-rendering: pixelated;
+}

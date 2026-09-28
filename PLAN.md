@@ -1,0 +1,135 @@
+# TinyWorld — Plan
+
+Một thế giới nhỏ sống trên desktop: các pet có tính cách, quan hệ, tự sống cạnh cửa sổ, taskbar và
+con trỏ chuột trong lúc người dùng làm việc. Không phải game phải mở lên chơi. Ưu tiên số 1: **nhẹ**.
+
+## Hướng đã chốt
+
+| Chủ đề | Quyết định |
+|---|---|
+| Quy trình | Làm theo plan này, **không** dùng AI-DLC |
+| Base | Theo cấu trúc và quy ước của `C:\Users\quang.nguyen13\Desktop\authenticator-app` |
+| Tên | TinyWorld, identifier `com.tinyworld.app` (dữ liệu ở `%APPDATA%\com.tinyworld.app\`) |
+| Nền tảng | Chỉ Windows 10/11. Desktop awareness dùng Win32, CI chỉ build NSIS |
+| Stack | Tauri v2 + Vite + TypeScript, backend Rust. Không Electron, không game engine, không server |
+| Vẽ pet | Mỗi pet một `<canvas>` nhỏ, di chuyển bằng CSS transform, vòng lặp `requestAnimationFrame` tối đa 30 fps. React chỉ dùng cho cửa sổ Settings (Phase 1) |
+| Logic pet | `packages/sim`: TS thuần (FSM, vật lý, RNG có seed), test bằng vitest |
+| Click-through | Overlay mặc định để chuột đi xuyên. Rust đọc con trỏ khoảng 60 lần/giây gửi sang, overlay kiểm tra theo alpha của sprite, con trỏ nằm trên pet thì tắt click-through |
+| Asset | Sprite pack xin từ itch.io (pixel art 32×32, license cho dùng/sửa). Mỗi pack là một thư mục `assets/sprites/<pack>/` có `pet.json`. Chưa có pack thì dùng pet tạm vẽ bằng code |
+| Thứ tự | Phase 2 (desktop awareness) làm trước Phase 3 (bộ lạc) |
+| Riêng tư | Mọi dữ liệu xử lý trên máy, không đọc tiêu đề cửa sổ, tính năng nhạy cảm (bàn phím, thói quen) mặc định tắt |
+| AI | Không cho AI điều khiển di chuyển, chỉ dùng cho hội thoại (Phase 7, tuỳ chọn) |
+| Ngôn ngữ | UI, comment, README tiếng Việt như authenticator-app |
+| Build / phát hành | Mỗi lần push lên `main`, CI tự test rồi build `.exe` (bản cài + bản chạy thẳng), tải ở mục Artifacts của Actions. Phát hành chính thức vẫn dùng workflow Release chạy tay (nhập version) như authenticator-app |
+
+### Kế thừa từ authenticator-app
+
+Giữ nguyên:
+
+- pnpm monorepo (`packages/*` + `desktop`), `tsconfig.base.json` strict, package nội bộ export thẳng source TS
+- Tauri v2 + Vite (port 1420), release profile `lto`, `opt-level = "s"`, `strip`, `codegen-units = 1`
+- Rust: `main.rs → app.rs → commands.rs → module nghiệp vụ`; lỗi `AppError { code, message }` trả thẳng về frontend
+- Frontend gọi Rust qua `desktop/src/api.ts`; types dùng chung ở `packages/core` khớp struct Rust (serde camelCase)
+- single-instance, dữ liệu JSON trong `%APPDATA%`, `assets/` giữ file gốc kèm README
+- Workflow release chạy tay (nhập version → test → release nháp → build NSIS)
+
+Khác đi:
+
+- `packages/ui` thay bằng `packages/sim`
+- Overlay trong suốt, luôn nằm trên, không có nút taskbar; điều khiển qua icon ở system tray
+- Không có `extension/`, không có Google OAuth
+- Thêm workflow Build: push lên `main` là tự build `.exe` ra Artifacts, không cần chạy release
+
+## Lộ trình
+
+| Phase | Tên | Kết quả chính | Trạng thái |
+|---|---|---|---|
+| 0 | Base | Monorepo, overlay trong suốt click-through, pet tạm, tray, CI | Xong: test pass, đã chạy thử trên máy thật (overlay trong suốt, click-through theo alpha, click → phản ứng) |
+| 1 | MVP | 1 pet: tự đi, quay đầu ở mép, click phản ứng, kéo thả + rơi, bỏ mặc thì ngủ | |
+| 2 | Desktop awareness | Đứng/leo/nhảy trên cửa sổ thật, ngủ trên taskbar, con trỏ là thực thể, đa màn hình | |
+| 3 | Bộ lạc | Nhiều pet, tính cách, quan hệ, nhật ký sự kiện, speech bubble, skin | |
+| 4 | Thế giới sống | Căn cứ + xây nhà, nhu cầu, thời tiết cục bộ, ngày/đêm, sự kiện hiếm | |
+| 5 | Thói quen user | Thống kê app theo giờ, nhắc khuya, phản ứng gõ phím (chỉ trên máy, tự bật) | |
+| 6 | Tiến hoá & colony | Tiến hoá theo cách đối xử, trứng nở, Keep/Send away, file `.pet` | |
+| 7 | AI dialogue | Chuột phải → Talk, LLM chỉ cho thoại (tuỳ chọn) | |
+
+### Phase 0 — Base
+
+- Monorepo, script `dev:desktop`, `build:desktop`, `typecheck`, `test`
+- `packages/core`: types Rust ↔ TS, tên event, `AppError`, đọc/kiểm tra `pet.json`
+- `packages/sim`: bước thời gian cố định, RNG có seed, khung FSM, `World`/`Pet` (idle, react)
+- Overlay phủ màn hình chính: trong suốt, luôn trên, ẩn khỏi taskbar, click-through; pet tạm đứng ở góc phải trên mép taskbar, click thì phản ứng
+- Loader sprite pack từ `assets/sprites/`, animation thiếu thì dùng `idle`
+- Rust: `overlay.rs`, `cursor.rs`, `tray.rs` (ẩn/hiện, thoát, DevTools khi debug), `storage.rs`, single-instance
+- CI: push lên `main` → typecheck, test, `cargo test` → build `.exe` Windows, tải ở Artifacts;
+  workflow Release chạy tay để phát hành `v<version>` lên trang Releases
+
+**Xong khi:** click vùng trống lọt xuống app bên dưới, click pet thì pet phản ứng; tray chạy được;
+`pnpm typecheck`, `pnpm test`, `cargo test` đều qua.
+
+### Phase 1 — MVP: một con pet
+
+- State: idle, walk, run, sleep, dragged, fall, land, react, dizzy
+- Pet xuất hiện ở góc phải dưới, đứng trên mép taskbar, tự chọn đứng/đi/chạy, chạm mép quay đầu
+- Click → phản ứng; kéo thả, thả ra rơi theo trọng lực; ném có quán tính, chạm đất nảy, thả từ cao thì choáng
+- Lâu không tương tác → buồn ngủ → ngủ, click đánh thức
+- Lưu trạng thái khi tắt/mở; tray thêm Tạm dừng; Settings (React): kích thước, tốc độ, chạy cùng Windows
+- Nhẹ: dừng vẽ khi ngủ/ẩn, tự ẩn khi có app fullscreen, click pet không cướp focus của app đang dùng
+  (Tauri có `focusable: false` → tao đặt `WS_EX_NOACTIVATE`, cần thử xem kéo thả còn chạy không)
+- Sprite pack thật từ itch.io cho đủ các state
+
+**Xong khi:** chạy 8 tiếng không rò RAM; unit test cho FSM và vật lý.
+
+### Phase 2 — Desktop awareness
+
+- Rust Win32: danh sách cửa sổ (khung thật qua DWM, thứ tự chồng, minimize, tên process), taskbar, màn hình + DPI; theo dõi thay đổi rồi gửi cho overlay
+- Mép trên cửa sổ là nền để đứng, cạnh bên là tường để leo: ngồi mép, leo, nhảy giữa cửa sổ, rơi khi minimize/đóng, bám theo khi kéo cửa sổ, bị che khi cửa sổ khác đè lên, ngủ trên taskbar, chạy trốn khi cửa sổ bị kéo tới, ăn mừng khi app đóng
+- Con trỏ là thực thể: nhìn theo, đuổi/né, lại gần ngửi khi đứng yên, giật mình ngã khi giật chuột
+- Đa màn hình, DPI khác nhau
+
+**Xong khi:** pet đứng đúng mép cửa sổ ở scale 100–200%, CPU vẫn trong ngân sách.
+
+### Phase 3 — Bộ lạc
+
+- Nhiều pet, chỉ số energy, curiosity, bravery, friendliness, mischief, affection → trọng số chọn hành vi trên FSM
+- Quan hệ từng cặp (bạn/ghét/thích) đổi theo tương tác: ngồi cạnh, chọc, đuổi, trốn, lẽo đẽo theo
+- Mood, nhật ký sự kiện ngắn cho mỗi pet, speech bubble theo ngữ cảnh có giới hạn tần suất, skin
+
+**Xong khi:** kịch bản kiểu Mochi–Pip (ngủ → bị chọc → đuổi → trốn sau cửa sổ → ngồi chờ) tự xảy ra, không viết cứng.
+
+### Phase 4 — Thế giới sống
+
+- Căn cứ góc màn hình: thùng carton → nhà nhỏ → cây, giường, bếp, máy arcade; tài nguyên (gỗ, xu, vải, đồ ăn) tăng theo thời gian chạy app, pet có nghề tự xây
+- Nhu cầu ngủ/ăn/chơi → pet tự đi tới đồ vật
+- Thời tiết chỉ quanh pet (mưa, tuyết, cánh hoa, sấm), ngày/đêm theo giờ thật, pet phản ứng
+- Sự kiện hiếm không báo trước: UFO, mèo khổng lồ, ma lúc 2 giờ sáng, mũ sinh nhật
+
+### Phase 5 — Thói quen user (chỉ trên máy, mặc định tắt)
+
+- Thống kê app dùng theo giờ (chỉ tên process), xem/xoá được
+- AFK qua thời điểm input cuối; nhận biết đang gõ phím không cần hook (có input nhưng chuột đứng yên)
+- Nhắc khuya ("Still coding?", "bro go sleep"), VSCode mở 2 tiếng → pet mang gối tới
+- Spam Ctrl+S → "bro it's saved 😭": cần hook bàn phím nên là tuỳ chọn riêng, chỉ đếm tổ hợp phím
+
+### Phase 6 — Tiến hoá & colony
+
+- Tiến hoá theo cách đối xử: friendly / independent / chaotic
+- Trứng xuất hiện → nở → thêm pet; giới hạn số lượng; Keep / Send away
+- Xuất/nhập `.pet` (có version, kiểm tra dữ liệu khi nhập) để trade
+
+### Phase 7 — AI dialogue (tuỳ chọn)
+
+- Chuột phải → Talk; context gồm tên, tính cách, quan hệ, sự kiện gần đây từ nhật ký Phase 3
+- Tự bật; API key khoá bằng DPAPI như authenticator-app lưu token Google; không có mạng thì dùng câu mẫu
+
+## Rủi ro kỹ thuật
+
+| Rủi ro | Cách xử lý |
+|---|---|
+| Click-through đổi chậm → click đầu tiên lọt xuống app bên dưới | Đọc con trỏ khoảng 60 lần/giây; đang kéo thì giữ quyền nhận chuột |
+| Toạ độ Win32 (pixel vật lý) lệch với CSS pixel khi DPI khác nhau | Một quy ước toạ độ (CSS pixel của overlay), Rust đổi toạ độ, có test |
+| Overlay trong suốt phủ màn hình tốn GPU khi vẽ liên tục | Giới hạn fps, chỉ vẽ lại canvas của pet khi đổi frame, dừng vòng lặp khi không có gì chuyển động |
+| Overlay đè lên video/game fullscreen | Tự ẩn khi app đang dùng chiếm trọn màn hình (Phase 1) |
+| Hook bàn phím dễ bị antivirus nghi ngờ | Tuỳ chọn riêng, mặc định tắt, có thể bỏ |
+| License asset itch.io thường cấm phát tán lại file gốc | Giữ file license trong thư mục pack; repo public mà license cấm thì không commit pack |
+| App chưa ký số → SmartScreen cảnh báo | Như authenticator-app: hướng dẫn "More info → Run anyway" |

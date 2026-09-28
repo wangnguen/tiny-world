@@ -1,0 +1,61 @@
+# Mỗi lần push lên main: kiểm tra code rồi build file .exe cho Windows.
+# Tải về: GitHub → tab Actions → bấm vào lần chạy → mục Artifacts ở cuối trang (giữ 30 ngày).
+# Phát hành chính thức lên trang Releases thì dùng workflow Release (release.yml, chạy tay).
+name: Build
+
+on:
+  push:
+    branches: [main]
+  # Cho phép bấm chạy tay ở tab Actions khi cần build lại.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Push liên tục thì huỷ lần build cũ, chỉ giữ lần mới nhất.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+      # Tauri cần thư mục dist của frontend lúc compile test.
+      - run: pnpm --filter desktop build
+      - run: cargo test --locked
+        working-directory: desktop/src-tauri
+      - name: Build .exe
+        run: pnpm build:desktop
+
+      - name: Chuẩn bị file tải về
+        id: files
+        shell: bash
+        run: |
+          version=$(jq -r .version desktop/src-tauri/tauri.conf.json)
+          mkdir -p out
+          # Bản cài đặt (NSIS) và bản chạy thẳng không cần cài (cần WebView2, Windows 10/11 có sẵn).
+          cp desktop/src-tauri/target/release/bundle/nsis/*-setup.exe "out/TinyWorld_${version}_x64-setup.exe"
+          cp desktop/src-tauri/target/release/tinyworld.exe "out/TinyWorld_${version}_x64-portable.exe"
+          echo "artifact=TinyWorld-${version}-${{ github.run_number }}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.files.outputs.artifact }}
+          path: out/*.exe
+          if-no-files-found: error
+          retention-days: 30
