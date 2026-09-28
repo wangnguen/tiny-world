@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TinyWorld — Sprite studio</title>
+  <style>
+    :root { color-scheme: light; font: 15px/1.5 system-ui,sans-serif; color: #332c35; background: #f7f5f1; }
+    * { box-sizing: border-box; }
+    body { max-width: 1100px; margin: auto; padding: 36px 24px; }
+    h1 { font-size: 32px; letter-spacing: -.04em; margin: 0 0 8px; }
+    p { margin: 0 0 20px; color: #746b77; }
+    .eyebrow { color: #487663; font-size: 12px; font-weight: 700; letter-spacing: .12em; margin-bottom: 10px; }
+    .toolbar,.animations { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+    button,select,input { font: inherit; }
+    button,select { border: 1px solid #dcd7d0; border-radius: 9px; padding: 7px 12px; background: #fff; color: inherit; cursor: pointer; }
+    button[aria-pressed="true"] { background: #376653; border-color: #376653; color: #fff; }
+    button:focus-visible,select:focus-visible,input:focus-visible { outline: 3px solid #73a68c; outline-offset: 3px; }
+    label { display: inline-flex; align-items: center; gap: 8px; }
+    .spacer { flex: 1; }
+    .cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin-top: 24px; }
+    .card { border: 1px solid #e3ded7; border-radius: 16px; background: #fff; padding: 18px; overflow: hidden; }
+    h2 { font-size: 19px; margin: 0; }
+    .pack { font: 12px/1.5 ui-monospace,monospace; color: #817783; }
+    .stage { position: relative; display: grid; place-items: center; height: 210px; border-radius: 10px; margin: 16px 0; background-color: #f2eee6; }
+    .stage::after { content: ""; position: absolute; width: 75%; height: 1px; bottom: 23px; background: #ab9f8f66; }
+    .stage.checker { background-color: #fafafa; background-image: conic-gradient(#e5e3df 25%,transparent 0 50%,#e5e3df 0 75%,transparent 0); background-size: 20px 20px; }
+    .stage.dark { background: #252631; }
+    .stage.white { background: #fff; outline: 1px solid #ebe7e1; }
+    canvas { image-rendering: pixelated; display: block; }
+    .hero { width: 192px; height: 192px; }
+    .frames { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; }
+    .frames button { display: grid; place-items: center; padding: 3px; min-width: 0; border-radius: 6px; background: #f7f5f1; }
+    .frames canvas { width: 48px; height: 48px; }
+    .info { font-size: 12px; color: #817783; margin-top: 12px; }
+    .note { padding: 14px 18px; border-radius: 10px; background: #eee9df; margin-top: 24px; font-size: 13px; }
+    a { color: #376653; }
+    @media(max-width:760px) { .cards { grid-template-columns: 1fr; } body { padding: 24px 16px; } .spacer { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="eyebrow">TINYWORLD / SPRITE STUDIO</div>
+  <h1>Những người bạn nhỏ.</h1>
+  <p>Xem chuyển động, kiểm tra từng frame và thử độ tương phản trên nền sáng hoặc tối.</p>
+  <div class="toolbar">
+    <button id="play" type="button" aria-pressed="true">Tạm dừng</button>
+    <label>Tốc độ <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+    <label>Nền <select id="background"><option value="soft">Kem</option><option value="white">Trắng</option><option value="dark">Tối</option><option value="checker">Ô caro để kiểm tra alpha</option></select></label>
+    <label>Nhân vật <select id="character"><option value="all">Tất cả</option></select></label>
+    <span class="spacer"></span>
+    <label><input id="future" type="checkbox"> Xem Phase 2</label>
+  </div>
+  <nav class="animations" aria-label="Animation"></nav>
+  <main class="cards"></main>
+  <div class="note" id="note">Frame thật 48×48 · 4 frame/dải · alpha 0/255 · chân ở y=44. Bấm một thumbnail để dừng và xem frame đó.</div>
+  <p class="info">Ảnh gốc và prompt: <a href="README.md">README</a>. Các pose Phase 2 chỉ là ảnh chuẩn bị sẵn; chưa được khai báo trong pet.json.</p>
+  <script src="gallery-data.js"></script>
+  <script>
+    const pets = window.SPRITE_PETS;
+    document.querySelector('h1').textContent = `${pets.length} người bạn nhỏ.`;
+    const translations = { idle: 'Đứng', walk: 'Đi', run: 'Chạy', sleep: 'Ngủ', react: 'Bị click', fall: 'Rơi', dragged: 'Bị nhấc', land: 'Tiếp đất', dizzy: 'Choáng', climb: 'Leo', perch: 'Ngồi mép', jump: 'Nhảy' };
+    const images = new Map();
+    const cards = [];
+    let animation = 'idle', running = true, time = 0, last = 0, fixed = null;
+    let loaded = 0;
+    window.__spriteGallery = { expected: pets.length * 12, loaded: 0, errors: [] };
+    function setRunning(value) {
+      running = value;
+      document.querySelector('#play').textContent = running ? 'Tạm dừng' : 'Phát';
+      document.querySelector('#play').setAttribute('aria-pressed', String(running));
+      if (running) fixed = null;
+    }
+    function draw(ctx, image, frame, scale) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(image, frame * 48, 0, 48, 48, 0, 0, 48 * scale, 48 * scale);
+    }
+    function renderNav() {
+      const future = document.querySelector('#future').checked;
+      const nav = document.querySelector('.animations');
+      nav.replaceChildren();
+      for (const spec of pets[0].animations.filter(s => future || !s.phase2)) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = translations[spec.name] + ' · ' + spec.name;
+        button.setAttribute('aria-pressed', String(animation === spec.name));
+        button.onclick = () => { animation = spec.name; time = 0; fixed = null; renderNav(); refresh(); };
+        nav.append(button);
+      }
+    }
+    function refresh() {
+      for (const card of cards) {
+        const spec = card.pet.animations.find(a => a.name === animation);
+        const image = images.get(spec.image);
+        if (!image?.complete || !image.naturalWidth) continue;
+        // Replay single-shot actions after a brief hold so they can be inspected.
+        const phase = time % (4 / spec.fps + (spec.loop ? 0 : .8));
+        const frame = fixed ?? (spec.loop ? Math.floor(phase * spec.fps) % 4 : Math.min(3, Math.floor(phase * spec.fps)));
+        draw(card.hero.getContext('2d'), image, frame, 4);
+        card.thumbs.forEach((canvas, n) => draw(canvas.getContext('2d'), image, n, 1));
+        card.info.textContent = `${animation} · ${spec.fps} fps · frame ${frame + 1}/4${spec.phase2 ? ' · Phase 2' : ''}`;
+        card.buttons.forEach((button, n) => button.setAttribute('aria-pressed', String(n === frame)));
+      }
+    }
+    for (const pet of pets) {
+      const option = document.createElement('option');
+      option.value = pet.folder;
+      option.textContent = pet.name;
+      document.querySelector('#character').append(option);
+      for (const spec of pet.animations) {
+        const image = new Image();
+        image.onload = () => { window.__spriteGallery.loaded = ++loaded; refresh(); };
+        image.onerror = () => window.__spriteGallery.errors.push(spec.image);
+        image.src = spec.image;
+        images.set(spec.image, image);
+      }
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `<h2>${pet.name}</h2><div class="pack">${pet.folder}</div><div class="stage"><canvas class="hero" width="192" height="192" aria-label="${pet.name} animation"></canvas></div><div class="frames"></div><div class="info"></div>`;
+      const thumbs = [], buttons = [];
+      for (let n = 0; n < 4; n++) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('aria-label', `Xem frame ${n + 1} của ${pet.name}`);
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 48;
+        button.append(canvas);
+        button.onclick = () => { setRunning(false); fixed = n; refresh(); };
+        thumbs.push(canvas); buttons.push(button);
+        card.querySelector('.frames').append(button);
+      }
+      cards.push({ pet, hero: card.querySelector('.hero'), thumbs, buttons, info: card.querySelector('.info') });
+      document.querySelector('.cards').append(card);
+    }
+    document.querySelector('#play').onclick = () => setRunning(!running);
+    document.querySelector('#character').onchange = (event) => cards.forEach(card => { card.hero.closest('.card').hidden = event.target.value !== 'all' && card.pet.folder !== event.target.value; });
+    document.querySelector('#background').onchange = (event) => cards.forEach(card => { card.hero.parentElement.className = 'stage ' + event.target.value; });
+    document.querySelector('#future').onchange = () => {
+      if (!document.querySelector('#future').checked && ['climb','perch','jump'].includes(animation)) animation = 'idle';
+      time = 0; fixed = null; renderNav(); refresh();
+    };
+    renderNav();
+    function tick(now) {
+      if (last && running && !document.hidden) time += Math.min((now - last) / 1000, .1) * Number(document.querySelector('#speed').value);
+      last = now;
+      refresh();
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

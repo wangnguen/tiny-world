@@ -1,0 +1,69 @@
+{
+  "name": "Bắp — Bumblebee",
+  "frameWidth": 48,
+  "frameHeight": 48,
+  "scale": 2,
+  "pixelArt": true,
+  "facing": "right",
+  "anchor": {
+    "x": 24,
+    "y": 45
+  },
+  "outline": false,
+  "animations": {
+    "idle": {
+      "image": "idle.png",
+      "frames": 4,
+      "fps": 5,
+      "loop": true
+    },
+    "walk": {
+      "image": "walk.png",
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    "run": {
+      "image": "run.png",
+      "frames": 4,
+      "fps": 12,
+      "loop": true
+    },
+    "sleep": {
+      "image": "sleep.png",
+      "frames": 4,
+      "fps": 3,
+      "loop": true
+    },
+    "react": {
+      "image": "react.png",
+      "frames": 4,
+      "fps": 8,
+      "loop": false
+    },
+    "fall": {
+      "image": "fall.png",
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    "dragged": {
+      "image": "dragged.png",
+      "frames": 4,
+      "fps": 6,
+      "loop": true
+    },
+    "land": {
+      "image": "land.png",
+      "frames": 4,
+      "fps": 16,
+      "loop": false
+    },
+    "dizzy": {
+      "image": "dizzy.png",
+      "frames": 4,
+      "fps": 5,
+      "loop": true
+    }
+  }
+}
