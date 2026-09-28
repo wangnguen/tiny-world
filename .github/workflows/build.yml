@@ -6,6 +6,11 @@ name: Build
 on:
   push:
     branches: [main]
+    # Push chỉ sửa tài liệu thì không build lại. Không bỏ qua assets/: sprite và icon được build vào app.
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".github/workflows/release.yml"
   # Cho phép bấm chạy tay ở tab Actions khi cần build lại.
   workflow_dispatch:
 

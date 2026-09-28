@@ -58,6 +58,8 @@ tải `TinyWorld-<version>-<số lần chạy>-<commit>` (file zip, giữ 30 ng�
 | `TinyWorld_<version>_x64-portable.exe` | Chạy thẳng không cần cài (cần WebView2, Windows 10/11 bản mới có sẵn) |
 
 Test hỏng thì không build ra file. Push liên tục thì lần build cũ bị huỷ, chỉ giữ lần mới nhất.
+Push chỉ sửa file `.md`, thư mục `docs/` hoặc `release.yml` thì không build (sửa sprite, icon trong
+`assets/` vẫn build vì chúng nằm trong app).
 Muốn build lại mà không push: tab **Actions → Build → Run workflow**.
 
 ### Release bằng GitHub Actions (chạy tay)

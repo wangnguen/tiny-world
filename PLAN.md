@@ -20,7 +20,7 @@ con trỏ chuột trong lúc người dùng làm việc. Không phải game ph�
 | Riêng tư | Mọi dữ liệu xử lý trên máy, không đọc tiêu đề cửa sổ, tính năng nhạy cảm (bàn phím, thói quen) mặc định tắt |
 | AI | Không cho AI điều khiển di chuyển, chỉ dùng cho hội thoại (Phase 7, tuỳ chọn) |
 | Ngôn ngữ | UI, comment, README tiếng Việt như authenticator-app |
-| Build / phát hành | Mỗi lần push lên `main`, CI tự test rồi build `.exe` (bản cài + bản chạy thẳng), tải ở mục Artifacts của Actions. Phát hành chính thức vẫn dùng workflow Release chạy tay (nhập version) như authenticator-app |
+| Build / phát hành | Mỗi lần push lên `main`, CI tự test rồi build `.exe` (bản cài + bản chạy thẳng), tải ở mục Artifacts của Actions; push nhiều lần thì chỉ build bản mới nhất, push chỉ sửa tài liệu (`.md`, `docs/`) thì không build. Phát hành chính thức vẫn dùng workflow Release chạy tay (nhập version) như authenticator-app |
 
 ### Kế thừa từ authenticator-app
 
