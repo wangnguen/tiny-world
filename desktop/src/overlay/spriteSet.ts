@@ -93,7 +93,7 @@ const SIMILAR: Partial<Record<AnimationName, AnimationName>> = {
   fall: "dragged",
 };
 
-/** Ngủ và choáng mà pack không có thì đứng yên ở frame đầu của `idle` (kèm 💤 / sao choáng). */
+/** Ngủ và choáng mà pack không có thì đứng yên ở frame đầu của `idle` (choáng thì kèm sao bay quanh đầu). */
 const STILL: readonly AnimationName[] = ["sleep", "dizzy"];
 
 /** Điền đủ mọi animation cho pack chỉ có một phần. */

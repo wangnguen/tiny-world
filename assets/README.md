@@ -8,7 +8,7 @@ thay file gốc ở đây rồi chạy lại lệnh tạo icon.
 | `icon.png` | Logo TinyWorld nền trong suốt: pet màu kem ôm hành tinh xanh, có mầm cây; dùng cho app, tray, setup và portable |
 | `branding/logo-prompt.txt` | Prompt gốc để tạo logo bằng imagegen |
 | `sprites/<pack>/` | Sprite pack của nhân vật: `pet.json` + ảnh PNG/WebP |
-| `sprite-sources/` | Atlas và prompt gốc của 15 nhân vật tự tạo, script chuẩn hóa và trang xem animation |
+| `sprite-sources/` | Atlas và prompt gốc của 22 nhân vật tự tạo, script chuẩn hóa và trang xem animation |
 
 ## Sprite pack
 
@@ -30,17 +30,22 @@ assets/sprites/a-momo/
 
 ### Các pet tự tạo của TinyWorld
 
-Có 15 nhân vật: Momo, Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa,
-Su và Bắp. [Danh mục thiết kế và thư mục pack](sprite-sources/README.md). Tất cả đủ 9 animation Phase 1,
-mỗi animation là một dải 4 frame **48×48**, alpha trong suốt thật, chân cùng hàng y=44,
+Có 22 nhân vật: Momo, Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa,
+Su, Bắp, Boggo, Wobi, Gloop, Bẹp, Frobu, Byte và Patch. [Danh mục thiết kế và thư mục pack](sprite-sources/README.md). Tất cả đủ 9 animation Phase 1,
+mỗi animation có 4 frame **48×48**, alpha trong suốt thật, chân cùng hàng y=44,
 quay sang phải. Mặc định là `a-momo`; đổi nhân vật trong **Cài đặt… → Nhân vật**, pet đổi ngay tại
 chỗ. Thêm pack mới thì chạy lại `pnpm dev:desktop` để pack hiện trong danh sách.
+
+Wobi, Byte và Patch chỉ có `pet.json` và một `atlas.png` **192×576** trong pack. Manifest dùng
+`row` để lấy đúng hàng animation từ sheet chung; 9 hàng đầu là Phase 1, 3 hàng cuối là Phase 2.
+Wobi cũng chỉ giữ một ảnh nguồn `sprite-sources/wobi/atlas.png`, không giữ các bản nháp hoặc ảnh
+preview trùng. Byte và Patch là chim cánh cụt coder đeo kính/hoodie teal và gấu trúc đỏ coder đeo tai nghe/hoodie tím.
 
 Xem tất cả chuyển động bằng [`sprite-sources/index.html`](sprite-sources/index.html), mở
 trực tiếp bằng trình duyệt. Ảnh gốc, prompt và cách tạo lại: [sprite-sources/README.md](sprite-sources/README.md).
 Pack Cat demo cũ của OboroPixel đã được gỡ khỏi cây mã nguồn hiện tại.
 Chạy `node scripts/prepare-sprites.mjs --check` để kiểm tra các pack. Ba animation Phase 2
-để riêng trong `phase2/`; không thêm vào `pet.json` trước khi engine hỗ trợ.
+để riêng trong `phase2/` hoặc ở hàng 9–11 của sheet chung; không thêm vào `pet.json` trước khi engine hỗ trợ.
 
 ### Lấy pack từ itch.io
 
@@ -109,8 +114,9 @@ animation vẫn chạy được, animation thiếu được thay như sau:
 | `sleep`, `dizzy` | đứng yên ở frame đầu của `idle` |
 | khác | `idle` |
 
-Lúc ngủ luôn có 💤 trên đầu pet; lúc choáng app tự cho pet lảo đảo và vẽ sao bay vòng quanh đầu. Có cả khi
-pack không có animation riêng, nên `dizzy.png` không cần vẽ sao hay nghiêng người, chỉ cần mặt choáng.
+Lúc choáng app tự cho pet lảo đảo và vẽ sao bay vòng quanh đầu, có cả khi pack không có animation riêng,
+nên `dizzy.png` không cần vẽ sao hay nghiêng người, chỉ cần mặt choáng. Lúc ngủ app không vẽ thêm gì:
+`sleep.png` tự thể hiện (nhắm mắt, cuộn người).
 Pack chung một sheet nhiều hàng thì dùng `row` / `start` / `frames`:
 
 ```json
@@ -124,8 +130,8 @@ Pack chung một sheet nhiều hàng thì dùng `row` / `start` / `frames`:
    ```powershell
    pnpm icons:desktop
    ```
-   Script dùng Tauri CLI, cập nhật `.ico`, `.icns` và các PNG trong `desktop/src-tauri/icons/`.
-   Icon Android/iOS được tạo trong `target/`, không đưa vào repo.
+   Script dùng Tauri CLI, cập nhật `icon.ico` và các PNG trong `desktop/src-tauri/icons/`.
+   Icon macOS, Microsoft Store, Android/iOS chỉ nằm trong `target/`, không đưa vào repo (app chỉ chạy Windows).
    Sau đó [`scripts/small-icons.mjs`](../scripts/small-icons.mjs) vẽ lại cỡ **16, 24, 32 px** theo lưới
    pixel và dựng lại `icon.ico`: thu nhỏ logo lớn xuống các cỡ này thì mắt, miệng nhoè hết, mà tray và
    thanh tiêu đề lại dùng đúng các cỡ đó. Đổi hẳn hình logo thì sửa luôn hình vẽ trong script này

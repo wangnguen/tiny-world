@@ -1,6 +1,6 @@
-//! Đọc vị trí con trỏ khoảng 60 lần/giây, gửi cho overlay khi con trỏ di chuyển hoặc phím Ctrl đổi
-//! trạng thái. Overlay đang để chuột đi xuyên nên không tự nhận được sự kiện chuột; frontend dùng
-//! thông tin này để biết con trỏ có nằm trên pet không.
+//! Đọc vị trí con trỏ khoảng 60 lần/giây, gửi cho overlay khi con trỏ di chuyển, phím Ctrl hoặc nút
+//! chuột đổi trạng thái. Overlay đang để chuột đi xuyên nên không tự nhận được sự kiện chuột; frontend
+//! dùng thông tin này để biết con trỏ có nằm trên pet không, và click ở đâu thì pet đang ngủ cũng dậy.
 
 use crate::events;
 use crate::overlay::{self, Overlay};
@@ -19,6 +19,8 @@ struct CursorInfo {
     y: f64,
     /// Đang giữ Ctrl: click xuyên qua pet xuống app bên dưới.
     pass_through: bool,
+    /// Đang giữ một nút chuột, ở bất kỳ đâu trên màn hình.
+    pressed: bool,
 }
 
 pub fn spawn(app: AppHandle) {
@@ -30,16 +32,22 @@ pub fn spawn(app: AppHandle) {
                 continue;
             };
             let pass_through = ctrl_pressed();
-            if last == Some((x, y, pass_through)) {
+            let pressed = mouse_pressed();
+            if last == Some((x, y, pass_through, pressed)) {
                 continue;
             }
-            last = Some((x, y, pass_through));
+            last = Some((x, y, pass_through, pressed));
             let overlay = app.state::<Overlay>();
             if !overlay.is_visible() {
                 continue;
             }
             let (x, y) = overlay.geometry().to_local(x, y);
-            let info = CursorInfo { x, y, pass_through };
+            let info = CursorInfo {
+                x,
+                y,
+                pass_through,
+                pressed,
+            };
             if let Err(e) = app.emit_to(overlay::LABEL, events::CURSOR_MOVED, info) {
                 eprintln!("Không gửi được vị trí con trỏ: {e}");
             }
@@ -64,7 +72,7 @@ fn cursor_position(app: &AppHandle) -> Option<(f64, f64)> {
     app.cursor_position().ok().map(|p| (p.x, p.y))
 }
 
-/// Chỉ đọc trạng thái phím Ctrl, không theo dõi phím nào khác.
+/// Chỉ đọc trạng thái phím Ctrl, không theo dõi phím bàn phím nào khác.
 #[cfg(windows)]
 fn ctrl_pressed() -> bool {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL};
@@ -77,5 +85,25 @@ fn ctrl_pressed() -> bool {
 
 #[cfg(not(windows))]
 fn ctrl_pressed() -> bool {
+    false
+}
+
+/// Nút chuột trái, phải hoặc giữa đang được giữ (nút vật lý, nên đổi tay chuột cũng không sao).
+#[cfg(windows)]
+fn mouse_pressed() -> bool {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+        GetAsyncKeyState, VK_LBUTTON, VK_MBUTTON, VK_RBUTTON,
+    };
+
+    [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON].into_iter().any(|key| {
+        // SAFETY: GetAsyncKeyState chỉ đọc trạng thái nút.
+        let state = unsafe { GetAsyncKeyState(i32::from(key)) };
+        // Bit cao bật (số âm) nghĩa là đang giữ nút.
+        state < 0
+    })
+}
+
+#[cfg(not(windows))]
+fn mouse_pressed() -> bool {
     false
 }

@@ -24,6 +24,21 @@ export function dizzyLean(time: number, height: number): number {
   return Math.round(height * SWAY_LEAN * strength * Math.sin(2 * Math.PI * SWAY_HZ * time));
 }
 
+/** `dizzyLean` lệch tối đa bấy nhiêu pixel với frame cao `frameHeight`: số cột chừa sẵn mỗi bên canvas. */
+export function dizzyReach(frameHeight: number): number {
+  return Math.ceil(frameHeight * SWAY_LEAN);
+}
+
+/**
+ * Hàng `y` của frame bị đẩy ngang bao nhiêu pixel lúc lảo đảo: chân (`footY`) đứng yên, từ đỉnh đầu trở
+ * lên (tai, ăng-ten) lệch đúng `lean`, ở giữa lệch dần theo số nguyên pixel.
+ */
+export function leanShift(lean: number, y: number, footY: number, headTop: number): number {
+  if (lean === 0) return 0;
+  const t = (footY - y) / Math.max(1, footY - headTop);
+  return Math.round(lean * Math.min(1, Math.max(0, t)));
+}
+
 /** Hàng pixel (của frame) mà vòng sao bay quanh. */
 export function ringRow(headTop: number, height: number): number {
   return headTop + Math.round(height * RING_DROP);

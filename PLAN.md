@@ -80,7 +80,7 @@ Khác đi:
     registry bằng `windows-sys`, không dùng plugin
 - Nhẹ: dừng vẽ khi ngủ/ẩn/tạm dừng, tự ẩn khi có app fullscreen, click pet không cướp focus của app đang
   dùng (`focusable: false` → `WS_EX_NOACTIVATE`, kéo thả vẫn chạy)
-- 15 sprite pack tự tạo (Momo mặc định): đủ 9 animation, frame 48×48,
+- 22 sprite pack tự tạo (Momo mặc định): đủ 9 animation, frame 48×48,
   alpha nhị phân và viền tối sẵn trong ảnh; thêm pose leo/ngồi mép/nhảy để riêng cho Phase 2
 
 **Xong khi:** chạy 8 tiếng không rò RAM; unit test cho FSM và vật lý.

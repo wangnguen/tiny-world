@@ -39,6 +39,15 @@ export function WindowsIcon() {
   );
 }
 
+/** Mũi tên của nút lật trang, `left` là trang trước. */
+export function ChevronIcon({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg className="icon icon--chevron" viewBox="0 0 24 24" aria-hidden="true">
+      <path d={direction === "left" ? "M14.5 6 8.5 12l6 6" : "M9.5 6l6 6-6 6"} />
+    </svg>
+  );
+}
+
 export function InfoIcon() {
   return (
     <svg className="icon icon--info" viewBox="0 0 24 24" aria-hidden="true">

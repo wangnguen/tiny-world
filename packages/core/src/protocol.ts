@@ -1,6 +1,6 @@
 /** Event Rust gửi cho overlay, tên phải khớp với desktop/src-tauri/src/events.rs. */
 export const EVENTS = {
-  /** `CursorInfo`, chỉ gửi khi con trỏ di chuyển hoặc phím Ctrl đổi trạng thái. */
+  /** `CursorInfo`, chỉ gửi khi con trỏ di chuyển, phím Ctrl hoặc nút chuột đổi trạng thái. */
   cursorMoved: "cursor-moved",
   /** `boolean`: overlay vừa hiện (`true`) hoặc ẩn (tray, có app fullscreen). */
   overlayVisibility: "overlay-visibility",

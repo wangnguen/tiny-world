@@ -1,50 +1,37 @@
 import { frameIndex, type AnimationName, type Point } from "@tinyworld/core";
-import type { Pet } from "@tinyworld/sim";
-import { DizzyStars, dizzyLean, ringRow } from "./dizzy";
+import type { Bounds, Pet } from "@tinyworld/sim";
+import { DizzyStars, dizzyLean, dizzyReach, leanShift, ringRow } from "./dizzy";
 import { headOf, type Animation, type Head, type SpriteSet } from "./spriteSet";
 
 /**
- * Biểu tượng hiện trên đầu pet theo state (class `pet-effect--<state>` trong overlay.css).
- * Choáng không dùng biểu tượng mà có sao bay quanh đầu và lảo đảo, xem `dizzy.ts`.
- */
-const EFFECTS: Partial<Record<AnimationName, string>> = { sleep: "💤" };
-/** Cỡ biểu tượng và độ đè xuống đỉnh đầu (để trông như dính vào nhân vật), tính bằng pixel của frame. */
-const EFFECT_SIZE = 7;
-const EFFECT_OVERLAP = 1.5;
-
-/**
- * Một pet trên màn hình: canvas nhỏ đúng bằng một frame, di chuyển bằng CSS transform.
- * Chỉ vẽ lại canvas khi đổi frame, không vẽ lại cả overlay.
+ * Một pet trên màn hình: canvas nhỏ bằng một frame (chừa thêm vài cột mỗi bên cho lúc lảo đảo),
+ * di chuyển bằng CSS transform. Chỉ vẽ lại canvas khi đổi frame, không vẽ lại cả overlay.
  */
 export class PetView {
   readonly element: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
-  /** Khung đặt vị trí hiệu ứng; phần tử con chạy animation để không làm lệch vị trí. */
-  private readonly effect: HTMLDivElement;
-  private readonly effectSymbol: HTMLSpanElement;
   private readonly stars: DizzyStars;
   /** Cỡ trong Settings (1 là cỡ gốc của pack). */
   private size = 1;
   /** Số CSS pixel cho một pixel của frame: `scale` của pack nhân với cỡ trong Settings. */
   private scale = 1;
-  /** Kích thước khi vẽ (CSS pixel). */
+  /** Kích thước một frame khi vẽ (CSS pixel), không tính phần chừa cho lúc lảo đảo. */
   width = 0;
   height = 0;
+  /** Số cột pixel (của frame) chừa thêm mỗi bên canvas để phần đầu nghiêng ra lúc lảo đảo không bị cắt. */
+  private pad = 0;
   private drawnKey = "";
   private shownState: AnimationName | null = null;
-  /** Đầu nhân vật trong animation hiện tại và kích thước hiệu ứng, đo lại khi đổi state. */
+  /** Đầu nhân vật trong animation hiện tại, đo lại khi đổi state. */
   private head: Head = { top: 0, centerX: 0 };
-  private effectWidth = 0;
-  private effectHeight = 0;
-  private effectKey = "";
   private animation: Animation | null = null;
   private frame = 0;
   private flip = false;
+  /** Góc trên bên trái của frame (không tính phần chừa), CSS pixel của overlay. */
   private left = Number.NaN;
   private top = Number.NaN;
-  /** Độ nghiêng lúc lảo đảo (tan của góc skewX, quanh điểm chân); 0 là đứng thẳng. */
-  private skew = 0;
-  private originKey = "";
+  /** Đỉnh đầu đang lệch bao nhiêu pixel của frame lúc lảo đảo (dương: sang phải màn hình); 0 là đứng thẳng. */
+  private lean = 0;
 
   /** `size`: cỡ trong Settings (1 là cỡ gốc của pack). */
   constructor(
@@ -56,12 +43,7 @@ export class PetView {
     const ctx = this.element.getContext("2d");
     if (!ctx) throw new Error("Không tạo được canvas cho pet.");
     this.ctx = ctx;
-    this.effect = document.createElement("div");
-    this.effect.className = "pet-effect";
-    this.effect.hidden = true;
-    this.effectSymbol = document.createElement("span");
-    this.effect.append(this.effectSymbol);
-    container.append(this.element, this.effect);
+    container.append(this.element);
     this.stars = new DizzyStars(this.element);
     this.setSprite(sprite, size);
   }
@@ -83,25 +65,28 @@ export class PetView {
   setSize(size: number): void {
     this.size = size;
     this.scale = this.sprite.scale * size;
+    this.pad = dizzyReach(this.sprite.frameHeight);
     this.width = this.sprite.frameWidth * this.scale;
     this.height = this.sprite.frameHeight * this.scale;
-    this.element.style.width = `${this.width}px`;
+    this.element.style.width = `${this.canvasWidth}px`;
     this.element.style.height = `${this.height}px`;
     this.resize();
-    // Biểu tượng và sao to nhỏ theo pet.
-    this.effect.style.fontSize = `${EFFECT_SIZE * this.scale}px`;
-    this.measureEffect();
+    // Sao choáng to nhỏ theo pet.
     this.stars.setScale(this.scale);
     this.left = Number.NaN;
-    this.originKey = "";
   }
 
   /** Đặt lại độ phân giải canvas theo DPI hiện tại để pixel art không bị nhoè. */
   resize(): void {
     const dpr = window.devicePixelRatio || 1;
-    this.element.width = Math.round(this.width * dpr);
+    this.element.width = Math.round(this.canvasWidth * dpr);
     this.element.height = Math.round(this.height * dpr);
     this.drawnKey = "";
+  }
+
+  /** Bề ngang canvas (CSS pixel): một frame cộng phần chừa hai bên. */
+  private get canvasWidth(): number {
+    return this.width + 2 * this.pad * this.scale;
   }
 
   update(pet: Pet): void {
@@ -111,72 +96,46 @@ export class PetView {
     const fps = moving ? animation.fps * pet.env.speed : animation.fps;
     const frame = frameIndex(animation.frames.length, fps, animation.loop, pet.stateTime);
     const flip = (pet.facing === 1) !== (this.sprite.facing === "right");
-    const key = `${pet.state}:${frame}:${flip}`;
-    if (key !== this.drawnKey) {
-      this.draw(animation, frame, flip);
-      this.drawnKey = key;
-      this.animation = animation;
-      this.frame = frame;
-      this.flip = flip;
-    }
-
     if (pet.state !== this.shownState) this.enterState(pet.state, animation);
+
     const { anchor, frameWidth } = this.sprite;
     const { scale } = this;
     const anchorX = flip ? frameWidth - anchor.x : anchor.x;
     const left = snap(pet.x - anchorX * scale);
     const top = snap(pet.y - anchor.y * scale);
-    // Choáng: nghiêng qua lại quanh điểm chân, đỉnh đầu lệch `lean` pixel của frame.
-    const height = Math.max(1, anchor.y - this.head.top);
-    const lean = pet.state === "dizzy" ? dizzyLean(pet.stateTime, height) : 0;
-    const skew = -lean / height;
-    if (left !== this.left || top !== this.top || skew !== this.skew) {
+    // Choáng: lảo đảo qua lại quanh điểm chân, đỉnh đầu lệch `lean` pixel của frame.
+    const lean =
+      pet.state === "dizzy"
+        ? this.fitLean(
+            dizzyLean(pet.stateTime, Math.max(1, anchor.y - this.head.top)),
+            animation.masks[frame],
+            flip,
+            left,
+            pet.env.bounds,
+          )
+        : 0;
+    const key = `${pet.state}:${frame}:${flip}:${lean}`;
+    if (key !== this.drawnKey) {
+      this.animation = animation;
+      this.frame = frame;
+      this.flip = flip;
+      this.lean = lean;
+      this.draw(animation, frame, flip);
+      this.drawnKey = key;
+    }
+    if (left !== this.left || top !== this.top) {
       this.left = left;
       this.top = top;
-      this.skew = skew;
-      const origin = `${anchorX * scale}px ${anchor.y * scale}px`;
-      if (origin !== this.originKey) {
-        this.originKey = origin;
-        this.element.style.transformOrigin = origin;
-      }
-      const tilt = skew === 0 ? "" : ` skewX(${Math.atan(skew)}rad)`;
-      this.element.style.transform = `translate(${left}px, ${top}px)${tilt}`;
+      this.element.style.transform = `translate(${snap(left - this.pad * scale)}px, ${top}px)`;
     }
-    if (!this.effect.hidden) this.placeEffect(flip);
     if (pet.state === "dizzy") this.placeStars(pet.stateTime, flip);
   }
 
-  /** Đo lại đầu nhân vật cho animation mới, bật/tắt biểu tượng và sao choáng. */
+  /** Đo lại đầu nhân vật cho animation mới, tắt sao choáng khi hết choáng. */
   private enterState(state: AnimationName, animation: Animation): void {
     this.shownState = state;
     this.head = headOf(animation.masks[0], this.sprite.frameWidth);
     if (state !== "dizzy") this.stars.hide();
-    const symbol = EFFECTS[state];
-    this.effect.hidden = !symbol;
-    if (!symbol) return;
-    this.effectSymbol.textContent = symbol;
-    this.effect.className = `pet-effect pet-effect--${state}`;
-    this.measureEffect();
-  }
-
-  private measureEffect(): void {
-    this.effectWidth = this.effect.offsetWidth;
-    this.effectHeight = this.effect.offsetHeight;
-    this.effectKey = "";
-  }
-
-  /** Đặt hiệu ứng ngay trên đỉnh đầu, giữa đầu theo chiều ngang (tính cả khi pet quay mặt). */
-  private placeEffect(flip: boolean): void {
-    const { frameWidth } = this.sprite;
-    const { scale } = this;
-    const headX = flip ? frameWidth - this.head.centerX : this.head.centerX;
-    const x = Math.round(this.left + headX * scale - this.effectWidth / 2);
-    const overlap = EFFECT_OVERLAP * scale;
-    const y = Math.round(this.top + this.head.top * scale - this.effectHeight + overlap);
-    const key = `${x},${y}`;
-    if (key === this.effectKey) return;
-    this.effectKey = key;
-    this.effect.style.transform = `translate(${x}px, ${y}px)`;
   }
 
   /** Vòng sao quanh đầu, lệch theo đầu lúc lảo đảo. */
@@ -185,43 +144,88 @@ export class PetView {
     const { scale } = this;
     const headX = flip ? frameWidth - this.head.centerX : this.head.centerX;
     const row = ringRow(this.head.top, anchor.y - this.head.top);
-    const tilt = this.skew * (row - anchor.y) * scale;
-    this.stars.update(time, this.left + headX * scale + tilt, this.top + row * scale);
+    this.stars.update(time, this.left + (headX + this.shift(row)) * scale, this.top + row * scale);
   }
 
   /** Con trỏ (CSS pixel của overlay) có nằm trên phần có hình của pet không. */
   hitTest(point: Point): boolean {
     if (!this.animation) return false;
-    const { anchor, frameWidth, frameHeight } = this.sprite;
+    const { frameWidth, frameHeight } = this.sprite;
     const { scale } = this;
-    const localY = point.y - this.top;
-    // Bỏ độ nghiêng lúc lảo đảo để về đúng pixel của frame.
-    const localX = point.x - this.left - this.skew * (localY - anchor.y * scale);
-    let x = Math.floor(localX / scale);
-    const y = Math.floor(localY / scale);
-    if (x < 0 || y < 0 || x >= frameWidth || y >= frameHeight) return false;
+    const y = Math.floor((point.y - this.top) / scale);
+    if (y < 0 || y >= frameHeight) return false;
+    // Bỏ độ lệch lúc lảo đảo để về đúng pixel của frame.
+    let x = Math.floor((point.x - this.left) / scale) - this.shift(y);
+    if (x < 0 || x >= frameWidth) return false;
     if (this.flip) x = frameWidth - 1 - x;
     return this.animation.masks[this.frame][y * frameWidth + x] === 1;
   }
 
+  /** Hàng `y` của frame đang bị đẩy ngang bao nhiêu pixel của frame (lảo đảo). */
+  private shift(y: number): number {
+    return leanShift(this.lean, y, this.sprite.anchor.y, this.head.top);
+  }
+
+  /**
+   * Giữ phần bị đẩy ngang lúc lảo đảo trong phần canvas chừa sẵn và trong màn hình: pet đứng sát mép thì
+   * nghiêng ít lại chứ không để mất một phần hình.
+   */
+  private fitLean(lean: number, mask: Uint8Array, flip: boolean, left: number, bounds: Bounds): number {
+    if (lean === 0) return 0;
+    const { frameWidth } = this.sprite;
+    let min = frameWidth;
+    let max = -1;
+    for (let i = 0; i < mask.length; i++) {
+      if (mask[i] === 0) continue;
+      min = Math.min(min, i % frameWidth);
+      max = Math.max(max, i % frameWidth);
+    }
+    if (max < 0) return 0;
+    // Cột có hình ngoài cùng bên trái / phải, theo chiều trên màn hình.
+    const first = flip ? frameWidth - 1 - max : min;
+    const last = flip ? frameWidth - 1 - min : max;
+    const lowest = Math.max(-this.pad - first, Math.ceil((bounds.left - left) / this.scale) - first);
+    const highest = Math.min(
+      frameWidth - 1 + this.pad - last,
+      Math.floor((bounds.right - left) / this.scale) - last - 1,
+    );
+    if (lowest > highest) return 0;
+    return Math.min(highest, Math.max(lowest, lean));
+  }
+
   private draw(animation: Animation, frame: number, flip: boolean): void {
     const { ctx, element } = this;
+    const { frameWidth, frameHeight } = this.sprite;
     const source = animation.frames[frame];
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, element.width, element.height);
     ctx.imageSmoothingEnabled = !this.sprite.pixelArt;
-    if (flip) ctx.setTransform(-1, 0, 0, 1, element.width, 0);
-    ctx.drawImage(
-      animation.image,
-      source.x,
-      source.y,
-      source.width,
-      source.height,
-      0,
-      0,
-      element.width,
-      element.height,
-    );
+    // Số pixel canvas cho một pixel của frame.
+    const kx = element.width / (frameWidth + 2 * this.pad);
+    const ky = element.height / frameHeight;
+    const width = frameWidth * kx;
+    // Vẽ theo dải hàng, lúc lảo đảo mỗi dải lệch một số nguyên pixel của frame: pixel art nghiêng thành
+    // bậc gọn. Nghiêng cả canvas bằng CSS thì trình duyệt nội suy, pet to lên là thấy nhoè.
+    for (let y = 0; y < frameHeight; ) {
+      const shift = this.shift(y);
+      let end = y + 1;
+      while (end < frameHeight && this.shift(end) === shift) end++;
+      const x = (this.pad + shift) * kx;
+      if (flip) ctx.setTransform(-1, 0, 0, 1, x + width, 0);
+      else ctx.setTransform(1, 0, 0, 1, x, 0);
+      ctx.drawImage(
+        animation.image,
+        source.x,
+        source.y + y,
+        source.width,
+        end - y,
+        0,
+        y * ky,
+        width,
+        (end - y) * ky,
+      );
+      y = end;
+    }
   }
 }
 

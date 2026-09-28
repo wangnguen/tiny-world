@@ -7,6 +7,8 @@ export interface Point {
 export interface CursorInfo extends Point {
   /** Đang giữ Ctrl: click xuyên qua pet xuống app bên dưới. */
   passThrough: boolean;
+  /** Đang giữ một nút chuột, ở bất kỳ đâu trên màn hình (click ra ngoài cũng làm pet đang ngủ thức dậy). */
+  pressed: boolean;
 }
 
 /** Hình chữ nhật theo CSS pixel, gốc toạ độ là góc trên trái của overlay. */
