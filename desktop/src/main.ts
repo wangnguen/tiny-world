@@ -6,7 +6,7 @@ import { AutoSave } from "./overlay/autosave";
 import { ClickThrough } from "./overlay/clickThrough";
 import { PetInteraction } from "./overlay/interaction";
 import { PetView } from "./overlay/petView";
-import { loadSpriteSet } from "./overlay/sprites";
+import { loadSpriteSet, resolvePack } from "./overlay/sprites";
 
 /** Tần số mô phỏng và vẽ tối đa: sprite thường chỉ 8–12 fps nên 30 là đủ mượt mà vẫn nhẹ. */
 const FPS = 30;
@@ -34,12 +34,14 @@ async function loadSaved(): Promise<unknown> {
 async function start(): Promise<void> {
   const container = document.getElementById("world");
   if (!container) throw new Error("Thiếu phần tử #world.");
-  const [screen, sprite, settings, saved] = await Promise.all([
+  const [screen, settings, saved] = await Promise.all([
     api.screenInfo(),
-    loadSpriteSet(),
     api.getSettings(),
     loadSaved(),
   ]);
+  /** Pack đang hiện (nhân vật chọn trong Settings, pack đó không còn thì pack đầu tiên). */
+  let petId = resolvePack(settings.pet);
+  const sprite = await loadSpriteSet(petId);
 
   const world = new World(boundsOf(screen), Date.now());
   world.speed = settings.speed;
@@ -113,9 +115,20 @@ async function start(): Promise<void> {
     refreshClickThrough();
     if (!paused) wake();
   });
-  const applySettings = (next: Settings) => {
-    world.speed = next.speed;
-    view.setSize(next.size);
+  let latest = settings;
+  const applySettings = async (next: Settings) => {
+    latest = next;
+    const id = resolvePack(next.pet);
+    if (id !== petId) {
+      petId = id;
+      const sprite = await loadSpriteSet(id);
+      // Trong lúc nạp đã chọn nhân vật khác: lần gọi sau sẽ áp dụng.
+      if (petId !== id) return;
+      view.setSprite(sprite);
+    }
+    // Có thể đã đổi cỡ, tốc độ trong lúc nạp pack, nên dùng giá trị mới nhất.
+    world.speed = latest.speed;
+    view.setSize(latest.size);
     pet.resize(view.width, view.height);
     view.update(pet);
     refreshClickThrough();

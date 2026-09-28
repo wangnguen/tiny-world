@@ -45,7 +45,7 @@ Khác đi:
 | Phase | Tên | Kết quả chính | Trạng thái |
 |---|---|---|---|
 | 0 | Base | Monorepo, overlay trong suốt click-through, pet tạm, tray, CI | Xong: test pass, đã chạy thử trên máy thật (overlay trong suốt, click-through theo alpha, click → phản ứng) |
-| 1 | MVP | 1 pet: tự đi, quay đầu ở mép, click phản ứng, kéo thả + rơi, bỏ mặc thì ngủ | Xong, đã thử trên máy thật: hành vi, vật lý, kéo thả/ném, Ctrl xuyên pet, không cướp focus, tự ẩn khi fullscreen, lưu trạng thái, tray Tạm dừng, Settings (cỡ, tốc độ, chạy cùng Windows). Đo 10 phút: heap JS ~2 MB không tăng; còn chạy thử 8 tiếng |
+| 1 | MVP | 1 pet: tự đi, quay đầu ở mép, click phản ứng, kéo thả + rơi, bỏ mặc thì ngủ | Xong, đã thử trên máy thật: hành vi, vật lý, kéo thả/ném, Ctrl xuyên pet, không cướp focus, tự ẩn khi fullscreen, lưu trạng thái, tray Tạm dừng, Settings (nhân vật, cỡ, tốc độ, chạy cùng Windows). Đo 10 phút: heap JS ~2 MB không tăng; còn chạy thử 8 tiếng |
 | 2 | Desktop awareness | Đứng/leo/nhảy trên cửa sổ thật, ngủ trên taskbar, con trỏ là thực thể, đa màn hình | |
 | 3 | Bộ lạc | Nhiều pet, tính cách, quan hệ, nhật ký sự kiện, speech bubble, skin | |
 | 4 | Thế giới sống | Căn cứ + xây nhà, nhu cầu, thời tiết cục bộ, ngày/đêm, sự kiện hiếm | |
@@ -73,15 +73,15 @@ Khác đi:
 - Pet xuất hiện ở góc phải dưới, đứng trên mép taskbar, tự chọn đứng/đi/chạy, chạm mép quay đầu
 - Click → phản ứng; kéo thả, thả ra rơi theo trọng lực; ném có quán tính, chạm đất nảy, thả từ cao thì choáng
 - Lâu không tương tác → buồn ngủ → ngủ, click đánh thức
-- Lưu trạng thái khi tắt/mở; tray thêm Tạm dừng; Settings (React): kích thước, tốc độ, chạy cùng Windows
+- Lưu trạng thái khi tắt/mở; tray thêm Tạm dừng; Settings (React): chọn nhân vật, kích thước, tốc độ, chạy cùng Windows
   - `world.json` lưu 30 giây/lần khi có thay đổi và khi bấm Thoát (tray → overlay lưu → command `quit`,
     quá 1,5 giây thì Rust tự thoát); chỉ giữ vị trí ngang, hướng, đang ngủ, thời gian chưa được đụng tới
   - Settings là trang React riêng, chỉ tạo cửa sổ khi mở; chạy cùng Windows ghi thẳng khoá `Run` trong
     registry bằng `windows-sys`, không dùng plugin
 - Nhẹ: dừng vẽ khi ngủ/ẩn/tạm dừng, tự ẩn khi có app fullscreen, click pet không cướp focus của app đang
   dùng (`focusable: false` → `WS_EX_NOACTIVATE`, kéo thả vẫn chạy)
-- Sprite pack thật từ itch.io (pack Cat demo của OboroPixel: idle, run, jump, fall; thiếu thì dùng thay
-  theo bảng trong assets/README.md), viền tối quanh nhân vật để không chìm vào nền sáng
+- 15 sprite pack tự tạo (Momo mặc định): đủ 9 animation, frame 48×48,
+  alpha nhị phân và viền tối sẵn trong ảnh; thêm pose leo/ngồi mép/nhảy để riêng cho Phase 2
 
 **Xong khi:** chạy 8 tiếng không rò RAM; unit test cho FSM và vật lý.
 

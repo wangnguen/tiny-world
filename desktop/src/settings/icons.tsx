@@ -1,5 +1,17 @@
 // Icon nhỏ của cửa sổ cài đặt, vẽ bằng SVG để không phải tải file ảnh.
 
+export function PawIcon() {
+  return (
+    <svg className="icon icon--paw" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 12.5c-3 0-6 3.4-6 5.6 0 1.6 1.4 2.4 3 2.4 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.6 0 3-.8 3-2.4 0-2.2-3-5.6-6-5.6z" />
+      <ellipse cx="5" cy="10" rx="1.9" ry="2.4" />
+      <ellipse cx="9.2" cy="5.8" rx="1.9" ry="2.5" />
+      <ellipse cx="14.8" cy="5.8" rx="1.9" ry="2.5" />
+      <ellipse cx="19" cy="10" rx="1.9" ry="2.4" />
+    </svg>
+  );
+}
+
 export function CubeIcon() {
   return (
     <svg className="icon icon--cube" viewBox="0 0 24 24" aria-hidden="true">

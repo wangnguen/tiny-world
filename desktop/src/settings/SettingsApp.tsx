@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { errorMessage, type Settings } from "@tinyworld/core";
 import { api } from "../api";
-import { CubeIcon, InfoIcon, RunnerIcon, WindowsIcon } from "./icons";
+import { listPacks, resolvePack } from "../overlay/sprites";
+import { CubeIcon, InfoIcon, PawIcon, RunnerIcon, WindowsIcon } from "./icons";
+import { PetPicker } from "./PetPicker";
 import { PetPreview } from "./PetPreview";
 import { CornerDecor, HILL_SPOT, NightScene, PineDecor } from "./scenery";
 
@@ -20,6 +22,8 @@ const SPEEDS: Option[] = [
   { value: 1, label: "Vừa" },
   { value: 1.5, label: "Nhanh" },
 ];
+
+const PACKS = listPacks();
 
 /** Cửa sổ cài đặt (tray → Cài đặt…). Đổi gì áp dụng ngay cho pet, không cần bấm lưu. */
 export function SettingsApp() {
@@ -61,11 +65,15 @@ export function SettingsApp() {
     }
   };
 
+  // Pack đã chọn không còn thì overlay dùng pack đầu tiên, ở đây cũng đánh dấu đúng pack đó.
+  const pet = settings ? resolvePack(settings.pet) : null;
+  const petName = PACKS.find((pack) => pack.id === pet)?.name;
+
   return (
     <main className="page">
       <header className="hero">
         <NightScene />
-        <PetPreview footX={HILL_SPOT.x} footY={HILL_SPOT.y} scale={3} />
+        {settings && <PetPreview pet={pet} footX={HILL_SPOT.x} footY={HILL_SPOT.y} height={96} />}
         <h1>Cài đặt</h1>
       </header>
 
@@ -73,6 +81,16 @@ export function SettingsApp() {
         <p className="muted loading">{error ?? "Đang tải..."}</p>
       ) : (
         <>
+          {PACKS.length > 1 && (
+            <section className="field">
+              <h2 className="field__label">
+                <PawIcon />
+                Nhân vật
+                {petName && <span className="field__value">{petName}</span>}
+              </h2>
+              <PetPicker packs={PACKS} value={pet} onChange={(id) => update({ pet: id })} />
+            </section>
+          )}
           <section className="field">
             <h2 className="field__label">
               <CubeIcon />

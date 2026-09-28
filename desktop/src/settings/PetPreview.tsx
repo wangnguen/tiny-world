@@ -3,25 +3,29 @@ import { frameIndex } from "@tinyworld/core";
 import { loadSpriteSet } from "../overlay/sprites";
 
 interface Props {
+  /** Nhân vật đang chọn (`Settings.pet`). */
+  pet: string | null;
   /** Chỗ đặt chân pet (CSS pixel trong khung chứa). */
   footX: number;
   footY: number;
-  /** Số CSS pixel cho một pixel của frame. */
-  scale: number;
+  /** Chiều cao frame khi vẽ (CSS pixel); phóng to theo số nguyên gần nhất để pixel art không nhoè. */
+  height: number;
 }
 
 /** Pet của người dùng (cùng sprite pack với overlay) đứng trên đồi, chạy animation idle, quay mặt sang trái. */
-export function PetPreview({ footX, footY, scale }: Props) {
+export function PetPreview({ pet, footX, footY, height: targetHeight }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     let timer = 0;
     let cancelled = false;
-    void loadSpriteSet().then((sprite) => {
+    void loadSpriteSet(pet).then((sprite) => {
       const canvas = ref.current;
       const ctx = canvas?.getContext("2d");
       if (cancelled || !canvas || !ctx) return;
       const { frameWidth: width, frameHeight: height, anchor } = sprite;
+      // Pack 32 px thì phóng 3 lần, 48 px thì 2 lần: pet nào đứng trên đồi cũng vừa khung.
+      const scale = Math.max(1, Math.round(targetHeight / height));
       const idle = sprite.animations.idle;
       const flip = sprite.facing === "right";
       const anchorX = flip ? width - anchor.x : anchor.x;
@@ -52,7 +56,7 @@ export function PetPreview({ footX, footY, scale }: Props) {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [footX, footY, scale]);
+  }, [pet, footX, footY, targetHeight]);
 
   return <canvas ref={ref} className="hero__pet" aria-hidden="true" />;
 }
