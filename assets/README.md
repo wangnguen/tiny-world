@@ -8,7 +8,7 @@ thay file gốc ở đây rồi chạy lại lệnh tạo icon.
 | `icon.png` | Logo TinyWorld nền trong suốt: pet màu kem ôm hành tinh xanh, có mầm cây; dùng cho app, tray, setup và portable |
 | `branding/logo-prompt.txt` | Prompt gốc để tạo logo bằng imagegen |
 | `sprites/<pack>/` | Sprite pack của nhân vật: `pet.json` + ảnh PNG/WebP |
-| `sprite-sources/` | Atlas và prompt gốc của 22 nhân vật tự tạo, script chuẩn hóa và trang xem animation |
+| `sprite-sources/` | Atlas và prompt gốc của 21 nhân vật tự tạo, script chuẩn hóa và trang xem animation |
 
 ## Sprite pack
 
@@ -30,16 +30,21 @@ assets/sprites/a-momo/
 
 ### Các pet tự tạo của TinyWorld
 
-Có 22 nhân vật: Momo, Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa,
-Su, Bắp, Boggo, Wobi, Gloop, Bẹp, Frobu, Byte và Patch. [Danh mục thiết kế và thư mục pack](sprite-sources/README.md). Tất cả đủ 9 animation Phase 1,
-mỗi animation có 4 frame **48×48**, alpha trong suốt thật, chân cùng hàng y=44,
+Có 21 nhân vật: Momo, Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa,
+Su, Bắp, Boggo, Gloop, Bẹp, Frobu, Byte và Patch. [Danh mục thiết kế và thư mục pack](sprite-sources/README.md). Tất cả đủ 9 animation Phase 1,
+mỗi animation có 4 frame **192×192**, alpha trong suốt thật, chân cùng hàng y=179,
 quay sang phải. Mặc định là `a-momo`; đổi nhân vật trong **Cài đặt… → Nhân vật**, pet đổi ngay tại
 chỗ. Thêm pack mới thì chạy lại `pnpm dev:desktop` để pack hiện trong danh sách.
 
-Wobi, Byte và Patch chỉ có `pet.json` và một `atlas.png` **192×576** trong pack. Manifest dùng
+Ảnh được lấy lại trực tiếp từ atlas nguồn và chép nguyên 1:1 pixel (không thu/phóng), nên viền mảnh
+và tay chân không bị mất hàng pixel; `scale: 0.5` giữ khung mặc định 96×96 CSS pixel.
+Cỡ 200% là 192×192: một pixel ảnh tương ứng một CSS pixel.
+App tắt nội suy cho pixel art và vẽ canvas theo DPI của màn hình. Độ chi tiết cuối cùng
+vẫn phụ thuộc vào atlas nguồn, với mỗi pose gốc có khoảng 140–175 pixel ở chiều lớn nhất.
+
+Byte và Patch chỉ có `pet.json` và một `atlas.png` **768×2304** trong pack. Manifest dùng
 `row` để lấy đúng hàng animation từ sheet chung; 9 hàng đầu là Phase 1, 3 hàng cuối là Phase 2.
-Wobi cũng chỉ giữ một ảnh nguồn `sprite-sources/wobi/atlas.png`, không giữ các bản nháp hoặc ảnh
-preview trùng. Byte và Patch là chim cánh cụt coder đeo kính/hoodie teal và gấu trúc đỏ coder đeo tai nghe/hoodie tím.
+Byte và Patch là chim cánh cụt coder đeo kính/hoodie teal và gấu trúc đỏ coder đeo tai nghe/hoodie tím.
 
 Xem tất cả chuyển động bằng [`sprite-sources/index.html`](sprite-sources/index.html), mở
 trực tiếp bằng trình duyệt. Ảnh gốc, prompt và cách tạo lại: [sprite-sources/README.md](sprite-sources/README.md).
@@ -117,6 +122,13 @@ animation vẫn chạy được, animation thiếu được thay như sau:
 Lúc choáng app tự cho pet lảo đảo và vẽ sao bay vòng quanh đầu, có cả khi pack không có animation riêng,
 nên `dizzy.png` không cần vẽ sao hay nghiêng người, chỉ cần mặt choáng. Lúc ngủ app không vẽ thêm gì:
 `sleep.png` tự thể hiện (nhắm mắt, cuộn người).
+21 pack tích hợp giữ `dizzy` ở một frame choáng xuyên suốt state, tránh đổi liên tục giữa đứng, ngồi
+và mặt đã tỉnh. Dải nguồn vẫn giữ đủ bốn pose; manifest chỉ dùng slot đầu (script đưa pose mắt xoáy
+rõ nhất vào đó), còn app tạo lảo đảo và sao.
+`idle` / `walk` / `run` được render lại chung trong `locomotion-v2.png` của mỗi thư mục nguồn;
+đi/chạy dùng bốn pha bước luân phiên, các chân giữ cùng màu gốc và tay nối vào vai, hiện rõ trong mỗi frame.
+Nhân vật hai chân đổi chân trụ/chân vung, loài bốn chân đổi cặp chân. Mực giữ đi/chạy của atlas gốc
+vì bản render lại mất xúc tu.
 Pack chung một sheet nhiều hàng thì dùng `row` / `start` / `frames`:
 
 ```json

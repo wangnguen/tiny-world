@@ -15,14 +15,14 @@ desktop-pet/
     └── src-tauri/     # Rust: overlay, click-through, đọc con trỏ, tray, cài đặt, lưu trạng thái
 ```
 
-**22 nhân vật có sẵn**, chọn trong **Cài đặt… → Nhân vật**: Momo (axolotl hồng, mặc định), Bông,
-Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Wobi, Gloop, Bẹp, Frobu,
+**21 nhân vật có sẵn**, chọn trong **Cài đặt… → Nhân vật**: Momo (axolotl hồng, mặc định), Bông,
+Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp, Frobu,
 Byte và Patch (chim cánh cụt coder đeo kính/hoodie xanh và gấu trúc đỏ coder đeo tai nghe/hoodie tím).
 Danh sách chia trang, 16 nhân vật mỗi trang: lật bằng nút mũi tên, chấm trang cạnh tiêu đề hoặc lăn
 chuột trên lưới. Mỗi nhân vật đủ 9 animation
 Phase 1. Xem chuyển động tại
 [sprite studio](assets/sprite-sources/index.html) hoặc [danh mục nhân vật](assets/sprite-sources/README.md).
-Wobi, Byte và Patch dùng một ảnh sprite sheet cho toàn bộ chuyển động trong app.
+Byte và Patch dùng một ảnh sprite sheet cho toàn bộ chuyển động trong app.
 
 **Thêm nhân vật:** bỏ sprite pack vào `assets/sprites/<tên-pack>/` kèm
 `pet.json` (định dạng và cách làm: [assets/README.md](assets/README.md)). Chưa có pack thì app dùng
