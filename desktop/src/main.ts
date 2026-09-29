@@ -154,6 +154,13 @@ async function start(): Promise<void> {
   view.update(pet);
   wake();
 
+  // WebView đổi DPI (chuyển màn hình/Windows scaling) thì vẽ lại cả pet đang ngủ.
+  window.addEventListener("resize", () => {
+    view.resize();
+    view.update(pet);
+    refreshClickThrough();
+  });
+
   // Chỉ khi chạy dev: xem và chỉnh pet từ DevTools (tray → Mở DevTools), ví dụ
   // `__tinyworld.pet.sinceInteraction = 1e6` để pet đi ngủ ngay. Bản build không có dòng này.
   if (import.meta.env.DEV) {
