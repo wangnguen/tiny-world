@@ -8,7 +8,7 @@ interface Props {
   /** Chỗ đặt chân pet (CSS pixel trong khung chứa). */
   footX: number;
   footY: number;
-  /** Chiều cao frame khi vẽ (CSS pixel); phóng to theo số nguyên gần nhất để pixel art không nhoè. */
+  /** Chiều cao frame khi vẽ (CSS pixel); ảnh nhỏ phóng theo số nguyên gần nhất. */
   height: number;
 }
 
@@ -24,8 +24,9 @@ export function PetPreview({ pet, footX, footY, height: targetHeight }: Props) {
       const ctx = canvas?.getContext("2d");
       if (cancelled || !canvas || !ctx) return;
       const { frameWidth: width, frameHeight: height, anchor } = sprite;
-      // Pack 32 px thì phóng 3 lần, 48 px thì 2 lần: pet nào đứng trên đồi cũng vừa khung.
-      const scale = Math.max(1, Math.round(targetHeight / height));
+      // Ảnh lớn vẫn thu về đúng khung; ảnh nhỏ phóng theo số nguyên để giữ nét pixel.
+      const fit = targetHeight / height;
+      const scale = fit >= 1 ? Math.round(fit) : fit;
       const idle = sprite.animations.idle;
       const flip = sprite.facing === "right";
       const anchorX = flip ? width - anchor.x : anchor.x;

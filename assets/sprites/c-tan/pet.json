@@ -1,15 +1,14 @@
 {
   "name": "Tàn — Ember",
-  "frameWidth": 48,
-  "frameHeight": 48,
-  "scale": 2,
+  "frameWidth": 192,
+  "frameHeight": 192,
+  "scale": 0.5,
   "pixelArt": true,
   "facing": "right",
   "anchor": {
-    "x": 24,
-    "y": 45
+    "x": 96,
+    "y": 180
   },
-  "outline": false,
   "animations": {
     "idle": {
       "image": "idle.png",
@@ -61,8 +60,8 @@
     },
     "dizzy": {
       "image": "dizzy.png",
-      "frames": 4,
-      "fps": 5,
+      "frames": 1,
+      "fps": 1,
       "loop": true
     }
   }

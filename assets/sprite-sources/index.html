@@ -7,6 +7,7 @@
   <style>
     :root { color-scheme: light; font: 15px/1.5 system-ui,sans-serif; color: #332c35; background: #f7f5f1; }
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     body { max-width: 1100px; margin: auto; padding: 36px 24px; }
     h1 { font-size: 32px; letter-spacing: -.04em; margin: 0 0 8px; }
     p { margin: 0 0 20px; color: #746b77; }
@@ -52,7 +53,7 @@
   </div>
   <nav class="animations" aria-label="Animation"></nav>
   <main class="cards"></main>
-  <div class="note" id="note">Frame thật 48×48 · 4 frame/animation · alpha 0/255 · chân ở y=44. Bấm một thumbnail để dừng và xem frame đó.</div>
+  <div class="note" id="note">Frame thật 192×192 · đi/chạy 4 pha, choáng 1 pose · alpha 0/255 · chân ở y=179. Khung lớn hiển thị cỡ 200%, đúng 1 pixel ảnh cho mỗi CSS pixel. Bấm một thumbnail để dừng và xem frame đó.</div>
   <p class="info">Ảnh gốc và prompt: <a href="README.md">README</a>. Các pose Phase 2 chỉ là ảnh chuẩn bị sẵn; chưa được khai báo trong pet.json.</p>
   <script src="gallery-data.js"></script>
   <script>
@@ -70,10 +71,10 @@
       document.querySelector('#play').setAttribute('aria-pressed', String(running));
       if (running) fixed = null;
     }
-    function draw(ctx, image, frame, scale, row = 0) {
+    function draw(ctx, image, frame, size, row = 0) {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(image, frame * 48, row * 48, 48, 48, 0, 0, 48 * scale, 48 * scale);
+      ctx.drawImage(image, frame * size, row * size, size, size, 0, 0, ctx.canvas.width, ctx.canvas.height);
     }
     function renderNav() {
       const future = document.querySelector('#future').checked;
@@ -94,12 +95,13 @@
         const image = images.get(spec.image);
         if (!image?.complete || !image.naturalWidth) continue;
         // Replay single-shot actions after a brief hold so they can be inspected.
-        const phase = time % (4 / spec.fps + (spec.loop ? 0 : .8));
-        const frame = fixed ?? (spec.loop ? Math.floor(phase * spec.fps) % 4 : Math.min(3, Math.floor(phase * spec.fps)));
-        draw(card.hero.getContext('2d'), image, frame, 4, spec.row);
-        card.thumbs.forEach((canvas, n) => draw(canvas.getContext('2d'), image, n, 1, spec.row));
-        card.info.textContent = `${animation} · ${spec.fps} fps · frame ${frame + 1}/4${spec.phase2 ? ' · Phase 2' : ''}`;
-        card.buttons.forEach((button, n) => button.setAttribute('aria-pressed', String(n === frame)));
+        const count = spec.frames;
+        const phase = time % (count / spec.fps + (spec.loop ? 0 : .8));
+        const frame = fixed === null ? (spec.loop ? Math.floor(phase * spec.fps) % count : Math.min(count - 1, Math.floor(phase * spec.fps))) : Math.min(fixed, count - 1);
+        draw(card.hero.getContext('2d'), image, frame, spec.frameSize, spec.row);
+        card.thumbs.forEach((canvas, n) => { if (n < count) draw(canvas.getContext('2d'), image, n, spec.frameSize, spec.row); });
+        card.info.textContent = `${animation} · ${spec.fps} fps · frame ${frame + 1}/${count}${spec.phase2 ? ' · Phase 2' : ''}`;
+        card.buttons.forEach((button, n) => { button.hidden = n >= count; button.setAttribute('aria-pressed', String(n === frame)); });
       }
     }
     for (const pet of pets) {

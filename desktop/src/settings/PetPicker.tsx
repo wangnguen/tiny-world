@@ -126,7 +126,7 @@ function PetThumbnail({ id }: { id: string }) {
 }
 
 /**
- * Cắt sát phần có hình, phóng to theo số nguyên (pixel art không nhoè) cho vừa ô, đặt chân lên
+ * Cắt sát phần có hình, thu vừa ô hoặc phóng theo số nguyên, đặt chân lên
  * `THUMB_FLOOR` và quay sang trái như pet trên đồi ở đầu trang.
  */
 function draw(canvas: HTMLCanvasElement, { image, frame, pixelArt, facing }: Thumbnail): void {
@@ -138,7 +138,8 @@ function draw(canvas: HTMLCanvasElement, { image, frame, pixelArt, facing }: Thu
 
   const box = boundsOf(image, frame.x, frame.y, frame.width, frame.height);
   if (!box) return;
-  const scale = Math.max(1, Math.floor((THUMB - 4) / Math.max(box.width, box.height)));
+  const fit = (THUMB - 4) / Math.max(box.width, box.height);
+  const scale = fit >= 1 ? Math.floor(fit) : fit;
   const width = box.width * scale;
   const height = box.height * scale;
   const left = Math.round((THUMB - width) / 2);

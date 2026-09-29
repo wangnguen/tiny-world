@@ -6,27 +6,28 @@ Lộ trình và các hướng đã chốt: [PLAN.md](PLAN.md).
 
 ```
 desktop-pet/
-├── assets/            # logo (icon.png) và sprite pack của nhân vật (sprites/<pack>/pet.json)
+├── assets/
+│   ├── icon.png          # logo gốc của app
+│   ├── sprites/          # sprite pack chạy trong app: <pack>/pet.json + PNG
+│   └── sprite-sources/   # atlas, prompt gốc của các nhân vật và trang xem animation
 ├── packages/
-│   ├── core/          # types dùng chung Rust <-> TS, tên event, đọc/kiểm tra pet.json
-│   └── sim/           # engine mô phỏng TS thuần: FSM, bước thời gian cố định, RNG có seed
-└── desktop/           # Tauri v2
-    ├── src/           # overlay (vẽ pet bằng canvas, TS thuần) và src/settings/ (cửa sổ cài đặt, React)
-    └── src-tauri/     # Rust: overlay, click-through, đọc con trỏ, tray, cài đặt, lưu trạng thái
+│   ├── core/             # types dùng chung Rust <-> TS, tên event, đọc/kiểm tra pet.json
+│   └── sim/              # engine mô phỏng TS thuần: FSM, bước thời gian cố định, RNG có seed
+├── desktop/              # Tauri v2
+│   ├── src/              # overlay (vẽ pet bằng canvas, TS thuần) và src/settings/ (cửa sổ cài đặt, React)
+│   └── src-tauri/        # Rust: overlay, click-through, đọc con trỏ, tray, cài đặt, lưu trạng thái
+└── scripts/              # chuẩn hoá sprite từ atlas nguồn, tạo icon
 ```
 
-**22 nhân vật có sẵn**, chọn trong **Cài đặt… → Nhân vật**: Momo (axolotl hồng, mặc định), Bông,
-Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Wobi, Gloop, Bẹp, Frobu,
-Byte và Patch (chim cánh cụt coder đeo kính/hoodie xanh và gấu trúc đỏ coder đeo tai nghe/hoodie tím).
-Danh sách chia trang, 16 nhân vật mỗi trang: lật bằng nút mũi tên, chấm trang cạnh tiêu đề hoặc lăn
-chuột trên lưới. Mỗi nhân vật đủ 9 animation
-Phase 1. Xem chuyển động tại
-[sprite studio](assets/sprite-sources/index.html) hoặc [danh mục nhân vật](assets/sprite-sources/README.md).
-Wobi, Byte và Patch dùng một ảnh sprite sheet cho toàn bộ chuyển động trong app.
+## Nhân vật
 
-**Thêm nhân vật:** bỏ sprite pack vào `assets/sprites/<tên-pack>/` kèm
-`pet.json` (định dạng và cách làm: [assets/README.md](assets/README.md)). Chưa có pack thì app dùng
-pet tạm vẽ bằng code.
+21 nhân vật tự vẽ cho dự án, chọn trong **Cài đặt… → Nhân vật** (16 nhân vật mỗi trang, lật bằng
+mũi tên, chấm trang hoặc lăn chuột): Momo (mặc định), Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn,
+Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp, Frobu, Byte và Patch. Nhân vật nào cũng đủ 9
+animation của Phase 1. Xem chuyển động bằng [sprite studio](assets/sprite-sources/index.html) (mở
+thẳng bằng trình duyệt), thiết kế từng nhân vật ở [assets/sprite-sources/README.md](assets/sprite-sources/README.md).
+
+Định dạng `pet.json` và cách thêm nhân vật: [assets/README.md](assets/README.md).
 
 ## Yêu cầu
 
@@ -80,8 +81,9 @@ pnpm icons:desktop   # tạo lại icon nếu vừa thay assets/icon.png
 pnpm build:desktop   # installer NSIS trong desktop/src-tauri/target/release/bundle/nsis
 ```
 
-Logo nguồn ở [`assets/icon.png`](assets/icon.png), dùng chung cho app, system tray, setup và portable.
-Build và Release trên GitHub tự tạo bộ icon từ logo này trước khi compile.
+Logo nguồn ở [`assets/icon.png`](assets/icon.png), dùng chung cho app, system tray, setup và portable
+(cách thay: [assets/README.md](assets/README.md#thay-logo)). Build và Release trên GitHub tự tạo bộ
+icon từ logo này trước khi compile.
 
 ### Tự build khi push lên `main`
 
@@ -98,9 +100,8 @@ tải `TinyWorld-<version>-<số lần chạy>-<commit>` (file zip, giữ 30 ng�
 | `TinyWorld_<version>_x64-portable.exe` | Chạy thẳng không cần cài (cần WebView2, Windows 10/11 bản mới có sẵn) |
 
 Test hỏng thì không build ra file. Push liên tục thì lần build cũ bị huỷ, chỉ giữ lần mới nhất.
-Push chỉ sửa file `.md`, thư mục `docs/` hoặc `release.yml` thì không build (sửa sprite, icon trong
-`assets/` vẫn build vì chúng nằm trong app).
-Muốn build lại mà không push: tab **Actions → Build → Run workflow**.
+Push chỉ sửa file `.md` hoặc `release.yml` thì không build (sửa sprite, icon trong `assets/` vẫn
+build vì chúng nằm trong app). Muốn build lại mà không push: tab **Actions → Build → Run workflow**.
 
 ### Release bằng GitHub Actions (chạy tay)
 
@@ -156,6 +157,9 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
 
 ```bash
 pnpm typecheck
-pnpm test                               # pet.json, frame, FSM, World/Pet, lưu/đọc world.json
+pnpm test                               # sprite pack, kéo thả overlay, pet.json, FSM, World/Pet, world.json
 cd desktop/src-tauri && cargo test      # toạ độ theo DPI, lưu trạng thái, cài đặt, registry
 ```
+
+`pnpm test` gồm `pnpm test:sprites` (script chuẩn hoá sprite và `prepare-sprites.mjs --check` trên
+cả 21 pack), `pnpm test:overlay` (kéo thả trên overlay) và vitest của `packages/*`.

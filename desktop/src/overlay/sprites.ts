@@ -114,7 +114,7 @@ async function loadPack(manifestPath: string, manifest: SpriteManifest): Promise
       image.naturalWidth,
       image.naturalHeight,
     );
-    animations[name] = buildAnimation(image, frames, spec.fps, spec.loop, manifest.outline);
+    animations[name] = buildAnimation(image, frames, spec.fps, spec.loop);
   }
   const idle = animations.idle;
   if (!idle) throw new Error("Thiếu animation idle.");
@@ -144,7 +144,7 @@ function dirOf(path: string): string {
   return path.slice(0, path.lastIndexOf("/") + 1);
 }
 
-/** "../../../assets/sprites/cat/pet.json" -> "cat". */
+/** "../../../assets/sprites/a-momo/pet.json" -> "a-momo". */
 function packName(path: string): string {
   return path.split("/sprites/")[1]?.split("/")[0] ?? path;
 }
