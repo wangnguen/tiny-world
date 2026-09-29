@@ -2,7 +2,7 @@
 // No image library or service is needed. Originals stay in assets/sprite-sources.
 // Usage: node scripts/prepare-sprites.mjs [--check] [--only-new] [--pet=source]
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateSync, inflateSync } from "node:zlib";
@@ -71,7 +71,9 @@ const PETS = [
   { source: "bap", folder: "c-bap", name: "Bắp — Bumblebee", poses: [{ image: "fix-v1.png", rows: ["ref", "fall", "dragged", "dizzy"] }, { image: "fix-v2.png", rows: ["ref", "jump"] }] },
   { source: "boggo", folder: "c-boggo", name: "Boggo — Coder Frog", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep", "fall", "dizzy"] }, { image: "fix-v2.png", rows: ["ref", "react", "climb"] }] },
   { source: "gloop", folder: "c-gloop", name: "Gloop — Chaos Frog", poses: { image: "fix-v2.png", rows: ["ref", "land", "react"] } },
-  { source: "bep", folder: "c-bep", name: "Bẹp — Grumpy Toad", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep"] }, { image: "fix-v2.png", rows: ["ref", "react"] }], reuse: { fall: [0, 1, 0, 3] } },
+  // fix-v2.png came back with its outer columns cropped (react 0 loses the back, react 3 half the face):
+  // react replays the two intact middle poses.
+  { source: "bep", folder: "c-bep", name: "Bẹp — Grumpy Toad", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep"] }, { image: "fix-v2.png", rows: ["ref", "react"] }], reuse: { fall: [0, 1, 0, 3], react: [1, 1, 2, 2] } },
   {
     source: "frobu", folder: "c-frobu", name: "Frobu — Night Frog", poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "run", "land"] },
     // A dark eye-like blot on the forehead in react frame 2.
@@ -498,7 +500,7 @@ function rowIndex(name) {
 function animationSpec(pet, row) {
   const [name, fps, loop = true] = ROWS[row];
   return {
-    image: pet.singleSheet ? "atlas.png" : `${row >= 9 ? "phase2/" : ""}${name}.png`,
+    image: pet.singleSheet ? "atlas.png" : `${name}.png`,
     // The source dizzy row mixes standing, seated and recovered poses. Keep
     // the initial dazed pose throughout the state; PetView supplies the sway
     // and DizzyStars supplies the orbiting stars without changing posture.
@@ -536,6 +538,63 @@ function despeckle(frames, passes = 2) {
           let best = -1, most = 0;
           for (const [color, count] of counts) if (count > most) { best = color; most = count; }
           if (most >= 5) frame.pixels.writeUIntBE(best, p, 3);
+        }
+      }
+    }
+  }
+}
+
+// The atlas dizzy poses keep the generator's grainy shading: neighbouring pixels
+// alternate between close palette colours. The app holds that one frame for the
+// whole state while swaying it, so the grain reads as noise. An edge-preserving
+// (Kuwahara) filter flattens it: each light pixel takes the mean of whichever of
+// its four overlapping (RADIUS+1)² quadrants varies least, snapped back to the
+// palette. A pixel far from that mean is real detail (a white glyph on a hoodie)
+// and stays; dark pixels are outlines, pupils and spirals and are never touched.
+const SMOOTH_ROWS = ["dizzy"];
+const SMOOTH_RADIUS = 2;
+const SMOOTH_PASSES = 2;
+const SMOOTH_LIMIT = 48;
+function smooth(frames, palette) {
+  const light = palette.filter((color) => luma(...color) >= DARK);
+  const indices = SMOOTH_ROWS.flatMap((name) => Array.from({ length: COLUMNS }, (_, col) => rowIndex(name) * COLUMNS + col));
+  for (const frame of indices.map((i) => frames[i])) {
+    for (let pass = 0; pass < SMOOTH_PASSES; pass++) {
+      const before = Buffer.from(frame.pixels);
+      const isLight = (x, y) => {
+        if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return false;
+        const p = (y * SIZE + x) * 4;
+        return before[p + 3] > 0 && luma(before[p], before[p + 1], before[p + 2]) >= DARK;
+      };
+      for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+          if (!isLight(x, y)) continue;
+          let mean, spread = Infinity;
+          for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+            const sum = [0, 0, 0];
+            let count = 0, squares = 0;
+            for (let dy = 0; dy <= SMOOTH_RADIUS; dy++) {
+              for (let dx = 0; dx <= SMOOTH_RADIUS; dx++) {
+                if (!isLight(x + sx * dx, y + sy * dy)) continue;
+                const n = ((y + sy * dy) * SIZE + x + sx * dx) * 4;
+                for (let c = 0; c < 3; c++) { sum[c] += before[n + c]; squares += before[n + c] ** 2; }
+                count++;
+              }
+            }
+            // A quadrant mostly outside the fill would drag edge pixels toward a lone neighbour.
+            if (count < (SMOOTH_RADIUS + 1) ** 2 / 2) continue;
+            const m = sum.map((v) => v / count);
+            const variance = squares / count - m.reduce((total, v) => total + v * v, 0);
+            if (variance < spread) { spread = variance; mean = m; }
+          }
+          const p = (y * SIZE + x) * 4;
+          if (!mean || Math.hypot(...mean.map((v, c) => v - before[p + c])) > SMOOTH_LIMIT) continue;
+          let best, distance = Infinity;
+          for (const color of light) {
+            const d = Math.hypot(...color.map((v, c) => v - mean[c]));
+            if (d < distance) { best = color; distance = d; }
+          }
+          frame.pixels.set(best, p);
         }
       }
     }
@@ -587,6 +646,7 @@ function finishFrames(pet, frames) {
       .map((hex) => [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16))))
     : quantize(frames);
   despeckle(frames);
+  smooth(frames, palette);
   closeOutline(frames);
   frames.splice(0, frames.length, ...reuseFrames(pet, frames));
   const hex = (color) => color.map((v) => v.toString(16).padStart(2, "0")).join("");
@@ -646,8 +706,10 @@ function prepare(pet) {
     }
     const spec = animationSpec(pet, row);
     if (!pet.singleSheet) savePng(join(dir, spec.image), strip);
-    if (row < 9) animations[name] = spec;
+    animations[name] = spec;
   }
+  // Trước đây climb, perch, jump nằm riêng trong phase2/ vì engine chưa dùng.
+  rmSync(join(dir, "phase2"), { recursive: true, force: true });
   const manifest = { name: pet.name, frameWidth: SIZE, frameHeight: SIZE, scale: DISPLAY_SIZE / SIZE, pixelArt: true, facing: "right", anchor: { x: SIZE / 2, y: BASELINE + 1 }, animations };
   writeFileSync(join(dir, "pet.json"), JSON.stringify(manifest, null, 2) + "\n");
   // Pack dải riêng không cần sheet gộp: trang xem thử (index.html) đọc thẳng các dải trong pack.
@@ -673,12 +735,13 @@ async function check(pets = PETS) {
     assert.equal(manifest.scale * 2, 1, `${pet.folder}: native source resolution at 200%`);
     assert.deepEqual(manifest.anchor, { x: SIZE / 2, y: BASELINE + 1 });
     assert.deepEqual(Object.keys(manifest.animations).sort(), [...ANIMATION_NAMES].sort());
+    assert.ok(!existsSync(join(dir, "phase2")), `${pet.folder}: stale phase2/ folder; regenerate sprites`);
     if (pet.singleSheet) {
       assert.deepEqual(readdirSync(dir, { recursive: true }).filter((file) => /\.png$/i.test(file)).sort(), ["atlas.png"], `${pet.folder}: keep only the shared sheet`);
     }
     const colors = new Set();
     for (const [row, [name]] of ROWS.entries()) {
-      const spec = row < 9 ? manifest.animations[name] : animationSpec(pet, row);
+      const spec = manifest.animations[name];
       const path = spec.image;
       const image = decodePng(join(dir, path));
       assert.equal(image.width, SIZE * COLUMNS, path);
@@ -738,7 +801,7 @@ async function main() {
       animations: ROWS.map(([name], row) => {
         const spec = animationSpec(pet, row);
         return {
-          name, fps: spec.fps, frames: spec.frames, loop: spec.loop, phase2: row >= 9, frameSize: SIZE,
+          name, fps: spec.fps, frames: spec.frames, loop: spec.loop, frameSize: SIZE,
           row: spec.row ?? 0,
           image: `../sprites/${pet.folder}/${spec.image}`,
         };
@@ -749,6 +812,6 @@ async function main() {
   }
 }
 
-export { PETS, ROWS, boundsOf, columnBoundaries, decodePng, emptyImage, extractCell, finishFrames, normalizeFrame, prepareFrames, resampleCell, rowBoundaries, savePng };
+export { PETS, ROWS, boundsOf, columnBoundaries, decodePng, emptyImage, extractCell, finishFrames, normalizeFrame, prepareFrames, resampleCell, rowBoundaries, savePng, smooth };
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();

@@ -23,8 +23,8 @@ desktop-pet/
 
 21 nhân vật tự vẽ cho dự án, chọn trong **Cài đặt… → Nhân vật** (16 nhân vật mỗi trang, lật bằng
 mũi tên, chấm trang hoặc lăn chuột): Momo (mặc định), Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn,
-Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp, Frobu, Byte và Patch. Nhân vật nào cũng đủ 9
-animation của Phase 1. Xem chuyển động bằng [sprite studio](assets/sprite-sources/index.html) (mở
+Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp, Frobu, Byte và Patch. Nhân vật nào cũng đủ 12
+animation: 9 của Phase 1 cộng leo, ngồi mép, nhảy. Xem chuyển động bằng [sprite studio](assets/sprite-sources/index.html) (mở
 thẳng bằng trình duyệt), thiết kế từng nhân vật ở [assets/sprite-sources/README.md](assets/sprite-sources/README.md).
 
 Định dạng `pet.json` và cách thêm nhân vật: [assets/README.md](assets/README.md).
@@ -63,12 +63,25 @@ Tương tác với pet:
 
 | Thao tác | Pet |
 |---|---|
-| Để yên | Tự đứng, đi, chạy; chạm mép màn hình thì quay đầu |
-| Click | Nhảy lên một cái rồi đi hoặc chạy tiếp; đang ngủ thì thức dậy. Click dồn dập chỉ nhảy một lần |
-| Kéo lên rồi thả | Rơi xuống, nảy nhẹ khi chạm đất; thả từ cao thì choáng: lảo đảo, sao bay quanh đầu |
-| Kéo rồi vung chuột và buông | Bị ném bay theo quán tính, đập tường thì bật lại |
-| 3 phút không đụng tới | Ngủ; click bất kỳ đâu trên màn hình hoặc kéo pet là dậy |
+| Để yên | Tự đứng, đi, chạy; chạm mép màn hình thì quay đầu. Mép giáp màn hình khác thì có lúc đi sang bên đó |
+| Có cửa sổ gần | Leo cạnh cửa sổ lên mép trên (cửa sổ lơ lửng thì nhảy lên bám cạnh rồi leo, đáy cao hơn chỗ đứng quá khoảng 270 px thì chịu), đi lại trên đó, ngồi ở mép, nhảy sang cửa sổ khác hoặc nhảy, leo xuống |
+| Kéo một cửa sổ khác lại sát pet | Pet chạy trốn về phía ngược lại; đang ở trên cửa sổ mà hết đường thì xuống luôn, dưới đất bị dồn vào mép màn hình thì giật mình nhảy lên. Phóng to hay đổi cỡ cửa sổ không tính |
+| Đóng một cửa sổ ở gần (trong khoảng 400 px) | Pet quay về phía đó nhảy cẫng lên hai cái ăn mừng (không phải lần nào cũng vậy, 15 giây mới ăn mừng một lần) |
+| Kéo cửa sổ pet đang đứng | Pet đi theo cửa sổ; kéo lên sát mép trên màn hình thì hết chỗ đứng, pet rơi |
+| Thu nhỏ hoặc đóng cửa sổ đó | Pet rơi xuống cửa sổ bên dưới hoặc taskbar |
+| Cửa sổ khác đè lên | Pet bị che mất phần nằm dưới cửa sổ đó (click vào đó là click cửa sổ), lát sau đi ra chỗ không bị che |
+| Con trỏ ở gần | Đứng yên thì quay về phía con trỏ. Con trỏ đứng yên ngang tầm (trong khoảng 250 px) thì lại gần ngửi, 15 giây một lần. Lướt chậm qua thì có lúc chạy đuổi theo, đuổi kịp thì đứng lại. Lao nhanh tới thì chạy né. Đang giữ chuột (kéo cửa sổ, bôi đen chữ) thì chỉ nhìn theo |
+| Giật chuột thật nhanh quét qua người pet | Giật mình nhảy dựng lên rồi ngã choáng (10 giây mới giật mình lại) |
+| Click | Nhảy lên một cái rồi đi hoặc chạy tiếp; đang ngủ thì thức dậy; đang leo thì tuột tay. Click dồn dập chỉ nhảy một lần |
+| Kéo lên rồi thả | Rơi xuống mép cửa sổ bên dưới hoặc taskbar, nảy nhẹ khi chạm đất; thả từ cao thì choáng: lảo đảo, sao bay quanh đầu |
+| Kéo rồi vung chuột và buông | Bị ném bay theo quán tính, đập tường thì bật lại; ném về phía màn hình khác thì bay sang bên đó |
+| Kéo pet sang màn hình khác | Pet sang màn hình đó theo con trỏ |
+| 3 phút không đụng tới | Xuống taskbar (đang ở trên cửa sổ thì nhảy hoặc leo xuống) rồi ngủ; click bất kỳ đâu trên màn hình hoặc kéo pet là dậy |
 | Giữ **Ctrl** khi click | Click xuyên qua pet xuống app bên dưới |
+
+Đổi độ phân giải, tỉ lệ DPI, chỗ đặt hay cỡ taskbar, cắm hoặc rút màn hình trong lúc app đang chạy thì
+overlay tự khớp lại trong khoảng một giây: pet đứng lên mặt đất mới, pet đang đứng trên cửa sổ thì
+vẫn đứng đúng mép cửa sổ đó, màn hình pet đang ở bị rút ra thì pet về màn hình chính.
 
 Click pet không làm mất focus của app đang dùng. Có app fullscreen (video, game, trình chiếu) thì pet
 tự ẩn, thoát fullscreen thì hiện lại. Lúc ẩn (kể cả ẩn từ tray) app dừng hẳn vòng lặp, pet đứng nguyên
@@ -134,10 +147,27 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
                       Rust: bật/tắt chuột đi xuyên overlay (set_ignore_cursor_events)
 ```
 
+- **Cửa sổ** (`src-tauri/src/window_list.rs`): Windows báo mỗi khi cửa sổ mở, đóng, di chuyển, đổi
+  thứ tự chồng (`SetWinEventHook`); luồng nền gom lại, đọc danh sách tối đa 30 lần/giây và chỉ gửi
+  event `windows-changed` khi có gì khác, không có gì đổi thì ngủ (2 giây đọc lại một lần phòng sót).
+  Chỉ lấy khung nhìn thấy (DWM, không tính viền trong suốt), thứ tự chồng và tên lớp để bỏ desktop,
+  taskbar; không đọc tiêu đề hay nội dung. Bỏ cửa sổ thu nhỏ, ẩn, ở desktop ảo khác, cửa sổ công cụ và
+  cửa sổ để chuột đi xuyên.
+- **Địa hình** (`packages/sim/src/terrain.ts`): mép trên cửa sổ là chỗ đứng, cạnh bên là tường để
+  leo, trừ phần bị cửa sổ nằm trên che. Pet đứng trên taskbar hoặc đang bay thì nằm trước mọi cửa sổ;
+  đứng hay leo trên cửa sổ nào thì phần bị cửa sổ nằm trên che không được vẽ (xoá trên canvas) và
+  không bắt chuột.
 - **Overlay** (`src-tauri/src/overlay.rs`): cửa sổ trong suốt, không viền, luôn trên cùng, không có
-  nút taskbar, phủ vùng làm việc (trừ taskbar) của màn hình chính. Không phủ kín cả màn hình vì
-  Windows sẽ coi đó là app fullscreen: tắt thông báo, và pet tự ẩn rồi hiện liên tục. Toạ độ gửi cho
-  frontend đều là CSS pixel của overlay; Rust đổi từ pixel vật lý theo DPI.
+  nút taskbar, phủ vùng làm việc (trừ taskbar) của một màn hình, lúc mở là màn hình chính. Không phủ
+  kín cả màn hình vì Windows sẽ coi đó là app fullscreen: tắt thông báo, và pet tự ẩn rồi hiện liên
+  tục. Toạ độ gửi cho frontend đều là CSS pixel của overlay; Rust đổi từ pixel vật lý theo DPI.
+- **Nhiều màn hình**: `screen_info` kèm vùng làm việc của các màn hình khác (`neighbors`), để pet biết
+  mép nào giáp màn hình khác. Pet bị kéo, bị ném hoặc tự đi ra khỏi mép thì frontend gọi
+  `move_overlay` với điểm nằm bên kia mép; điểm đó thuộc màn hình khác thì Rust chuyển overlay sang,
+  rồi gửi event `screen-changed` kèm cách đổi toạ độ cũ sang mới (`remap`). Cứ mỗi giây Rust đo lại
+  màn hình; độ phân giải, DPI, taskbar đổi hay màn hình bị rút thì đặt lại overlay và gửi cùng event đó.
+- **Con trỏ**: sim nhận vị trí từ `cursor-moved` (chỉ lúc vòng lặp đang chạy), tự tính vận tốc, tốc
+  độ lớn nhất trong mỗi bước và thời gian đứng yên (`packages/sim/src/cursor.ts`).
 - **Pet**: mỗi pet là một `<canvas>` nhỏ đúng bằng một frame, di chuyển bằng CSS transform, chỉ vẽ
   lại khi đổi frame. Vòng lặp tối đa 30 fps.
 - **Logic** (`packages/sim`): không phụ thuộc DOM hay Tauri, test bằng vitest. Bước thời gian cố
@@ -157,8 +187,8 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
 
 ```bash
 pnpm typecheck
-pnpm test                               # sprite pack, kéo thả overlay, pet.json, FSM, World/Pet, world.json
-cd desktop/src-tauri && cargo test      # toạ độ theo DPI, lưu trạng thái, cài đặt, registry
+pnpm test                               # sprite pack, kéo thả overlay, pet.json, FSM, World/Pet, địa hình cửa sổ, con trỏ, đổi màn hình, world.json
+cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên cạnh, đổi toạ độ giữa hai màn hình, danh sách cửa sổ, lưu trạng thái, cài đặt, registry
 ```
 
 `pnpm test` gồm `pnpm test:sprites` (script chuẩn hoá sprite và `prepare-sprites.mjs --check` trên

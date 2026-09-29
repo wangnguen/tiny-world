@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-  PETS, ROWS, boundsOf, columnBoundaries, decodePng, emptyImage, extractCell, finishFrames, prepareFrames, resampleCell, rowBoundaries,
+  PETS, ROWS, boundsOf, columnBoundaries, decodePng, emptyImage, extractCell, finishFrames, prepareFrames, resampleCell, rowBoundaries, smooth,
 } from "./prepare-sprites.mjs";
 
 const SOURCES = fileURLToPath(new URL("../assets/sprite-sources/", import.meta.url));
@@ -159,6 +159,33 @@ test("the app's single dizzy frame is the chosen dazed pose", () => {
     const unmoved = prepareFrames({ ...pet, dizzy: undefined });
     assert.ok(samePixels(moved[32], unmoved[32 + pet.dizzy]), `${pet.source}: dizzy pose ${pet.dizzy}`);
   }
+});
+
+test("dizzy smoothing flattens grain but keeps outlines and high-contrast detail", () => {
+  const teal = [40, 140, 150], tealLight = [52, 152, 160], white = [240, 240, 240], outline = [20, 20, 30];
+  const palette = [teal, tealLight, white, outline];
+  const frame = emptyImage(192, 192);
+  // A grainy teal body: flecks of a close colour, with a 2px white bar and a dark line across it.
+  for (let y = 40; y < 140; y++) {
+    for (let x = 40; x < 140; x++) frame.pixels.set([...((x * 7 + y * 13) % 4 ? teal : tealLight), 255], (y * 192 + x) * 4);
+  }
+  fill(frame, 60, 80, 40, 2, [...white, 255]);
+  fill(frame, 60, 110, 40, 1, [...outline, 255]);
+  const frames = Array.from({ length: ROWS.length * 4 }, () => emptyImage(192, 192));
+  const dizzy = ROWS.findIndex(([name]) => name === "dizzy") * 4;
+  frames[dizzy] = frame;
+  frames[0] = { ...frame, pixels: Buffer.from(frame.pixels) };
+  const idle = Buffer.from(frames[0].pixels);
+  smooth(frames, palette);
+  const at = (x, y) => [...frame.pixels.subarray((y * 192 + x) * 4, (y * 192 + x) * 4 + 3)];
+  const body = new Set();
+  for (let y = 50; y < 70; y++) for (let x = 50; x < 130; x++) body.add(at(x, y).join());
+  assert.equal(body.size, 1, "grain is flattened to one colour");
+  for (let x = 60; x < 100; x++) {
+    assert.deepEqual(at(x, 80), white, `white bar at ${x}`);
+    assert.deepEqual(at(x, 110), outline, `dark line at ${x}`);
+  }
+  assert.ok(frames[0].pixels.equals(idle), "other rows are untouched");
 });
 
 test("Momo's pose corrections preserve accepted gait and other states", () => {

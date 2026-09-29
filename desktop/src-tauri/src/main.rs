@@ -13,6 +13,7 @@ mod overlay;
 mod settings;
 mod storage;
 mod tray;
+mod window_list;
 
 fn main() {
     app::run();
