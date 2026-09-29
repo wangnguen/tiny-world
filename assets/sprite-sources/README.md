@@ -57,7 +57,7 @@ phân biệt bằng vị trí và gập gối. Tay nối vào vai, không mọc 
 ## Xem trước
 
 Mở `index.html` bằng trình duyệt, chạy thẳng qua `file://`, không cần Tauri: phát/dừng, chọn
-animation, chọn nền (có ô caro để soát alpha), đổi tốc độ, xem riêng từng frame và các pose Phase 2.
+animation, chọn nền (có ô caro để soát alpha), đổi tốc độ, xem riêng từng frame.
 Trang đọc thẳng ảnh trong `../sprites/` theo `gallery-data.js`, file này do script tạo ra.
 
 ## Tạo lại pack
@@ -82,11 +82,13 @@ Script không gọi AI và không cần thư viện ảnh. Với mỗi nhân v�
    (hoặc hàng `ref`) so với atlas, để nhân vật không to lên/nhỏ đi khi đổi state.
 3. Pose của atlas chép nguyên 1:1 pixel. Sheet sửa thu nhỏ bằng lấy mẫu theo vùng, màu tối (viền,
    đồng tử, miệng) được ưu tiên để nét mảnh không mất. Pose đặt giữa frame, pixel thấp nhất ở y=179.
-4. Giới hạn bảng màu chung 24 màu, xoá đốm lẻ một pixel (không đụng màu tối), khép viền ngoài 2px
-   bằng màu viền của pack, rồi áp `reuse`, `recolor`, `fill`.
+4. Giới hạn bảng màu chung 24 màu, xoá đốm lẻ một pixel (không đụng màu tối), làm mịn hàng `dizzy`,
+   khép viền ngoài 2px bằng màu viền của pack, rồi áp `reuse`, `recolor`, `fill`. Pose choáng của atlas
+   giữ bóng đổ lấm tấm của ảnh sinh ra, mà app giữ nguyên frame đó suốt lúc choáng và cho lảo đảo nên
+   trông như nhiễu. Bước làm mịn (lọc Kuwahara) làm phẳng các pixel xen kẽ hai màu gần nhau, giữ viền,
+   đồng tử, mắt xoáy (màu tối) và chi tiết tương phản cao như chữ trên áo.
 5. Ghi mỗi animation thành dải 768×192 (4 frame 192×192), hoặc một sheet 768×2304 với `singleSheet`
-   (Byte, Patch). `pet.json` chỉ có 9 animation Phase 1; `climb`, `perch`, `jump` vào `phase2/` (hoặc
-   hàng 9–11 của sheet chung) vì engine chưa dùng.
+   (Byte, Patch), rồi ghi `pet.json` đủ 12 animation.
 
 Thứ tự hàng: `idle`, `walk`, `run`, `sleep`, `react`, `fall`, `dragged`, `land`, `dizzy`, `climb`,
 `perch`, `jump`. `react` không lặp, đủ 4 frame trong state 0,5 giây; `land` không lặp, 16 fps để hiện

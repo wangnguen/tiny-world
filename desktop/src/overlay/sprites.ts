@@ -15,11 +15,11 @@ const manifests = import.meta.glob<unknown>("../../../assets/sprites/*/pet.json"
   eager: true,
   import: "default",
 });
-// Bỏ `phase2/`: animation Phase 2 chưa khai báo trong pet.json, nhúng vào chỉ làm nặng bản build.
-const imageFiles = import.meta.glob<string>(
-  ["../../../assets/sprites/**/*.{png,webp,PNG,WEBP}", "!**/phase2/**"],
-  { eager: true, query: "?url", import: "default" },
-);
+const imageFiles = import.meta.glob<string>("../../../assets/sprites/**/*.{png,webp,PNG,WEBP}", {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
 // Windows không phân biệt hoa thường, nên pet.json ghi "idle.png" cho file "Idle.png" vẫn phải chạy.
 const imageUrls = new Map(Object.entries(imageFiles).map(([path, url]) => [path.toLowerCase(), url]));
 

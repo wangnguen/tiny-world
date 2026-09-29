@@ -30,6 +30,45 @@ export interface ScreenInfo {
   bounds: Rect;
   /** Vùng làm việc (trừ taskbar), trùng với kích thước overlay. Mép dưới là chỗ pet đứng. */
   workArea: Rect;
+  /**
+   * Vùng làm việc của các màn hình khác, tính theo toạ độ của overlay này. Màn hình nào giáp mép trái/phải
+   * của `workArea` thì pet đi hoặc bay sang được bên đó.
+   */
+  neighbors: Rect[];
+}
+
+/** Đổi toạ độ CSS pixel của overlay cũ sang overlay mới: `p * scale + (x, y)`. */
+export interface Remap {
+  scale: number;
+  x: number;
+  y: number;
+}
+
+/**
+ * Event `screen-changed`: overlay vừa sang màn hình khác, hoặc màn hình đang ở đổi độ phân giải, DPI,
+ * taskbar. `remap` đổi toạ độ cũ (pet, cửa sổ) sang toạ độ mới.
+ */
+export interface ScreenChange {
+  screen: ScreenInfo;
+  remap: Remap;
+}
+
+/** Một cửa sổ thật trên màn hình, khớp `WindowInfo` trong windows.rs. */
+export interface WindowInfo {
+  /** HWND, không đổi trong suốt đời cửa sổ. */
+  id: number;
+  /** Khung nhìn thấy (không tính viền kéo giãn trong suốt), CSS pixel; có thể thò ra ngoài overlay. */
+  rect: Rect;
+}
+
+/**
+ * Event `windows-changed` và command `list_windows`: các cửa sổ đang hiện (không tính cửa sổ thu
+ * nhỏ, ẩn, ở desktop ảo khác), xếp từ trên xuống dưới theo thứ tự chồng.
+ */
+export interface WindowList {
+  windows: WindowInfo[];
+  /** Cửa sổ vừa bị đóng hẳn (không phải thu nhỏ hay ẩn) kể từ lần gửi trước, kèm khung lúc còn hiện. */
+  closed: WindowInfo[];
 }
 
 /** Cài đặt người dùng (command `get_settings` / `set_settings`), khớp `Settings` trong settings.rs. */

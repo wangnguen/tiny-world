@@ -1,5 +1,5 @@
-import { frameIndex, type AnimationName, type Point } from "@tinyworld/core";
-import type { Bounds, Pet } from "@tinyworld/sim";
+import { frameIndex, type AnimationName, type Point, type Rect } from "@tinyworld/core";
+import { contains, type Bounds, type Pet } from "@tinyworld/sim";
 import { DizzyStars, dizzyLean, dizzyReach, leanShift, ringRow } from "./dizzy";
 import { headOf, type Animation, type Head, type SpriteSet } from "./spriteSet";
 
@@ -20,6 +20,10 @@ export class PetView {
   height = 0;
   /** Số cột pixel (của frame) chừa thêm mỗi bên canvas để phần đầu nghiêng ra lúc lảo đảo không bị cắt. */
   private pad = 0;
+  /** Số pixel canvas (pixel màn hình) cho một pixel của frame. */
+  private density = 1;
+  /** Frame đứng thẳng vẽ sẵn ở đây lúc lảo đảo, rồi chép từng dải hàng sang canvas chính. */
+  private readonly upright = document.createElement("canvas");
   private drawnKey = "";
   private shownState: AnimationName | null = null;
   /** Đầu nhân vật trong animation hiện tại, đo lại khi đổi state. */
@@ -32,6 +36,10 @@ export class PetView {
   private top = Number.NaN;
   /** Đỉnh đầu đang lệch bao nhiêu pixel của frame lúc lảo đảo (dương: sang phải màn hình); 0 là đứng thẳng. */
   private lean = 0;
+  /** Cửa sổ đang che pet (CSS pixel của overlay): không vẽ, không bắt chuột ở đó. */
+  private occluders: readonly Rect[] = [];
+  /** Khoảng từ điểm chân tới tường lúc leo (CSS pixel), đo theo tay nhân vật trong animation `climb`. */
+  reach = 0;
 
   /** `size`: cỡ trong Settings (1 là cỡ gốc của pack). */
   constructor(
@@ -69,6 +77,7 @@ export class PetView {
     this.pad = dizzyReach(this.sprite.frameHeight);
     this.width = this.sprite.frameWidth * this.scale;
     this.height = this.sprite.frameHeight * this.scale;
+    this.reach = climbReach(this.sprite) * this.scale;
     this.element.style.width = `${this.canvasWidth}px`;
     this.element.style.height = `${this.height}px`;
     this.resize();
@@ -82,6 +91,9 @@ export class PetView {
     const dpr = window.devicePixelRatio || 1;
     this.element.width = Math.round(this.canvasWidth * dpr);
     this.element.height = Math.round(this.height * dpr);
+    this.upright.width = this.element.width;
+    this.upright.height = this.element.height;
+    this.density = this.element.width / (this.sprite.frameWidth + 2 * this.pad);
     this.drawnKey = "";
   }
 
@@ -90,12 +102,17 @@ export class PetView {
     return this.width + 2 * this.pad * this.scale;
   }
 
-  update(pet: Pet): void {
+  /** `occluders`: cửa sổ đang che pet (`World.occluders`), phần bị che không vẽ. */
+  update(pet: Pet, occluders: readonly Rect[] = []): void {
     const animation = this.sprite.animations[pet.state];
-    // Đi/chạy nhanh hơn (Settings) thì chân cũng bước nhanh hơn, không trượt.
-    const moving = pet.state === "walk" || pet.state === "run";
+    // Đi/chạy/leo nhanh hơn (Settings) thì chân tay cũng nhanh hơn, không trượt.
+    const moving = pet.state === "walk" || pet.state === "run" || pet.state === "climb";
     const fps = moving ? animation.fps * pet.env.speed : animation.fps;
-    const frame = frameIndex(animation.frames.length, fps, animation.loop, pet.stateTime);
+    const count = animation.frames.length;
+    const frame =
+      pet.pose === undefined
+        ? frameIndex(count, fps, animation.loop, pet.stateTime)
+        : Math.min(pet.pose, count - 1);
     const flip = (pet.facing === 1) !== (this.sprite.facing === "right");
     if (pet.state !== this.shownState) this.enterState(pet.state, animation);
 
@@ -118,13 +135,18 @@ export class PetView {
             pet.env.bounds,
           )
         : 0;
-    const key = `${pet.state}:${frame}:${flip}:${lean}`;
+    // Chỉ giữ cửa sổ chạm vào canvas, toạ độ tính từ góc canvas để pet đi mà cửa sổ đứng yên cũng vẽ lại.
+    const box = { x: canvasLeft, y: top, width: this.canvasWidth, height: this.height };
+    this.occluders = occluders.filter((r) => overlaps(r, box));
+    const cuts = this.occluders.map((r) => ({ ...r, x: r.x - canvasLeft, y: r.y - top }));
+    const key = `${pet.state}:${frame}:${flip}:${lean}:${cuts.map(rectKey).join(";")}`;
     if (key !== this.drawnKey) {
       this.animation = animation;
       this.frame = frame;
       this.flip = flip;
       this.lean = lean;
       this.draw(animation, frame, flip);
+      this.cut(cuts);
       this.drawnKey = key;
     }
     if (left !== this.left || top !== this.top) {
@@ -154,20 +176,28 @@ export class PetView {
   /** Con trỏ (CSS pixel của overlay) có nằm trên phần có hình của pet không. */
   hitTest(point: Point): boolean {
     if (!this.animation) return false;
+    // Chỗ bị cửa sổ khác che thì click thuộc về cửa sổ đó.
+    if (this.occluders.some((r) => contains(r, point.x, point.y))) return false;
     const { frameWidth, frameHeight } = this.sprite;
     const { scale } = this;
     const y = Math.floor((point.y - this.top) / scale);
     if (y < 0 || y >= frameHeight) return false;
     // Bỏ độ lệch lúc lảo đảo để về đúng pixel của frame.
-    let x = Math.floor((point.x - this.left) / scale) - this.shift(y);
+    let x = Math.floor((point.x - this.left) / scale - this.shift((point.y - this.top) / scale));
     if (x < 0 || x >= frameWidth) return false;
     if (this.flip) x = frameWidth - 1 - x;
     return this.animation.masks[this.frame][y * frameWidth + x] === 1;
   }
 
-  /** Hàng `y` của frame đang bị đẩy ngang bao nhiêu pixel của frame (lảo đảo). */
+  /** Hàng `y` của frame (có thể lẻ) đang bị đẩy ngang bao nhiêu pixel của frame (lảo đảo). */
   private shift(y: number): number {
-    return leanShift(this.lean, y, this.sprite.anchor.y, this.head.top);
+    return leanShift(this.lean, y, this.sprite.anchor.y, this.head.top, this.density);
+  }
+
+  /** Hàng `row` của canvas đang bị đẩy ngang bao nhiêu pixel canvas (lảo đảo), luôn là số nguyên. */
+  private rowShift(row: number): number {
+    const ky = this.element.height / this.sprite.frameHeight;
+    return Math.round(this.shift((row + 0.5) / ky) * this.density);
   }
 
   /**
@@ -197,40 +227,70 @@ export class PetView {
     return Math.min(highest, Math.max(lowest, lean));
   }
 
+  /** Xoá phần canvas bị cửa sổ che; `cuts` tính theo CSS pixel từ góc trên trái canvas. */
+  private cut(cuts: readonly Rect[]): void {
+    if (cuts.length === 0) return;
+    const { ctx, element } = this;
+    const kx = element.width / this.canvasWidth;
+    const ky = element.height / this.height;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    for (const r of cuts) ctx.clearRect(r.x * kx, r.y * ky, r.width * kx, r.height * ky);
+  }
+
   private draw(animation: Animation, frame: number, flip: boolean): void {
     const { ctx, element } = this;
-    const { frameWidth, frameHeight } = this.sprite;
     const source = animation.frames[frame];
+    // Lảo đảo: vẽ frame đứng thẳng (thu nhỏ y như lúc không choáng) lên canvas phụ, rồi chép từng dải
+    // hàng sang, mỗi dải dời một số nguyên pixel canvas: pixel art nghiêng thành bậc gọn mà vân không đổi.
+    // Nghiêng cả canvas bằng CSS thì trình duyệt nội suy, pet to lên là thấy nhoè.
+    const target = this.lean === 0 ? ctx : context(this.upright);
+    target.setTransform(1, 0, 0, 1, 0, 0);
+    target.clearRect(0, 0, element.width, element.height);
+    target.imageSmoothingEnabled = !this.sprite.pixelArt;
+    const x = this.pad * this.density;
+    const width = this.sprite.frameWidth * this.density;
+    if (flip) target.setTransform(-1, 0, 0, 1, x + width, 0);
+    else target.setTransform(1, 0, 0, 1, x, 0);
+    target.drawImage(animation.image, source.x, source.y, source.width, source.height, 0, 0, width, element.height);
+    if (target === ctx) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, element.width, element.height);
-    ctx.imageSmoothingEnabled = !this.sprite.pixelArt;
-    // Số pixel canvas cho một pixel của frame.
-    const kx = element.width / (frameWidth + 2 * this.pad);
-    const ky = element.height / frameHeight;
-    const width = frameWidth * kx;
-    // Vẽ theo dải hàng, lúc lảo đảo mỗi dải lệch một số nguyên pixel của frame: pixel art nghiêng thành
-    // bậc gọn. Nghiêng cả canvas bằng CSS thì trình duyệt nội suy, pet to lên là thấy nhoè.
-    for (let y = 0; y < frameHeight; ) {
-      const shift = this.shift(y);
-      let end = y + 1;
-      while (end < frameHeight && this.shift(end) === shift) end++;
-      const x = (this.pad + shift) * kx;
-      if (flip) ctx.setTransform(-1, 0, 0, 1, x + width, 0);
-      else ctx.setTransform(1, 0, 0, 1, x, 0);
-      ctx.drawImage(
-        animation.image,
-        source.x,
-        source.y + y,
-        source.width,
-        end - y,
-        0,
-        y * ky,
-        width,
-        (end - y) * ky,
-      );
-      y = end;
+    for (let row = 0; row < element.height; ) {
+      const shift = this.rowShift(row);
+      let end = row + 1;
+      while (end < element.height && this.rowShift(end) === shift) end++;
+      ctx.drawImage(this.upright, 0, row, element.width, end - row, shift, row, element.width, end - row);
+      row = end;
     }
   }
+}
+
+/** Khoảng từ điểm chân tới mép tay xa nhất trong animation `climb` (pixel của frame): chỗ tay chạm tường. */
+function climbReach(sprite: SpriteSet): number {
+  const { frameWidth, anchor } = sprite;
+  let reach = 0;
+  for (const mask of sprite.animations.climb.masks) {
+    for (let i = 0; i < mask.length; i++) {
+      if (mask[i] === 0) continue;
+      const x = i % frameWidth;
+      reach = Math.max(reach, sprite.facing === "right" ? x + 1 - anchor.x : anchor.x - x);
+    }
+  }
+  return Math.max(reach, frameWidth * 0.1);
+}
+
+function context(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Không tạo được canvas cho pet.");
+  return ctx;
+}
+
+function overlaps(a: Rect, b: Rect): boolean {
+  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+function rectKey(r: Rect): string {
+  return [r.x, r.y, r.width, r.height].map((v) => Math.round(v * 4) / 4).join(",");
 }
 
 /** Làm tròn theo pixel thật của màn hình để pixel art không bị nhoè khi di chuyển. */

@@ -39,9 +39,13 @@ export class StateMachine<S extends string, C> {
     if (next !== undefined) this.go(ctx, next);
   }
 
-  /** Chuyển state ngay. Chuyển sang chính state đang ở thì chạy lại state đó từ đầu. */
-  go(ctx: C, next: S): void {
+  /**
+   * Chuyển state ngay. Chuyển sang chính state đang ở thì chạy lại state đó từ đầu. `prepare` chạy sau
+   * `exit` của state cũ, trước `enter` của state mới: đặt dữ liệu mà `exit` sẽ xoá còn `enter` cần đọc.
+   */
+  go(ctx: C, next: S, prepare?: () => void): void {
     this.table[this.current].exit?.(ctx);
+    prepare?.();
     this.current = next;
     this.elapsed = 0;
     this.table[next].enter?.(ctx);

@@ -29,13 +29,15 @@ export function dizzyReach(frameHeight: number): number {
 }
 
 /**
- * Hàng `y` của frame bị đẩy ngang bao nhiêu pixel lúc lảo đảo: chân (`footY`) đứng yên, từ đỉnh đầu trở
- * lên (tai, ăng-ten) lệch đúng `lean`, ở giữa lệch dần theo số nguyên pixel.
+ * Hàng `y` của frame bị đẩy ngang bao nhiêu pixel của frame lúc lảo đảo: chân (`footY`) đứng yên, từ đỉnh
+ * đầu trở lên (tai, ăng-ten) lệch đúng `lean`, ở giữa lệch dần. Làm tròn theo pixel màn hình (`density`
+ * pixel màn hình cho một pixel của frame): mỗi hàng dời nguyên pixel màn hình. Dời nửa pixel thì hàng đó
+ * lấy mẫu lại lệch pha với hàng bên cạnh, vân và viền nhấp nháy như nhiễu.
  */
-export function leanShift(lean: number, y: number, footY: number, headTop: number): number {
+export function leanShift(lean: number, y: number, footY: number, headTop: number, density = 1): number {
   if (lean === 0) return 0;
   const t = (footY - y) / Math.max(1, footY - headTop);
-  return Math.round(lean * Math.min(1, Math.max(0, t)));
+  return Math.round(lean * density * Math.min(1, Math.max(0, t))) / density;
 }
 
 /** Hàng pixel (của frame) mà vòng sao bay quanh. */

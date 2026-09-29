@@ -1,5 +1,6 @@
 use crate::settings::SettingsStore;
 use crate::storage::Storage;
+use crate::window_list::{self, Windows};
 use crate::{commands, cursor, events, fullscreen, overlay, tray};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
@@ -18,14 +19,19 @@ pub fn run() {
             std::fs::create_dir_all(&data_dir)?;
             app.manage(SettingsStore::load(&data_dir));
             app.manage(Storage::new(data_dir));
+            app.manage(Windows::default());
             overlay::setup(app.handle())?;
+            overlay::watch(app.handle().clone());
             tray::setup(app.handle())?;
             cursor::spawn(app.handle().clone());
             fullscreen::spawn(app.handle().clone());
+            window_list::spawn(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::screen_info,
+            commands::move_overlay,
+            commands::list_windows,
             commands::set_click_through,
             commands::load_state,
             commands::save_state,

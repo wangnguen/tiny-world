@@ -41,7 +41,7 @@ pub fn spawn(app: AppHandle) {
             if !overlay.is_visible() {
                 continue;
             }
-            let (x, y) = overlay.geometry().to_local(x, y);
+            let (x, y) = overlay.to_local(x, y);
             let info = CursorInfo {
                 x,
                 y,
