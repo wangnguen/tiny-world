@@ -648,7 +648,7 @@ function prepare(pet) {
     if (!pet.singleSheet) savePng(join(dir, spec.image), strip);
     if (row < 9) animations[name] = spec;
   }
-  const manifest = { name: pet.name, frameWidth: SIZE, frameHeight: SIZE, scale: DISPLAY_SIZE / SIZE, pixelArt: true, facing: "right", anchor: { x: SIZE / 2, y: BASELINE + 1 }, outline: false, animations };
+  const manifest = { name: pet.name, frameWidth: SIZE, frameHeight: SIZE, scale: DISPLAY_SIZE / SIZE, pixelArt: true, facing: "right", anchor: { x: SIZE / 2, y: BASELINE + 1 }, animations };
   writeFileSync(join(dir, "pet.json"), JSON.stringify(manifest, null, 2) + "\n");
   // Pack dải riêng không cần sheet gộp: trang xem thử (index.html) đọc thẳng các dải trong pack.
   if (pet.singleSheet) savePng(join(dir, "atlas.png"), sheet);

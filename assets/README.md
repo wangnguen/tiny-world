@@ -39,7 +39,8 @@ Phase 2.
   `sprite-sources/<tên>/`, khai báo trong `PETS` của `scripts/prepare-sprites.mjs` rồi chạy script.
   Chi tiết: [sprite-sources/README.md](sprite-sources/README.md).
 - **Pack tự làm**: tạo `sprites/<tên-pack>/` gồm các PNG và `pet.json` (xem bên dưới). Pack này
-  không qua script nên `--check` không kiểm tra.
+  không qua script nên `--check` không kiểm tra. App vẽ nguyên ảnh, không thêm viền, nên nhân vật
+  màu sáng cần có viền tối vẽ sẵn để không chìm vào nền sáng.
 
 Vite gom pack vào bản build, nên thêm hoặc sửa pack chỉ cần chạy lại `pnpm dev:desktop`.
 
@@ -54,7 +55,6 @@ Ví dụ rút gọn từ `a-momo`, mỗi animation một file PNG dải ngang:
   "frameHeight": 192,
   "scale": 0.5,
   "anchor": { "x": 96, "y": 180 },
-  "outline": false,
   "animations": {
     "idle": { "image": "idle.png", "frames": 4, "fps": 5 },
     "walk": { "image": "walk.png", "frames": 4, "fps": 8 },
@@ -78,7 +78,6 @@ Nhiều animation chung một sheet thì dùng `row` (như Byte và Patch):
 | `pixelArt` | | `true` | Phóng to kiểu pixel art, không làm mờ. Hình vẽ mượt thì đặt `false` |
 | `facing` | | `"right"` | Hướng nhân vật nhìn trong ảnh gốc; đi ngược hướng thì app tự lật |
 | `anchor` | | giữa mép dưới frame | Điểm chân nhân vật trong frame. Frame có khoảng trống dưới chân thì giảm `y` cho pet chạm đất |
-| `outline` | | `"#1b1622"` | Viền 1 pixel app tự vẽ thêm quanh nhân vật để không chìm vào nền sáng. Nhận `"#rrggbb"` / `"#rrggbbaa"`; ảnh đã có viền (như 21 pack có sẵn) thì đặt `false` |
 | `animations` | có | | Mỗi animation của engine ứng với một ảnh |
 
 Mỗi animation:

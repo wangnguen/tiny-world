@@ -9,7 +9,6 @@
     "x": 96,
     "y": 180
   },
-  "outline": false,
   "animations": {
     "idle": {
       "image": "atlas.png",

@@ -114,7 +114,7 @@ async function loadPack(manifestPath: string, manifest: SpriteManifest): Promise
       image.naturalWidth,
       image.naturalHeight,
     );
-    animations[name] = buildAnimation(image, frames, spec.fps, spec.loop, manifest.outline);
+    animations[name] = buildAnimation(image, frames, spec.fps, spec.loop);
   }
   const idle = animations.idle;
   if (!idle) throw new Error("Thiếu animation idle.");
