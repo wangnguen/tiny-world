@@ -77,7 +77,6 @@ const rect = (frame: number): Rect => ({ x: frame * SIZE, y: 0, width: SIZE, hei
 
 export function createPlaceholderSprite(): SpriteSet {
   const sheet = drawSheet();
-  // Lưới pixel đã có viền (màu "o") nên không thêm viền nữa.
   const anim = (frames: number[], fps: number, loop = true) =>
     buildAnimation(sheet, frames.map(rect), fps, loop);
   const idleFrames = [F_BASE, F_BASE, F_BREATHE, F_BREATHE, F_BASE, F_BASE, F_BREATHE, F_BLINK];

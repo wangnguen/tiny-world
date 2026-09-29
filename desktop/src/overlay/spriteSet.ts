@@ -24,65 +24,14 @@ export interface SpriteSet {
   animations: Record<AnimationName, Animation>;
 }
 
-/** `outline`: màu viền thêm quanh nhân vật (xem `SpriteManifest.outline`), `null` là giữ nguyên ảnh. */
 export function buildAnimation(
   image: CanvasImageSource,
   frames: Rect[],
   fps: number,
   loop: boolean,
-  outline: string | null = null,
 ): Animation {
-  const source = outline ? outlinedStrip(image, frames, outline) : { image, frames };
-  const masks = source.frames.map((frame) => alphaMask(source.image, frame));
-  return { ...source, masks, fps, loop };
-}
-
-/**
- * Chép các frame sang một dải ảnh mới, mỗi frame thêm viền 1 pixel quanh phần có hình: nhân vật
- * màu sáng đứng trên nền trắng (trang web, tài liệu) vẫn thấy rõ. Làm một lần lúc nạp pack.
- */
-function outlinedStrip(
-  image: CanvasImageSource,
-  frames: Rect[],
-  outline: string,
-): { image: OffscreenCanvas; frames: Rect[] } {
-  const { width, height } = frames[0];
-  const canvas = new OffscreenCanvas(width * frames.length, height);
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) throw new Error("Không tạo được canvas để vẽ viền sprite.");
-  const color = hexColor(outline);
-  const rects = frames.map((frame, i) => {
-    const x = i * width;
-    ctx.drawImage(image, frame.x, frame.y, width, height, x, 0, width, height);
-    const pixels = ctx.getImageData(x, 0, width, height);
-    addOutline(pixels.data, width, height, color);
-    ctx.putImageData(pixels, x, 0);
-    return { x, y: 0, width, height };
-  });
-  return { image: canvas, frames: rects };
-}
-
-/** Tô màu viền vào mọi pixel trống nằm sát (trên, dưới, trái, phải) một pixel có hình. */
-function addOutline(data: Uint8ClampedArray, width: number, height: number, color: number[]): void {
-  const solid = (x: number, y: number) =>
-    x >= 0 && y >= 0 && x < width && y < height && data[(y * width + x) * 4 + 3] > ALPHA_THRESHOLD;
-  const edge: number[] = [];
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (solid(x, y)) continue;
-      if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1)) {
-        edge.push(y * width + x);
-      }
-    }
-  }
-  for (const i of edge) data.set(color, i * 4);
-}
-
-/** "#rrggbb" / "#rrggbbaa" (đã kiểm tra trong parseSpriteManifest) -> [r, g, b, a]. */
-function hexColor(hex: string): number[] {
-  const channels = hex.slice(1).match(/../g) ?? [];
-  const [r, g, b, a = 255] = channels.map((c) => parseInt(c, 16));
-  return [r, g, b, a];
+  const masks = frames.map((frame) => alphaMask(image, frame));
+  return { image, frames, masks, fps, loop };
 }
 
 /** Pack thiếu animation thì mượn animation gần giống trước khi dùng `idle`. */

@@ -1,4 +1,3 @@
-import { DEFAULT_OUTLINE } from "@tinyworld/core";
 import { TUNING } from "@tinyworld/sim";
 
 /** Lảo đảo: đỉnh đầu lệch sang mỗi bên tối đa bấy nhiêu phần khoảng cách từ chân tới đỉnh đầu. */
@@ -45,7 +44,7 @@ export function ringRow(headTop: number, height: number): number {
 }
 
 // Sao vẽ theo từng pixel: o viền, y vàng, w sáng, d vàng tối (sao phía sau, xa hơn).
-const COLORS: Record<string, string> = { o: DEFAULT_OUTLINE, y: "#ffd84d", w: "#fff7d6", d: "#d4a53a" };
+const COLORS: Record<string, string> = { o: "#1b1622", y:"#ffd84d", w: "#fff7d6", d: "#d4a53a" };
 const NEAR = ["...o...", "..oyo..", "oooyooo", "oyywyyo", ".oyyyo.", ".oyoyo.", ".oo.oo."];
 const FAR = ["..o..", ".odo.", "odddo", ".odo.", "..o.."];
 const PAD = Math.floor(NEAR.length / 2);

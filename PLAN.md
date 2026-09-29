@@ -15,12 +15,12 @@ con trỏ chuột trong lúc người dùng làm việc. Không phải game ph�
 | Vẽ pet | Mỗi pet một `<canvas>` nhỏ, di chuyển bằng CSS transform, vòng lặp `requestAnimationFrame` tối đa 30 fps. React chỉ dùng cho cửa sổ Settings (Phase 1) |
 | Logic pet | `packages/sim`: TS thuần (FSM, vật lý, RNG có seed), test bằng vitest |
 | Click-through | Overlay mặc định để chuột đi xuyên. Rust đọc con trỏ khoảng 60 lần/giây gửi sang, overlay kiểm tra theo alpha của sprite, con trỏ nằm trên pet thì tắt click-through |
-| Asset | Sprite pack xin từ itch.io (pixel art 32×32, license cho dùng/sửa). Mỗi pack là một thư mục `assets/sprites/<pack>/` có `pet.json`. Chưa có pack thì dùng pet tạm vẽ bằng code |
+| Asset | Nhân vật tự vẽ bằng imagegen: atlas gốc ở `assets/sprite-sources/`, `scripts/prepare-sprites.mjs` chuẩn hoá thành pack `assets/sprites/<pack>/` có `pet.json`. Không dùng asset của bên thứ ba. Chưa có pack thì dùng pet tạm vẽ bằng code |
 | Thứ tự | Phase 2 (desktop awareness) làm trước Phase 3 (bộ lạc) |
 | Riêng tư | Mọi dữ liệu xử lý trên máy, không đọc tiêu đề cửa sổ, tính năng nhạy cảm (bàn phím, thói quen) mặc định tắt |
 | AI | Không cho AI điều khiển di chuyển, chỉ dùng cho hội thoại (Phase 7, tuỳ chọn) |
 | Ngôn ngữ | UI, comment, README tiếng Việt như authenticator-app |
-| Build / phát hành | Mỗi lần push lên `main`, CI tự test rồi build `.exe` (bản cài + bản chạy thẳng), tải ở mục Artifacts của Actions; push nhiều lần thì chỉ build bản mới nhất, push chỉ sửa tài liệu (`.md`, `docs/`) thì không build. Phát hành chính thức vẫn dùng workflow Release chạy tay (nhập version) như authenticator-app |
+| Build / phát hành | Mỗi lần push lên `main`, CI tự test rồi build `.exe` (bản cài + bản chạy thẳng), tải ở mục Artifacts của Actions; push nhiều lần thì chỉ build bản mới nhất, push chỉ sửa tài liệu (`.md`) thì không build. Phát hành chính thức vẫn dùng workflow Release chạy tay (nhập version) như authenticator-app |
 
 ### Kế thừa từ authenticator-app
 
@@ -80,8 +80,8 @@ Khác đi:
     registry bằng `windows-sys`, không dùng plugin
 - Nhẹ: dừng vẽ khi ngủ/ẩn/tạm dừng, tự ẩn khi có app fullscreen, click pet không cướp focus của app đang
   dùng (`focusable: false` → `WS_EX_NOACTIVATE`, kéo thả vẫn chạy)
-- 22 sprite pack tự tạo (Momo mặc định): đủ 9 animation, frame 48×48,
-  alpha nhị phân và viền tối sẵn trong ảnh; thêm pose leo/ngồi mép/nhảy để riêng cho Phase 2
+- 21 sprite pack tự tạo (Momo mặc định): đủ 9 animation, frame 192×192 (96×96 CSS pixel ở cỡ 100%),
+  alpha nhị phân và viền tối sẵn trong ảnh; pose leo/ngồi mép/nhảy làm sẵn cho Phase 2, chưa đưa vào `pet.json`
 
 **Xong khi:** chạy 8 tiếng không rò RAM; unit test cho FSM và vật lý.
 
@@ -137,5 +137,5 @@ Khác đi:
 | Overlay đè lên video/game fullscreen | Tự ẩn khi app đang dùng chiếm trọn màn hình (Phase 1) |
 | Overlay luôn trên mà che kín màn hình bị Windows coi là app fullscreen: tắt thông báo (Focus Assist), pet tự ẩn/hiện mỗi giây | Overlay chỉ phủ vùng làm việc; taskbar tự ẩn (vùng làm việc trùng màn hình) thì thấp đi 1 pixel. Phase 2 cần vẽ lên taskbar thì vẫn giữ quy tắc này |
 | Hook bàn phím dễ bị antivirus nghi ngờ | Tuỳ chọn riêng, mặc định tắt, có thể bỏ |
-| License asset itch.io thường cấm phát tán lại file gốc | Giữ file license trong thư mục pack; repo public mà license cấm thì không commit pack |
+| Mỗi lượt sinh lại sprite bằng AI có thể làm mất hoặc đổi màu tay chân mà `--check` không bắt được | Soát từng frame so với atlas gốc trước khi nhận sheet mới; lỗi nhỏ sửa bằng tuỳ chọn trong `PETS` của script thay vì sinh lại |
 | App chưa ký số → SmartScreen cảnh báo | Như authenticator-app: hướng dẫn "More info → Run anyway" |

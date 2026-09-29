@@ -55,7 +55,8 @@ export class PetView {
   setSprite(sprite: SpriteSet, size = this.size): void {
     this.sprite = sprite;
     this.element.className = sprite.pixelArt ? "pet pet--pixel" : "pet";
-    this.stars.setFrameWidth(sprite.frameWidth);
+    // Sao dùng lưới 48px riêng, không nhỏ đi khi pack tăng độ phân giải ảnh.
+    this.stars.setFrameWidth(Math.min(48, sprite.frameWidth));
     this.animation = null;
     this.shownState = null;
     this.setSize(size);
@@ -72,7 +73,7 @@ export class PetView {
     this.element.style.height = `${this.height}px`;
     this.resize();
     // Sao choáng to nhỏ theo pet.
-    this.stars.setScale(this.scale);
+    this.stars.setScale(this.scale * Math.max(1, this.sprite.frameWidth / 48));
     this.left = Number.NaN;
   }
 
@@ -101,7 +102,10 @@ export class PetView {
     const { anchor, frameWidth } = this.sprite;
     const { scale } = this;
     const anchorX = flip ? frameWidth - anchor.x : anchor.x;
-    const left = snap(pet.x - anchorX * scale);
+    // Làm tròn gốc canvas một lần; vùng bắt chuột dùng đúng gốc frame đã vẽ.
+    // Làm tròn riêng frame rồi canvas sẽ lệch tới nửa pixel ở DPI 125%.
+    const canvasLeft = snap(pet.x - (anchorX + this.pad) * scale);
+    const left = canvasLeft + this.pad * scale;
     const top = snap(pet.y - anchor.y * scale);
     // Choáng: lảo đảo qua lại quanh điểm chân, đỉnh đầu lệch `lean` pixel của frame.
     const lean =
@@ -126,7 +130,7 @@ export class PetView {
     if (left !== this.left || top !== this.top) {
       this.left = left;
       this.top = top;
-      this.element.style.transform = `translate(${snap(left - this.pad * scale)}px, ${top}px)`;
+      this.element.style.transform = `translate(${canvasLeft}px, ${top}px)`;
     }
     if (pet.state === "dizzy") this.placeStars(pet.stateTime, flip);
   }

@@ -2,7 +2,7 @@ import type { Point, Rect } from "./types";
 
 /**
  * Animation engine dùng, mỗi cái ứng với một state của pet. Chỉ `idle` là bắt buộc:
- * pack thiếu animation nào thì dùng `idle` thay (nhiều pack trên itch.io không có sleep, dizzy...).
+ * pack thiếu animation nào thì app dùng animation gần giống hoặc `idle` thay (bảng thay thế: assets/README.md).
  */
 export const ANIMATION_NAMES = [
   "idle",
@@ -37,7 +37,7 @@ export interface SpriteManifest {
   name: string;
   frameWidth: number;
   frameHeight: number;
-  /** Phóng to khi vẽ: frame 32×32 với scale 2 thành 64×64 CSS pixel. */
+  /** Tỉ lệ vẽ ở cỡ 100%: frame 192×192 với scale 0.5 thành 96×96 CSS pixel. */
   scale: number;
   /** true: phóng to kiểu pixel art, không làm mờ. */
   pixelArt: boolean;
@@ -45,16 +45,8 @@ export interface SpriteManifest {
   facing: "left" | "right";
   /** Điểm chân nhân vật trong frame (pixel của frame), dùng để đặt pet lên mặt đất. */
   anchor: Point;
-  /**
-   * Màu viền 1 pixel quanh nhân vật (`#rrggbb` hoặc `#rrggbbaa`) để không chìm vào nền cùng màu,
-   * `null` nếu tắt (pack đã có viền sẵn).
-   */
-  outline: string | null;
   animations: { idle: AnimationSpec } & Partial<Record<AnimationName, AnimationSpec>>;
 }
-
-/** Viền mặc định: gần đen, thấy rõ trên nền sáng mà nền tối cũng không bị lộ. */
-export const DEFAULT_OUTLINE = "#1b1622";
 
 const MAX_FRAME_SIZE = 1024;
 const MAX_FRAMES = 256;
@@ -95,7 +87,6 @@ export function parseSpriteManifest(value: unknown): SpriteManifest {
     pixelArt: optional(root.pixelArt, true, (v) => boolean(v, "pixelArt")),
     facing: optional(root.facing, "right", (v) => oneOf(v, "facing", ["left", "right"] as const)),
     anchor,
-    outline: optional(root.outline, DEFAULT_OUTLINE, (v) => (v === false ? null : color(v, "outline"))),
     animations: { ...animations, idle },
   };
 }
@@ -194,13 +185,6 @@ function string(value: unknown, path: string): string {
     throw new Error(`${path}: phải là chuỗi không rỗng.`);
   }
   return value.trim();
-}
-
-function color(value: unknown, path: string): string {
-  if (typeof value !== "string" || !/^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
-    throw new Error(`${path}: phải là màu dạng "#rrggbb" / "#rrggbbaa", hoặc false để tắt.`);
-  }
-  return value;
 }
 
 function oneOf<T extends string>(value: unknown, path: string, options: readonly T[]): T {
