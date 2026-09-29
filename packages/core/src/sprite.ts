@@ -2,7 +2,7 @@ import type { Point, Rect } from "./types";
 
 /**
  * Animation engine dùng, mỗi cái ứng với một state của pet. Chỉ `idle` là bắt buộc:
- * pack thiếu animation nào thì dùng `idle` thay (nhiều pack trên itch.io không có sleep, dizzy...).
+ * pack thiếu animation nào thì app dùng animation gần giống hoặc `idle` thay (bảng thay thế: assets/README.md).
  */
 export const ANIMATION_NAMES = [
   "idle",
@@ -37,7 +37,7 @@ export interface SpriteManifest {
   name: string;
   frameWidth: number;
   frameHeight: number;
-  /** Phóng to khi vẽ: frame 32×32 với scale 2 thành 64×64 CSS pixel. */
+  /** Tỉ lệ vẽ ở cỡ 100%: frame 192×192 với scale 0.5 thành 96×96 CSS pixel. */
   scale: number;
   /** true: phóng to kiểu pixel art, không làm mờ. */
   pixelArt: boolean;

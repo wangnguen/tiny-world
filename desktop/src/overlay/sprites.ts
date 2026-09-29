@@ -144,7 +144,7 @@ function dirOf(path: string): string {
   return path.slice(0, path.lastIndexOf("/") + 1);
 }
 
-/** "../../../assets/sprites/cat/pet.json" -> "cat". */
+/** "../../../assets/sprites/a-momo/pet.json" -> "a-momo". */
 function packName(path: string): string {
   return path.split("/sprites/")[1]?.split("/")[0] ?? path;
 }

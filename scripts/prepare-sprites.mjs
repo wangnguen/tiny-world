@@ -715,7 +715,8 @@ async function check(pets = PETS) {
     assert.ok(colors.size <= 24, `${pet.folder}: inconsistent palette`);
     console.log(`${pet.folder}: source silhouettes, manifest, 48 frames, binary alpha, 24-color palette and y=${BASELINE} baseline OK`);
   }
-  const first = readdirSync(PACKS).filter((dir) => PETS.some((p) => p.folder === dir) || dir === "cat").sort()[0];
+  // The app defaults to the first pack folder (with a pet.json) by name.
+  const first = readdirSync(PACKS).filter((dir) => existsSync(join(PACKS, dir, "pet.json"))).sort()[0];
   assert.equal(first, PETS[0].folder);
   console.log(`Default pack: ${first}`);
 }
