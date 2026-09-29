@@ -17,7 +17,8 @@ con trỏ chuột trong lúc người dùng làm việc. Không phải game ph�
 | Click-through | Overlay mặc định để chuột đi xuyên. Rust đọc con trỏ khoảng 60 lần/giây gửi sang, overlay kiểm tra theo alpha của sprite, con trỏ nằm trên pet thì tắt click-through |
 | Asset | Nhân vật tự vẽ bằng imagegen: atlas gốc ở `assets/sprite-sources/`, `scripts/prepare-sprites.mjs` chuẩn hoá thành pack `assets/sprites/<pack>/` có `pet.json`. Không dùng asset của bên thứ ba. Chưa có pack thì dùng pet tạm vẽ bằng code |
 | Thứ tự | Phase 2 (desktop awareness) làm trước Phase 3 (bộ lạc) |
-| Riêng tư | Mọi dữ liệu xử lý trên máy, không đọc tiêu đề cửa sổ, tính năng nhạy cảm (bàn phím, thói quen) mặc định tắt |
+| Riêng tư | Mọi dữ liệu xử lý trên máy, không đọc tiêu đề cửa sổ, tính năng nhạy cảm (bàn phím, thói quen) mặc định tắt. Chỉ gọi mạng cho thời tiết thật (toạ độ thành phố người dùng tự nhập) và AI dialogue (Phase 7, tuỳ chọn) |
+| Thời tiết | Thời tiết thật từ Open-Meteo (Phase 4): miễn phí, không cần key hay tài khoản. Người dùng tự nhập thành phố, không đoán vị trí qua IP/GPS. Chưa nhập thành phố, mất mạng hoặc API lỗi thì dùng thời tiết giả lập |
 | AI | Không cho AI điều khiển di chuyển, chỉ dùng cho hội thoại (Phase 7, tuỳ chọn) |
 | Ngôn ngữ | UI, comment, README tiếng Việt như authenticator-app |
 | Build / phát hành | Mỗi lần push lên `main`, CI tự test rồi build `.exe` (bản cài + bản chạy thẳng), tải ở mục Artifacts của Actions; push nhiều lần thì chỉ build bản mới nhất, push chỉ sửa tài liệu (`.md`) thì không build. Phát hành chính thức vẫn dùng workflow Release chạy tay (nhập version) như authenticator-app |
@@ -48,7 +49,7 @@ Khác đi:
 | 1 | MVP | 1 pet: tự đi, quay đầu ở mép, click phản ứng, kéo thả + rơi, bỏ mặc thì ngủ | Xong, đã thử trên máy thật: hành vi, vật lý, kéo thả/ném, Ctrl xuyên pet, không cướp focus, tự ẩn khi fullscreen, lưu trạng thái, tray Tạm dừng, Settings (nhân vật, cỡ, tốc độ, chạy cùng Windows). Đo 10 phút: heap JS ~2 MB không tăng; còn chạy thử 8 tiếng |
 | 2 | Desktop awareness | Đứng/leo/nhảy trên cửa sổ thật, ngủ trên taskbar, con trỏ là thực thể, đa màn hình | Đang làm: 2a–2d xong, đã thử trên máy thật; 2e xong phần code và test, chờ thử trên máy có 2 màn hình và DPI khác 100% |
 | 3 | Bộ lạc | Nhiều pet, tính cách, quan hệ, nhật ký sự kiện, speech bubble, skin | |
-| 4 | Thế giới sống | Căn cứ + xây nhà, nhu cầu, thời tiết cục bộ, ngày/đêm, sự kiện hiếm | |
+| 4 | Thế giới sống | Căn cứ + xây nhà, nhu cầu, thời tiết thật quanh pet (theo thành phố tự nhập), ngày/đêm, sự kiện hiếm | |
 | 5 | Thói quen user | Thống kê app theo giờ, nhắc khuya, phản ứng gõ phím (chỉ trên máy, tự bật) | |
 | 6 | Tiến hoá & colony | Tiến hoá theo cách đối xử, trứng nở, Keep/Send away, file `.pet` | |
 | 7 | AI dialogue | Chuột phải → Talk, LLM chỉ cho thoại (tuỳ chọn) | |
@@ -81,7 +82,7 @@ Khác đi:
 - Nhẹ: dừng vẽ khi ngủ/ẩn/tạm dừng, tự ẩn khi có app fullscreen, click pet không cướp focus của app đang
   dùng (`focusable: false` → `WS_EX_NOACTIVATE`, kéo thả vẫn chạy)
 - 21 sprite pack tự tạo (Momo mặc định): đủ 9 animation, frame 192×192 (96×96 CSS pixel ở cỡ 100%),
-  alpha nhị phân và viền tối sẵn trong ảnh; pose leo/ngồi mép/nhảy làm sẵn cho Phase 2, chưa đưa vào `pet.json`
+  alpha nhị phân và viền tối sẵn trong ảnh; pose leo/ngồi mép/nhảy làm sẵn cho Phase 2 (đưa vào `pet.json` ở bước 2b)
 
 **Xong khi:** chạy 8 tiếng không rò RAM; unit test cho FSM và vật lý.
 
@@ -142,8 +143,26 @@ Chia 5 bước, xong bước nào thử trên máy thật bước đó:
 
 - Căn cứ góc màn hình: thùng carton → nhà nhỏ → cây, giường, bếp, máy arcade; tài nguyên (gỗ, xu, vải, đồ ăn) tăng theo thời gian chạy app, pet có nghề tự xây
 - Nhu cầu ngủ/ăn/chơi → pet tự đi tới đồ vật
-- Thời tiết chỉ quanh pet (mưa, tuyết, cánh hoa, sấm), ngày/đêm theo giờ thật, pet phản ứng
+- Thời tiết chỉ quanh pet (mưa, tuyết, sương mù, sấm, cánh hoa), ngày/đêm theo giờ thật, pet phản ứng
+- Thời tiết thật từ [Open-Meteo](https://open-meteo.com):
+  - Cài đặt có ô **Thành phố**: gõ tên rồi chọn trong danh sách, tìm bằng API geocoding
+    (`geocoding-api.open-meteo.com/v1/search`). Chỉ lưu tên và toạ độ trong `settings.json`. Ô trống là
+    thời tiết giả lập
+  - Rust hỏi thời tiết hiện tại (`api.open-meteo.com/v1/forecast`, `current=weather_code,is_day,temperature_2m,wind_speed_10m`)
+    lúc mở app, lúc đổi thành phố, rồi 30 phút một lần, gửi cho overlay qua event. Webview không gọi mạng.
+    Kết quả gần nhất được lưu lại, mở app lúc chưa có mạng vẫn có thời tiết
+  - Mã WMO thành hiệu ứng: 0–3 quang/nhiều mây, 45/48 sương mù, 51–67 và 80–82 mưa, 71–77 và 85–86
+    tuyết, 95–99 sấm. Cánh hoa không có trong dữ liệu: rơi vào mùa xuân những ngày quang. Ngày/đêm theo
+    `is_day` (giờ mặt trời mọc/lặn thật); chưa có thành phố thì theo giờ máy
+  - Mất mạng, API lỗi hay quá hạn mức thì dùng kết quả gần nhất nếu chưa quá vài giờ, không thì dùng thời
+    tiết giả lập (đổi ngẫu nhiên theo mùa). Lỗi thì chờ lâu dần mới hỏi lại, không hỏi liên tục
+  - Hạn mức miễn phí (dùng phi thương mại): dưới 10.000 lần/ngày, 5.000 lần/giờ,
+    600 lần/phút. App chỉ gọi khoảng 50 lần/ngày
+  - Dữ liệu theo giấy phép CC BY 4.0: ghi "Dữ liệu thời tiết: Open-Meteo.com" cạnh ô Thành phố
 - Sự kiện hiếm không báo trước: UFO, mèo khổng lồ, ma lúc 2 giờ sáng, mũ sinh nhật
+
+**Xong khi:** đổi thành phố thì thời tiết quanh pet đổi theo trong vài giây; rút mạng hay chưa nhập thành
+phố thì vẫn có thời tiết giả lập, không có lỗi nào hiện ra.
 
 ### Phase 5 — Thói quen user (chỉ trên máy, mặc định tắt)
 
@@ -171,7 +190,8 @@ Chia 5 bước, xong bước nào thử trên máy thật bước đó:
 | Toạ độ Win32 (pixel vật lý) lệch với CSS pixel khi DPI khác nhau | Một quy ước toạ độ (CSS pixel của overlay), Rust đổi toạ độ, có test |
 | Overlay trong suốt phủ màn hình tốn GPU khi vẽ liên tục | Giới hạn fps, chỉ vẽ lại canvas của pet khi đổi frame, dừng vòng lặp khi không có gì chuyển động |
 | Overlay đè lên video/game fullscreen | Tự ẩn khi app đang dùng chiếm trọn màn hình (Phase 1) |
-| Overlay luôn trên mà che kín màn hình bị Windows coi là app fullscreen: tắt thông báo (Focus Assist), pet tự ẩn/hiện mỗi giây | Overlay chỉ phủ vùng làm việc; taskbar tự ẩn (vùng làm việc trùng màn hình) thì thấp đi 1 pixel. Phase 2 cần vẽ lên taskbar thì vẫn giữ quy tắc này |
+| Overlay luôn trên mà che kín màn hình bị Windows coi là app fullscreen: tắt thông báo (Focus Assist), pet tự ẩn/hiện mỗi giây | Overlay chỉ phủ vùng làm việc; taskbar tự ẩn (vùng làm việc trùng màn hình) thì thấp đi 1 pixel. Phase 2 giữ quy tắc này: pet đứng trên mép taskbar, không vẽ lên taskbar |
 | Hook bàn phím dễ bị antivirus nghi ngờ | Tuỳ chọn riêng, mặc định tắt, có thể bỏ |
 | Mỗi lượt sinh lại sprite bằng AI có thể làm mất hoặc đổi màu tay chân mà `--check` không bắt được | Soát từng frame so với atlas gốc trước khi nhận sheet mới; lỗi nhỏ sửa bằng tuỳ chọn trong `PETS` của script thay vì sinh lại |
+| Open-Meteo lỗi, đổi API hoặc chặn vì quá hạn mức | Không có thời tiết thật thì dùng thời tiết giả lập; 30 phút mới hỏi một lần, lỗi thì chờ lâu dần |
 | App chưa ký số → SmartScreen cảnh báo | Như authenticator-app: hướng dẫn "More info → Run anyway" |
