@@ -1,4 +1,4 @@
-import type { Point } from "@tinyworld/core";
+import type { Point, Remap } from "@tinyworld/core";
 import type { Pet } from "@tinyworld/sim";
 import type { PetView } from "./petView";
 
@@ -27,6 +27,8 @@ export interface InteractionHooks {
   onHold(held: boolean): void;
   /** Pet vừa được click hoặc kéo, để chạy lại vòng lặp vẽ nếu đang dừng. */
   onActivity(): void;
+  /** Đang kéo pet mà con trỏ ra ngoài overlay (CSS pixel của overlay): có thể là sang màn hình khác. */
+  onDragOutside?(point: Point): void;
 }
 
 /** Click, kéo thả và ném pet bằng chuột trái. */
@@ -53,6 +55,18 @@ export class PetInteraction {
     this.finish(press.id);
     if (press.dragging) this.pet.release(0, 0);
   };
+
+  /**
+   * Overlay vừa đổi chỗ (kéo pet sang màn hình khác): đổi các điểm đã ghi sang toạ độ mới, để lúc buông
+   * vận tốc ném không bị tính từ toạ độ cũ. Khoảng từ con trỏ tới chân pet giữ nguyên: pet vẫn to bằng
+   * chừng ấy CSS pixel.
+   */
+  remap({ scale, x, y }: Remap): void {
+    const press = this.press;
+    if (!press) return;
+    press.start = { x: press.start.x * scale + x, y: press.start.y * scale + y };
+    press.samples = press.samples.map((s) => ({ x: s.x * scale + x, y: s.y * scale + y, t: s.t }));
+  }
 
   private readonly onDown = (event: PointerEvent) => {
     if (event.button !== 0 || this.press) return;
@@ -83,6 +97,7 @@ export class PetInteraction {
     }
     this.pet.dragTo(x + press.offset.x, y + press.offset.y);
     this.hooks.onActivity();
+    if (x < 0 || y < 0 || x >= window.innerWidth || y >= window.innerHeight) this.hooks.onDragOutside?.({ x, y });
   };
 
   private readonly onUp = (event: PointerEvent) => {

@@ -1,10 +1,24 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { EVENTS, type CursorInfo, type ScreenInfo, type Settings } from "@tinyworld/core";
+import {
+  EVENTS,
+  type CursorInfo,
+  type ScreenChange,
+  type ScreenInfo,
+  type Settings,
+  type WindowList,
+} from "@tinyworld/core";
 
 /** Wrapper cho các Tauri command trong src-tauri/src/commands.rs. */
 export const api = {
   screenInfo: () => invoke<ScreenInfo>("screen_info"),
+  /**
+   * Pet bị kéo hoặc đi ra khỏi overlay tới điểm này (CSS pixel của overlay): điểm đó nằm trên màn hình
+   * khác thì overlay sang đó, rồi báo qua `onScreenChanged`.
+   */
+  moveOverlay: (x: number, y: number) => invoke<void>("move_overlay", { x, y }),
+  /** Các cửa sổ đang hiện, lấy một lần lúc mở; sau đó theo `onWindowsChanged`. */
+  listWindows: () => invoke<WindowList>("list_windows"),
   /** `true`: chuột đi xuyên overlay xuống app bên dưới. */
   setClickThrough: (enabled: boolean) => invoke<void>("set_click_through", { enabled }),
   /** Trạng thái thế giới pet đã lưu, `null` nếu chưa có. */
@@ -21,6 +35,12 @@ export const api = {
   /** Vị trí con trỏ và phím Ctrl, Rust chỉ gửi khi có thay đổi. */
   onCursorMoved: (callback: (cursor: CursorInfo) => void) =>
     listen<CursorInfo>(EVENTS.cursorMoved, (event) => callback(event.payload)),
+  /** Overlay vừa sang màn hình khác, hoặc màn hình đổi độ phân giải, DPI, taskbar. */
+  onScreenChanged: (callback: (change: ScreenChange) => void) =>
+    listen<ScreenChange>(EVENTS.screenChanged, (event) => callback(event.payload)),
+  /** Cửa sổ mở, đóng, di chuyển, đổi thứ tự chồng; Rust gửi tối đa 30 lần/giây. */
+  onWindowsChanged: (callback: (windows: WindowList) => void) =>
+    listen<WindowList>(EVENTS.windowsChanged, (event) => callback(event.payload)),
   /**
    * Overlay ẩn/hiện (tray, app fullscreen). Cửa sổ ẩn mà WebView2 vẫn chạy requestAnimationFrame
    * như thường, nên frontend phải tự dừng vòng lặp.

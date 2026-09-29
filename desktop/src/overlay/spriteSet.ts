@@ -40,6 +40,9 @@ const SIMILAR: Partial<Record<AnimationName, AnimationName>> = {
   run: "walk",
   dragged: "fall",
   fall: "dragged",
+  // Bám tường trông gần giống bị nhấc lên (tay chân buông thõng), nhảy thì như nhảy lên khi bị click.
+  climb: "dragged",
+  jump: "react",
 };
 
 /** Ngủ và choáng mà pack không có thì đứng yên ở frame đầu của `idle` (choáng thì kèm sao bay quanh đầu). */

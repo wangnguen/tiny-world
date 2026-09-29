@@ -14,6 +14,12 @@ export const ANIMATION_NAMES = [
   "land",
   "react",
   "dizzy",
+  /** Leo cạnh cửa sổ: mặt quay vào tường, tay bám lên phía trước. */
+  "climb",
+  /** Ngồi ở mép cửa sổ. */
+  "perch",
+  /** Nhảy giữa cửa sổ: frame 0 lấy đà, 1 bay, 2–3 tiếp đất. */
+  "jump",
 ] as const;
 
 export type AnimationName = (typeof ANIMATION_NAMES)[number];

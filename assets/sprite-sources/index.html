@@ -18,7 +18,7 @@
     button[aria-pressed="true"] { background: #376653; border-color: #376653; color: #fff; }
     button:focus-visible,select:focus-visible,input:focus-visible { outline: 3px solid #73a68c; outline-offset: 3px; }
     label { display: inline-flex; align-items: center; gap: 8px; }
-    .spacer { flex: 1; }
+
     .cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin-top: 24px; }
     .card { border: 1px solid #e3ded7; border-radius: 16px; background: #fff; padding: 18px; overflow: hidden; }
     h2 { font-size: 19px; margin: 0; }
@@ -36,7 +36,7 @@
     .info { font-size: 12px; color: #817783; margin-top: 12px; }
     .note { padding: 14px 18px; border-radius: 10px; background: #eee9df; margin-top: 24px; font-size: 13px; }
     a { color: #376653; }
-    @media(max-width:760px) { .cards { grid-template-columns: 1fr; } body { padding: 24px 16px; } .spacer { display: none; } }
+    @media(max-width:760px) { .cards { grid-template-columns: 1fr; } body { padding: 24px 16px; } }
   </style>
 </head>
 <body>
@@ -48,13 +48,11 @@
     <label>Tốc độ <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
     <label>Nền <select id="background"><option value="soft">Kem</option><option value="white">Trắng</option><option value="dark">Tối</option><option value="checker">Ô caro để kiểm tra alpha</option></select></label>
     <label>Nhân vật <select id="character"><option value="all">Tất cả</option></select></label>
-    <span class="spacer"></span>
-    <label><input id="future" type="checkbox"> Xem Phase 2</label>
   </div>
   <nav class="animations" aria-label="Animation"></nav>
   <main class="cards"></main>
   <div class="note" id="note">Frame thật 192×192 · đi/chạy 4 pha, choáng 1 pose · alpha 0/255 · chân ở y=179. Khung lớn hiển thị cỡ 200%, đúng 1 pixel ảnh cho mỗi CSS pixel. Bấm một thumbnail để dừng và xem frame đó.</div>
-  <p class="info">Ảnh gốc và prompt: <a href="README.md">README</a>. Các pose Phase 2 chỉ là ảnh chuẩn bị sẵn; chưa được khai báo trong pet.json.</p>
+  <p class="info">Ảnh gốc và prompt: <a href="README.md">README</a>.</p>
   <script src="gallery-data.js"></script>
   <script>
     const pets = window.SPRITE_PETS;
@@ -77,10 +75,9 @@
       ctx.drawImage(image, frame * size, row * size, size, size, 0, 0, ctx.canvas.width, ctx.canvas.height);
     }
     function renderNav() {
-      const future = document.querySelector('#future').checked;
       const nav = document.querySelector('.animations');
       nav.replaceChildren();
-      for (const spec of pets[0].animations.filter(s => future || !s.phase2)) {
+      for (const spec of pets[0].animations) {
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = translations[spec.name] + ' · ' + spec.name;
@@ -100,7 +97,7 @@
         const frame = fixed === null ? (spec.loop ? Math.floor(phase * spec.fps) % count : Math.min(count - 1, Math.floor(phase * spec.fps))) : Math.min(fixed, count - 1);
         draw(card.hero.getContext('2d'), image, frame, spec.frameSize, spec.row);
         card.thumbs.forEach((canvas, n) => { if (n < count) draw(canvas.getContext('2d'), image, n, spec.frameSize, spec.row); });
-        card.info.textContent = `${animation} · ${spec.fps} fps · frame ${frame + 1}/${count}${spec.phase2 ? ' · Phase 2' : ''}`;
+        card.info.textContent = `${animation} · ${spec.fps} fps · frame ${frame + 1}/${count}`;
         card.buttons.forEach((button, n) => { button.hidden = n >= count; button.setAttribute('aria-pressed', String(n === frame)); });
       }
     }
@@ -138,10 +135,6 @@
     document.querySelector('#play').onclick = () => setRunning(!running);
     document.querySelector('#character').onchange = (event) => cards.forEach(card => { card.hero.closest('.card').hidden = event.target.value !== 'all' && card.pet.folder !== event.target.value; });
     document.querySelector('#background').onchange = (event) => cards.forEach(card => { card.hero.parentElement.className = 'stage ' + event.target.value; });
-    document.querySelector('#future').onchange = () => {
-      if (!document.querySelector('#future').checked && ['climb','perch','jump'].includes(animation)) animation = 'idle';
-      time = 0; fixed = null; renderNav(); refresh();
-    };
     renderNav();
     function tick(now) {
       if (last && running && !document.hidden) time += Math.min((now - last) / 1000, .1) * Number(document.querySelector('#speed').value);

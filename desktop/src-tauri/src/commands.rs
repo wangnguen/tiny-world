@@ -6,12 +6,27 @@ use crate::events;
 use crate::overlay::{self, Overlay, ScreenInfo};
 use crate::settings::{Settings, SettingsStore};
 use crate::storage::Storage;
+use crate::window_list::{WindowList, Windows};
 use serde_json::Value;
 use tauri::{AppHandle, Emitter, State, WebviewWindow};
 
 #[tauri::command]
 pub fn screen_info(overlay: State<'_, Overlay>) -> ScreenInfo {
     overlay.geometry().screen
+}
+
+/// Pet bị kéo hoặc đi ra khỏi overlay tới điểm (`x`, `y`) (CSS pixel của overlay): điểm đó nằm trên
+/// màn hình khác thì overlay sang màn hình đó, rồi báo qua event `screen-changed`. Là command async để
+/// chạy ngoài main thread: đổi chỗ cửa sổ phải chờ main thread.
+#[tauri::command]
+pub async fn move_overlay(app: AppHandle, x: f64, y: f64) -> AppResult<()> {
+    overlay::move_to(&app, x, y)
+}
+
+/// Các cửa sổ đang hiện (danh sách gửi lần gần nhất), để overlay vừa mở không phải chờ thay đổi.
+#[tauri::command]
+pub fn list_windows(windows: State<'_, Windows>) -> WindowList {
+    windows.current()
 }
 
 /// `enabled = true`: chuột đi xuyên overlay xuống app bên dưới. Chỉ overlay được gọi.

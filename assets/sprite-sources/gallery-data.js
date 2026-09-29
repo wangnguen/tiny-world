@@ -10,7 +10,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/a-momo/idle.png"
@@ -20,7 +19,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/a-momo/walk.png"
@@ -30,7 +28,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/a-momo/run.png"
@@ -40,7 +37,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/a-momo/sleep.png"
@@ -50,7 +46,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/a-momo/react.png"
@@ -60,7 +55,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/a-momo/fall.png"
@@ -70,7 +64,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/a-momo/dragged.png"
@@ -80,7 +73,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/a-momo/land.png"
@@ -90,7 +82,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/a-momo/dizzy.png"
@@ -100,30 +91,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/phase2/climb.png"
+        "image": "../sprites/a-momo/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/phase2/perch.png"
+        "image": "../sprites/a-momo/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/phase2/jump.png"
+        "image": "../sprites/a-momo/jump.png"
       }
     ]
   },
@@ -137,7 +125,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-bong/idle.png"
@@ -147,7 +134,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-bong/walk.png"
@@ -157,7 +143,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-bong/run.png"
@@ -167,7 +152,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-bong/sleep.png"
@@ -177,7 +161,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-bong/react.png"
@@ -187,7 +170,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-bong/fall.png"
@@ -197,7 +179,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-bong/dragged.png"
@@ -207,7 +188,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-bong/land.png"
@@ -217,7 +197,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-bong/dizzy.png"
@@ -227,30 +206,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/phase2/climb.png"
+        "image": "../sprites/b-bong/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/phase2/perch.png"
+        "image": "../sprites/b-bong/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/phase2/jump.png"
+        "image": "../sprites/b-bong/jump.png"
       }
     ]
   },
@@ -264,7 +240,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-kitsu/idle.png"
@@ -274,7 +249,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-kitsu/walk.png"
@@ -284,7 +258,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-kitsu/run.png"
@@ -294,7 +267,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-kitsu/sleep.png"
@@ -304,7 +276,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-kitsu/react.png"
@@ -314,7 +285,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-kitsu/fall.png"
@@ -324,7 +294,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-kitsu/dragged.png"
@@ -334,7 +303,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-kitsu/land.png"
@@ -344,7 +312,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/b-kitsu/dizzy.png"
@@ -354,30 +321,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/phase2/climb.png"
+        "image": "../sprites/b-kitsu/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/phase2/perch.png"
+        "image": "../sprites/b-kitsu/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/phase2/jump.png"
+        "image": "../sprites/b-kitsu/jump.png"
       }
     ]
   },
@@ -391,7 +355,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-mam/idle.png"
@@ -401,7 +364,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-mam/walk.png"
@@ -411,7 +373,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-mam/run.png"
@@ -421,7 +382,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-mam/sleep.png"
@@ -431,7 +391,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-mam/react.png"
@@ -441,7 +400,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-mam/fall.png"
@@ -451,7 +409,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-mam/dragged.png"
@@ -461,7 +418,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-mam/land.png"
@@ -471,7 +427,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-mam/dizzy.png"
@@ -481,30 +436,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/phase2/climb.png"
+        "image": "../sprites/c-mam/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/phase2/perch.png"
+        "image": "../sprites/c-mam/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/phase2/jump.png"
+        "image": "../sprites/c-mam/jump.png"
       }
     ]
   },
@@ -518,7 +470,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bip/idle.png"
@@ -528,7 +479,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bip/walk.png"
@@ -538,7 +488,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bip/run.png"
@@ -548,7 +497,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bip/sleep.png"
@@ -558,7 +506,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bip/react.png"
@@ -568,7 +515,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bip/fall.png"
@@ -578,7 +524,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bip/dragged.png"
@@ -588,7 +533,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bip/land.png"
@@ -598,7 +542,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bip/dizzy.png"
@@ -608,30 +551,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/phase2/climb.png"
+        "image": "../sprites/c-bip/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/phase2/perch.png"
+        "image": "../sprites/c-bip/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/phase2/jump.png"
+        "image": "../sprites/c-bip/jump.png"
       }
     ]
   },
@@ -645,7 +585,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-lumi/idle.png"
@@ -655,7 +594,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-lumi/walk.png"
@@ -665,7 +603,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-lumi/run.png"
@@ -675,7 +612,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-lumi/sleep.png"
@@ -685,7 +621,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-lumi/react.png"
@@ -695,7 +630,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-lumi/fall.png"
@@ -705,7 +639,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-lumi/dragged.png"
@@ -715,7 +648,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-lumi/land.png"
@@ -725,7 +657,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-lumi/dizzy.png"
@@ -735,30 +666,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/phase2/climb.png"
+        "image": "../sprites/c-lumi/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/phase2/perch.png"
+        "image": "../sprites/c-lumi/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/phase2/jump.png"
+        "image": "../sprites/c-lumi/jump.png"
       }
     ]
   },
@@ -772,7 +700,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-nam/idle.png"
@@ -782,7 +709,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-nam/walk.png"
@@ -792,7 +718,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-nam/run.png"
@@ -802,7 +727,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-nam/sleep.png"
@@ -812,7 +736,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-nam/react.png"
@@ -822,7 +745,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-nam/fall.png"
@@ -832,7 +754,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-nam/dragged.png"
@@ -842,7 +763,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-nam/land.png"
@@ -852,7 +772,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-nam/dizzy.png"
@@ -862,30 +781,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/phase2/climb.png"
+        "image": "../sprites/c-nam/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/phase2/perch.png"
+        "image": "../sprites/c-nam/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/phase2/jump.png"
+        "image": "../sprites/c-nam/jump.png"
       }
     ]
   },
@@ -899,7 +815,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-may/idle.png"
@@ -909,7 +824,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-may/walk.png"
@@ -919,7 +833,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-may/run.png"
@@ -929,7 +842,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-may/sleep.png"
@@ -939,7 +851,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-may/react.png"
@@ -949,7 +860,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-may/fall.png"
@@ -959,7 +869,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-may/dragged.png"
@@ -969,7 +878,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-may/land.png"
@@ -979,7 +887,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-may/dizzy.png"
@@ -989,30 +896,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/phase2/climb.png"
+        "image": "../sprites/c-may/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/phase2/perch.png"
+        "image": "../sprites/c-may/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/phase2/jump.png"
+        "image": "../sprites/c-may/jump.png"
       }
     ]
   },
@@ -1026,7 +930,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-tan/idle.png"
@@ -1036,7 +939,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-tan/walk.png"
@@ -1046,7 +948,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-tan/run.png"
@@ -1056,7 +957,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-tan/sleep.png"
@@ -1066,7 +966,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-tan/react.png"
@@ -1076,7 +975,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-tan/fall.png"
@@ -1086,7 +984,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-tan/dragged.png"
@@ -1096,7 +993,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-tan/land.png"
@@ -1106,7 +1002,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-tan/dizzy.png"
@@ -1116,30 +1011,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/phase2/climb.png"
+        "image": "../sprites/c-tan/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/phase2/perch.png"
+        "image": "../sprites/c-tan/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/phase2/jump.png"
+        "image": "../sprites/c-tan/jump.png"
       }
     ]
   },
@@ -1153,7 +1045,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-reu/idle.png"
@@ -1163,7 +1054,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-reu/walk.png"
@@ -1173,7 +1063,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-reu/run.png"
@@ -1183,7 +1072,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-reu/sleep.png"
@@ -1193,7 +1081,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-reu/react.png"
@@ -1203,7 +1090,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-reu/fall.png"
@@ -1213,7 +1099,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-reu/dragged.png"
@@ -1223,7 +1108,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-reu/land.png"
@@ -1233,7 +1117,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-reu/dizzy.png"
@@ -1243,30 +1126,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/phase2/climb.png"
+        "image": "../sprites/c-reu/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/phase2/perch.png"
+        "image": "../sprites/c-reu/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/phase2/jump.png"
+        "image": "../sprites/c-reu/jump.png"
       }
     ]
   },
@@ -1280,7 +1160,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-cuc/idle.png"
@@ -1290,7 +1169,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-cuc/walk.png"
@@ -1300,7 +1178,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-cuc/run.png"
@@ -1310,7 +1187,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-cuc/sleep.png"
@@ -1320,7 +1196,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-cuc/react.png"
@@ -1330,7 +1205,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-cuc/fall.png"
@@ -1340,7 +1214,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-cuc/dragged.png"
@@ -1350,7 +1223,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-cuc/land.png"
@@ -1360,7 +1232,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-cuc/dizzy.png"
@@ -1370,30 +1241,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/phase2/climb.png"
+        "image": "../sprites/c-cuc/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/phase2/perch.png"
+        "image": "../sprites/c-cuc/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/phase2/jump.png"
+        "image": "../sprites/c-cuc/jump.png"
       }
     ]
   },
@@ -1407,7 +1275,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-muc/idle.png"
@@ -1417,7 +1284,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-muc/walk.png"
@@ -1427,7 +1293,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-muc/run.png"
@@ -1437,7 +1302,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-muc/sleep.png"
@@ -1447,7 +1311,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-muc/react.png"
@@ -1457,7 +1320,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-muc/fall.png"
@@ -1467,7 +1329,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-muc/dragged.png"
@@ -1477,7 +1338,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-muc/land.png"
@@ -1487,7 +1347,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-muc/dizzy.png"
@@ -1497,30 +1356,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/phase2/climb.png"
+        "image": "../sprites/c-muc/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/phase2/perch.png"
+        "image": "../sprites/c-muc/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/phase2/jump.png"
+        "image": "../sprites/c-muc/jump.png"
       }
     ]
   },
@@ -1534,7 +1390,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-dua/idle.png"
@@ -1544,7 +1399,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-dua/walk.png"
@@ -1554,7 +1408,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-dua/run.png"
@@ -1564,7 +1417,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-dua/sleep.png"
@@ -1574,7 +1426,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-dua/react.png"
@@ -1584,7 +1435,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-dua/fall.png"
@@ -1594,7 +1444,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-dua/dragged.png"
@@ -1604,7 +1453,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-dua/land.png"
@@ -1614,7 +1462,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-dua/dizzy.png"
@@ -1624,30 +1471,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/phase2/climb.png"
+        "image": "../sprites/c-dua/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/phase2/perch.png"
+        "image": "../sprites/c-dua/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/phase2/jump.png"
+        "image": "../sprites/c-dua/jump.png"
       }
     ]
   },
@@ -1661,7 +1505,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-su/idle.png"
@@ -1671,7 +1514,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-su/walk.png"
@@ -1681,7 +1523,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-su/run.png"
@@ -1691,7 +1532,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-su/sleep.png"
@@ -1701,7 +1541,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-su/react.png"
@@ -1711,7 +1550,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-su/fall.png"
@@ -1721,7 +1559,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-su/dragged.png"
@@ -1731,7 +1568,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-su/land.png"
@@ -1741,7 +1577,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-su/dizzy.png"
@@ -1751,30 +1586,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/phase2/climb.png"
+        "image": "../sprites/c-su/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/phase2/perch.png"
+        "image": "../sprites/c-su/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/phase2/jump.png"
+        "image": "../sprites/c-su/jump.png"
       }
     ]
   },
@@ -1788,7 +1620,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bap/idle.png"
@@ -1798,7 +1629,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bap/walk.png"
@@ -1808,7 +1638,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bap/run.png"
@@ -1818,7 +1647,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bap/sleep.png"
@@ -1828,7 +1656,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bap/react.png"
@@ -1838,7 +1665,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bap/fall.png"
@@ -1848,7 +1674,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bap/dragged.png"
@@ -1858,7 +1683,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bap/land.png"
@@ -1868,7 +1692,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bap/dizzy.png"
@@ -1878,30 +1701,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/phase2/climb.png"
+        "image": "../sprites/c-bap/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/phase2/perch.png"
+        "image": "../sprites/c-bap/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/phase2/jump.png"
+        "image": "../sprites/c-bap/jump.png"
       }
     ]
   },
@@ -1915,7 +1735,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-boggo/idle.png"
@@ -1925,7 +1744,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-boggo/walk.png"
@@ -1935,7 +1753,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-boggo/run.png"
@@ -1945,7 +1762,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-boggo/sleep.png"
@@ -1955,7 +1771,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-boggo/react.png"
@@ -1965,7 +1780,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-boggo/fall.png"
@@ -1975,7 +1789,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-boggo/dragged.png"
@@ -1985,7 +1798,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-boggo/land.png"
@@ -1995,7 +1807,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-boggo/dizzy.png"
@@ -2005,30 +1816,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/phase2/climb.png"
+        "image": "../sprites/c-boggo/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/phase2/perch.png"
+        "image": "../sprites/c-boggo/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/phase2/jump.png"
+        "image": "../sprites/c-boggo/jump.png"
       }
     ]
   },
@@ -2042,7 +1850,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-gloop/idle.png"
@@ -2052,7 +1859,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-gloop/walk.png"
@@ -2062,7 +1868,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-gloop/run.png"
@@ -2072,7 +1877,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-gloop/sleep.png"
@@ -2082,7 +1886,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-gloop/react.png"
@@ -2092,7 +1895,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-gloop/fall.png"
@@ -2102,7 +1904,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-gloop/dragged.png"
@@ -2112,7 +1913,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-gloop/land.png"
@@ -2122,7 +1922,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-gloop/dizzy.png"
@@ -2132,30 +1931,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/phase2/climb.png"
+        "image": "../sprites/c-gloop/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/phase2/perch.png"
+        "image": "../sprites/c-gloop/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/phase2/jump.png"
+        "image": "../sprites/c-gloop/jump.png"
       }
     ]
   },
@@ -2169,7 +1965,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bep/idle.png"
@@ -2179,7 +1974,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bep/walk.png"
@@ -2189,7 +1983,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bep/run.png"
@@ -2199,7 +1992,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bep/sleep.png"
@@ -2209,7 +2001,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bep/react.png"
@@ -2219,7 +2010,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bep/fall.png"
@@ -2229,7 +2019,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bep/dragged.png"
@@ -2239,7 +2028,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bep/land.png"
@@ -2249,7 +2037,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-bep/dizzy.png"
@@ -2259,30 +2046,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/phase2/climb.png"
+        "image": "../sprites/c-bep/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/phase2/perch.png"
+        "image": "../sprites/c-bep/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/phase2/jump.png"
+        "image": "../sprites/c-bep/jump.png"
       }
     ]
   },
@@ -2296,7 +2080,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-frobu/idle.png"
@@ -2306,7 +2089,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-frobu/walk.png"
@@ -2316,7 +2098,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-frobu/run.png"
@@ -2326,7 +2107,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-frobu/sleep.png"
@@ -2336,7 +2116,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-frobu/react.png"
@@ -2346,7 +2125,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-frobu/fall.png"
@@ -2356,7 +2134,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-frobu/dragged.png"
@@ -2366,7 +2143,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-frobu/land.png"
@@ -2376,7 +2152,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-frobu/dizzy.png"
@@ -2386,30 +2161,27 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/phase2/climb.png"
+        "image": "../sprites/c-frobu/climb.png"
       },
       {
         "name": "perch",
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/phase2/perch.png"
+        "image": "../sprites/c-frobu/perch.png"
       },
       {
         "name": "jump",
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/phase2/jump.png"
+        "image": "../sprites/c-frobu/jump.png"
       }
     ]
   },
@@ -2423,7 +2195,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-byte/atlas.png"
@@ -2433,7 +2204,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 1,
         "image": "../sprites/c-byte/atlas.png"
@@ -2443,7 +2213,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 2,
         "image": "../sprites/c-byte/atlas.png"
@@ -2453,7 +2222,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 3,
         "image": "../sprites/c-byte/atlas.png"
@@ -2463,7 +2231,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 4,
         "image": "../sprites/c-byte/atlas.png"
@@ -2473,7 +2240,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 5,
         "image": "../sprites/c-byte/atlas.png"
@@ -2483,7 +2249,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 6,
         "image": "../sprites/c-byte/atlas.png"
@@ -2493,7 +2258,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 7,
         "image": "../sprites/c-byte/atlas.png"
@@ -2503,7 +2267,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 8,
         "image": "../sprites/c-byte/atlas.png"
@@ -2513,7 +2276,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 9,
         "image": "../sprites/c-byte/atlas.png"
@@ -2523,7 +2285,6 @@ window.SPRITE_PETS = [
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 10,
         "image": "../sprites/c-byte/atlas.png"
@@ -2533,7 +2294,6 @@ window.SPRITE_PETS = [
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 11,
         "image": "../sprites/c-byte/atlas.png"
@@ -2550,7 +2310,6 @@ window.SPRITE_PETS = [
         "fps": 5,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 0,
         "image": "../sprites/c-patch/atlas.png"
@@ -2560,7 +2319,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 1,
         "image": "../sprites/c-patch/atlas.png"
@@ -2570,7 +2328,6 @@ window.SPRITE_PETS = [
         "fps": 12,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 2,
         "image": "../sprites/c-patch/atlas.png"
@@ -2580,7 +2337,6 @@ window.SPRITE_PETS = [
         "fps": 3,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 3,
         "image": "../sprites/c-patch/atlas.png"
@@ -2590,7 +2346,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 4,
         "image": "../sprites/c-patch/atlas.png"
@@ -2600,7 +2355,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 5,
         "image": "../sprites/c-patch/atlas.png"
@@ -2610,7 +2364,6 @@ window.SPRITE_PETS = [
         "fps": 6,
         "frames": 4,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 6,
         "image": "../sprites/c-patch/atlas.png"
@@ -2620,7 +2373,6 @@ window.SPRITE_PETS = [
         "fps": 16,
         "frames": 4,
         "loop": false,
-        "phase2": false,
         "frameSize": 192,
         "row": 7,
         "image": "../sprites/c-patch/atlas.png"
@@ -2630,7 +2382,6 @@ window.SPRITE_PETS = [
         "fps": 1,
         "frames": 1,
         "loop": true,
-        "phase2": false,
         "frameSize": 192,
         "row": 8,
         "image": "../sprites/c-patch/atlas.png"
@@ -2640,7 +2391,6 @@ window.SPRITE_PETS = [
         "fps": 8,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 9,
         "image": "../sprites/c-patch/atlas.png"
@@ -2650,7 +2400,6 @@ window.SPRITE_PETS = [
         "fps": 4,
         "frames": 4,
         "loop": true,
-        "phase2": true,
         "frameSize": 192,
         "row": 10,
         "image": "../sprites/c-patch/atlas.png"
@@ -2660,7 +2409,6 @@ window.SPRITE_PETS = [
         "fps": 10,
         "frames": 4,
         "loop": false,
-        "phase2": true,
         "frameSize": 192,
         "row": 11,
         "image": "../sprites/c-patch/atlas.png"
