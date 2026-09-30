@@ -8,7 +8,7 @@ Lộ trình và các hướng đã chốt: [PLAN.md](PLAN.md).
 desktop-pet/
 ├── assets/
 │   ├── icon.png          # logo gốc của app
-│   ├── sprites/          # sprite pack chạy trong app: <pack>/pet.json + PNG
+│   ├── sprites/          # sprite pack chạy trong app: <pack>/pet.json + WebP
 │   └── sprite-sources/   # atlas, prompt gốc của các nhân vật và trang xem animation
 ├── packages/
 │   ├── core/             # types dùng chung Rust <-> TS, tên event, đọc/kiểm tra pet.json

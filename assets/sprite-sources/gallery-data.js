@@ -12,7 +12,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/idle.png"
+        "image": "../sprites/a-momo/idle.webp"
       },
       {
         "name": "walk",
@@ -21,7 +21,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/walk.png"
+        "image": "../sprites/a-momo/walk.webp"
       },
       {
         "name": "run",
@@ -30,7 +30,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/run.png"
+        "image": "../sprites/a-momo/run.webp"
       },
       {
         "name": "sleep",
@@ -39,7 +39,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/sleep.png"
+        "image": "../sprites/a-momo/sleep.webp"
       },
       {
         "name": "react",
@@ -48,7 +48,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/react.png"
+        "image": "../sprites/a-momo/react.webp"
       },
       {
         "name": "fall",
@@ -57,7 +57,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/fall.png"
+        "image": "../sprites/a-momo/fall.webp"
       },
       {
         "name": "dragged",
@@ -66,7 +66,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/dragged.png"
+        "image": "../sprites/a-momo/dragged.webp"
       },
       {
         "name": "land",
@@ -75,7 +75,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/land.png"
+        "image": "../sprites/a-momo/land.webp"
       },
       {
         "name": "dizzy",
@@ -84,7 +84,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/dizzy.png"
+        "image": "../sprites/a-momo/dizzy.webp"
       },
       {
         "name": "climb",
@@ -93,7 +93,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/climb.png"
+        "image": "../sprites/a-momo/climb.webp"
       },
       {
         "name": "perch",
@@ -102,7 +102,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/perch.png"
+        "image": "../sprites/a-momo/perch.webp"
       },
       {
         "name": "jump",
@@ -111,7 +111,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/a-momo/jump.png"
+        "image": "../sprites/a-momo/jump.webp"
       }
     ]
   },
@@ -127,7 +127,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/idle.png"
+        "image": "../sprites/b-bong/idle.webp"
       },
       {
         "name": "walk",
@@ -136,7 +136,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/walk.png"
+        "image": "../sprites/b-bong/walk.webp"
       },
       {
         "name": "run",
@@ -145,7 +145,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/run.png"
+        "image": "../sprites/b-bong/run.webp"
       },
       {
         "name": "sleep",
@@ -154,7 +154,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/sleep.png"
+        "image": "../sprites/b-bong/sleep.webp"
       },
       {
         "name": "react",
@@ -163,7 +163,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/react.png"
+        "image": "../sprites/b-bong/react.webp"
       },
       {
         "name": "fall",
@@ -172,7 +172,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/fall.png"
+        "image": "../sprites/b-bong/fall.webp"
       },
       {
         "name": "dragged",
@@ -181,7 +181,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/dragged.png"
+        "image": "../sprites/b-bong/dragged.webp"
       },
       {
         "name": "land",
@@ -190,7 +190,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/land.png"
+        "image": "../sprites/b-bong/land.webp"
       },
       {
         "name": "dizzy",
@@ -199,7 +199,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/dizzy.png"
+        "image": "../sprites/b-bong/dizzy.webp"
       },
       {
         "name": "climb",
@@ -208,7 +208,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/climb.png"
+        "image": "../sprites/b-bong/climb.webp"
       },
       {
         "name": "perch",
@@ -217,7 +217,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/perch.png"
+        "image": "../sprites/b-bong/perch.webp"
       },
       {
         "name": "jump",
@@ -226,7 +226,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-bong/jump.png"
+        "image": "../sprites/b-bong/jump.webp"
       }
     ]
   },
@@ -242,7 +242,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/idle.png"
+        "image": "../sprites/b-kitsu/idle.webp"
       },
       {
         "name": "walk",
@@ -251,7 +251,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/walk.png"
+        "image": "../sprites/b-kitsu/walk.webp"
       },
       {
         "name": "run",
@@ -260,7 +260,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/run.png"
+        "image": "../sprites/b-kitsu/run.webp"
       },
       {
         "name": "sleep",
@@ -269,7 +269,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/sleep.png"
+        "image": "../sprites/b-kitsu/sleep.webp"
       },
       {
         "name": "react",
@@ -278,7 +278,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/react.png"
+        "image": "../sprites/b-kitsu/react.webp"
       },
       {
         "name": "fall",
@@ -287,7 +287,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/fall.png"
+        "image": "../sprites/b-kitsu/fall.webp"
       },
       {
         "name": "dragged",
@@ -296,7 +296,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/dragged.png"
+        "image": "../sprites/b-kitsu/dragged.webp"
       },
       {
         "name": "land",
@@ -305,7 +305,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/land.png"
+        "image": "../sprites/b-kitsu/land.webp"
       },
       {
         "name": "dizzy",
@@ -314,7 +314,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/dizzy.png"
+        "image": "../sprites/b-kitsu/dizzy.webp"
       },
       {
         "name": "climb",
@@ -323,7 +323,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/climb.png"
+        "image": "../sprites/b-kitsu/climb.webp"
       },
       {
         "name": "perch",
@@ -332,7 +332,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/perch.png"
+        "image": "../sprites/b-kitsu/perch.webp"
       },
       {
         "name": "jump",
@@ -341,7 +341,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/b-kitsu/jump.png"
+        "image": "../sprites/b-kitsu/jump.webp"
       }
     ]
   },
@@ -357,7 +357,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/idle.png"
+        "image": "../sprites/c-mam/idle.webp"
       },
       {
         "name": "walk",
@@ -366,7 +366,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/walk.png"
+        "image": "../sprites/c-mam/walk.webp"
       },
       {
         "name": "run",
@@ -375,7 +375,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/run.png"
+        "image": "../sprites/c-mam/run.webp"
       },
       {
         "name": "sleep",
@@ -384,7 +384,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/sleep.png"
+        "image": "../sprites/c-mam/sleep.webp"
       },
       {
         "name": "react",
@@ -393,7 +393,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/react.png"
+        "image": "../sprites/c-mam/react.webp"
       },
       {
         "name": "fall",
@@ -402,7 +402,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/fall.png"
+        "image": "../sprites/c-mam/fall.webp"
       },
       {
         "name": "dragged",
@@ -411,7 +411,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/dragged.png"
+        "image": "../sprites/c-mam/dragged.webp"
       },
       {
         "name": "land",
@@ -420,7 +420,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/land.png"
+        "image": "../sprites/c-mam/land.webp"
       },
       {
         "name": "dizzy",
@@ -429,7 +429,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/dizzy.png"
+        "image": "../sprites/c-mam/dizzy.webp"
       },
       {
         "name": "climb",
@@ -438,7 +438,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/climb.png"
+        "image": "../sprites/c-mam/climb.webp"
       },
       {
         "name": "perch",
@@ -447,7 +447,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/perch.png"
+        "image": "../sprites/c-mam/perch.webp"
       },
       {
         "name": "jump",
@@ -456,7 +456,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-mam/jump.png"
+        "image": "../sprites/c-mam/jump.webp"
       }
     ]
   },
@@ -472,7 +472,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/idle.png"
+        "image": "../sprites/c-bip/idle.webp"
       },
       {
         "name": "walk",
@@ -481,7 +481,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/walk.png"
+        "image": "../sprites/c-bip/walk.webp"
       },
       {
         "name": "run",
@@ -490,7 +490,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/run.png"
+        "image": "../sprites/c-bip/run.webp"
       },
       {
         "name": "sleep",
@@ -499,7 +499,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/sleep.png"
+        "image": "../sprites/c-bip/sleep.webp"
       },
       {
         "name": "react",
@@ -508,7 +508,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/react.png"
+        "image": "../sprites/c-bip/react.webp"
       },
       {
         "name": "fall",
@@ -517,7 +517,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/fall.png"
+        "image": "../sprites/c-bip/fall.webp"
       },
       {
         "name": "dragged",
@@ -526,7 +526,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/dragged.png"
+        "image": "../sprites/c-bip/dragged.webp"
       },
       {
         "name": "land",
@@ -535,7 +535,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/land.png"
+        "image": "../sprites/c-bip/land.webp"
       },
       {
         "name": "dizzy",
@@ -544,7 +544,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/dizzy.png"
+        "image": "../sprites/c-bip/dizzy.webp"
       },
       {
         "name": "climb",
@@ -553,7 +553,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/climb.png"
+        "image": "../sprites/c-bip/climb.webp"
       },
       {
         "name": "perch",
@@ -562,7 +562,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/perch.png"
+        "image": "../sprites/c-bip/perch.webp"
       },
       {
         "name": "jump",
@@ -571,7 +571,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bip/jump.png"
+        "image": "../sprites/c-bip/jump.webp"
       }
     ]
   },
@@ -587,7 +587,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/idle.png"
+        "image": "../sprites/c-lumi/idle.webp"
       },
       {
         "name": "walk",
@@ -596,7 +596,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/walk.png"
+        "image": "../sprites/c-lumi/walk.webp"
       },
       {
         "name": "run",
@@ -605,7 +605,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/run.png"
+        "image": "../sprites/c-lumi/run.webp"
       },
       {
         "name": "sleep",
@@ -614,7 +614,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/sleep.png"
+        "image": "../sprites/c-lumi/sleep.webp"
       },
       {
         "name": "react",
@@ -623,7 +623,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/react.png"
+        "image": "../sprites/c-lumi/react.webp"
       },
       {
         "name": "fall",
@@ -632,7 +632,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/fall.png"
+        "image": "../sprites/c-lumi/fall.webp"
       },
       {
         "name": "dragged",
@@ -641,7 +641,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/dragged.png"
+        "image": "../sprites/c-lumi/dragged.webp"
       },
       {
         "name": "land",
@@ -650,7 +650,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/land.png"
+        "image": "../sprites/c-lumi/land.webp"
       },
       {
         "name": "dizzy",
@@ -659,7 +659,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/dizzy.png"
+        "image": "../sprites/c-lumi/dizzy.webp"
       },
       {
         "name": "climb",
@@ -668,7 +668,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/climb.png"
+        "image": "../sprites/c-lumi/climb.webp"
       },
       {
         "name": "perch",
@@ -677,7 +677,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/perch.png"
+        "image": "../sprites/c-lumi/perch.webp"
       },
       {
         "name": "jump",
@@ -686,7 +686,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-lumi/jump.png"
+        "image": "../sprites/c-lumi/jump.webp"
       }
     ]
   },
@@ -702,7 +702,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/idle.png"
+        "image": "../sprites/c-nam/idle.webp"
       },
       {
         "name": "walk",
@@ -711,7 +711,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/walk.png"
+        "image": "../sprites/c-nam/walk.webp"
       },
       {
         "name": "run",
@@ -720,7 +720,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/run.png"
+        "image": "../sprites/c-nam/run.webp"
       },
       {
         "name": "sleep",
@@ -729,7 +729,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/sleep.png"
+        "image": "../sprites/c-nam/sleep.webp"
       },
       {
         "name": "react",
@@ -738,7 +738,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/react.png"
+        "image": "../sprites/c-nam/react.webp"
       },
       {
         "name": "fall",
@@ -747,7 +747,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/fall.png"
+        "image": "../sprites/c-nam/fall.webp"
       },
       {
         "name": "dragged",
@@ -756,7 +756,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/dragged.png"
+        "image": "../sprites/c-nam/dragged.webp"
       },
       {
         "name": "land",
@@ -765,7 +765,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/land.png"
+        "image": "../sprites/c-nam/land.webp"
       },
       {
         "name": "dizzy",
@@ -774,7 +774,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/dizzy.png"
+        "image": "../sprites/c-nam/dizzy.webp"
       },
       {
         "name": "climb",
@@ -783,7 +783,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/climb.png"
+        "image": "../sprites/c-nam/climb.webp"
       },
       {
         "name": "perch",
@@ -792,7 +792,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/perch.png"
+        "image": "../sprites/c-nam/perch.webp"
       },
       {
         "name": "jump",
@@ -801,7 +801,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-nam/jump.png"
+        "image": "../sprites/c-nam/jump.webp"
       }
     ]
   },
@@ -817,7 +817,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/idle.png"
+        "image": "../sprites/c-may/idle.webp"
       },
       {
         "name": "walk",
@@ -826,7 +826,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/walk.png"
+        "image": "../sprites/c-may/walk.webp"
       },
       {
         "name": "run",
@@ -835,7 +835,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/run.png"
+        "image": "../sprites/c-may/run.webp"
       },
       {
         "name": "sleep",
@@ -844,7 +844,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/sleep.png"
+        "image": "../sprites/c-may/sleep.webp"
       },
       {
         "name": "react",
@@ -853,7 +853,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/react.png"
+        "image": "../sprites/c-may/react.webp"
       },
       {
         "name": "fall",
@@ -862,7 +862,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/fall.png"
+        "image": "../sprites/c-may/fall.webp"
       },
       {
         "name": "dragged",
@@ -871,7 +871,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/dragged.png"
+        "image": "../sprites/c-may/dragged.webp"
       },
       {
         "name": "land",
@@ -880,7 +880,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/land.png"
+        "image": "../sprites/c-may/land.webp"
       },
       {
         "name": "dizzy",
@@ -889,7 +889,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/dizzy.png"
+        "image": "../sprites/c-may/dizzy.webp"
       },
       {
         "name": "climb",
@@ -898,7 +898,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/climb.png"
+        "image": "../sprites/c-may/climb.webp"
       },
       {
         "name": "perch",
@@ -907,7 +907,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/perch.png"
+        "image": "../sprites/c-may/perch.webp"
       },
       {
         "name": "jump",
@@ -916,7 +916,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-may/jump.png"
+        "image": "../sprites/c-may/jump.webp"
       }
     ]
   },
@@ -932,7 +932,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/idle.png"
+        "image": "../sprites/c-tan/idle.webp"
       },
       {
         "name": "walk",
@@ -941,7 +941,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/walk.png"
+        "image": "../sprites/c-tan/walk.webp"
       },
       {
         "name": "run",
@@ -950,7 +950,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/run.png"
+        "image": "../sprites/c-tan/run.webp"
       },
       {
         "name": "sleep",
@@ -959,7 +959,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/sleep.png"
+        "image": "../sprites/c-tan/sleep.webp"
       },
       {
         "name": "react",
@@ -968,7 +968,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/react.png"
+        "image": "../sprites/c-tan/react.webp"
       },
       {
         "name": "fall",
@@ -977,7 +977,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/fall.png"
+        "image": "../sprites/c-tan/fall.webp"
       },
       {
         "name": "dragged",
@@ -986,7 +986,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/dragged.png"
+        "image": "../sprites/c-tan/dragged.webp"
       },
       {
         "name": "land",
@@ -995,7 +995,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/land.png"
+        "image": "../sprites/c-tan/land.webp"
       },
       {
         "name": "dizzy",
@@ -1004,7 +1004,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/dizzy.png"
+        "image": "../sprites/c-tan/dizzy.webp"
       },
       {
         "name": "climb",
@@ -1013,7 +1013,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/climb.png"
+        "image": "../sprites/c-tan/climb.webp"
       },
       {
         "name": "perch",
@@ -1022,7 +1022,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/perch.png"
+        "image": "../sprites/c-tan/perch.webp"
       },
       {
         "name": "jump",
@@ -1031,7 +1031,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-tan/jump.png"
+        "image": "../sprites/c-tan/jump.webp"
       }
     ]
   },
@@ -1047,7 +1047,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/idle.png"
+        "image": "../sprites/c-reu/idle.webp"
       },
       {
         "name": "walk",
@@ -1056,7 +1056,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/walk.png"
+        "image": "../sprites/c-reu/walk.webp"
       },
       {
         "name": "run",
@@ -1065,7 +1065,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/run.png"
+        "image": "../sprites/c-reu/run.webp"
       },
       {
         "name": "sleep",
@@ -1074,7 +1074,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/sleep.png"
+        "image": "../sprites/c-reu/sleep.webp"
       },
       {
         "name": "react",
@@ -1083,7 +1083,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/react.png"
+        "image": "../sprites/c-reu/react.webp"
       },
       {
         "name": "fall",
@@ -1092,7 +1092,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/fall.png"
+        "image": "../sprites/c-reu/fall.webp"
       },
       {
         "name": "dragged",
@@ -1101,7 +1101,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/dragged.png"
+        "image": "../sprites/c-reu/dragged.webp"
       },
       {
         "name": "land",
@@ -1110,7 +1110,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/land.png"
+        "image": "../sprites/c-reu/land.webp"
       },
       {
         "name": "dizzy",
@@ -1119,7 +1119,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/dizzy.png"
+        "image": "../sprites/c-reu/dizzy.webp"
       },
       {
         "name": "climb",
@@ -1128,7 +1128,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/climb.png"
+        "image": "../sprites/c-reu/climb.webp"
       },
       {
         "name": "perch",
@@ -1137,7 +1137,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/perch.png"
+        "image": "../sprites/c-reu/perch.webp"
       },
       {
         "name": "jump",
@@ -1146,7 +1146,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-reu/jump.png"
+        "image": "../sprites/c-reu/jump.webp"
       }
     ]
   },
@@ -1162,7 +1162,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/idle.png"
+        "image": "../sprites/c-cuc/idle.webp"
       },
       {
         "name": "walk",
@@ -1171,7 +1171,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/walk.png"
+        "image": "../sprites/c-cuc/walk.webp"
       },
       {
         "name": "run",
@@ -1180,7 +1180,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/run.png"
+        "image": "../sprites/c-cuc/run.webp"
       },
       {
         "name": "sleep",
@@ -1189,7 +1189,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/sleep.png"
+        "image": "../sprites/c-cuc/sleep.webp"
       },
       {
         "name": "react",
@@ -1198,7 +1198,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/react.png"
+        "image": "../sprites/c-cuc/react.webp"
       },
       {
         "name": "fall",
@@ -1207,7 +1207,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/fall.png"
+        "image": "../sprites/c-cuc/fall.webp"
       },
       {
         "name": "dragged",
@@ -1216,7 +1216,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/dragged.png"
+        "image": "../sprites/c-cuc/dragged.webp"
       },
       {
         "name": "land",
@@ -1225,7 +1225,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/land.png"
+        "image": "../sprites/c-cuc/land.webp"
       },
       {
         "name": "dizzy",
@@ -1234,7 +1234,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/dizzy.png"
+        "image": "../sprites/c-cuc/dizzy.webp"
       },
       {
         "name": "climb",
@@ -1243,7 +1243,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/climb.png"
+        "image": "../sprites/c-cuc/climb.webp"
       },
       {
         "name": "perch",
@@ -1252,7 +1252,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/perch.png"
+        "image": "../sprites/c-cuc/perch.webp"
       },
       {
         "name": "jump",
@@ -1261,7 +1261,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-cuc/jump.png"
+        "image": "../sprites/c-cuc/jump.webp"
       }
     ]
   },
@@ -1277,7 +1277,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/idle.png"
+        "image": "../sprites/c-muc/idle.webp"
       },
       {
         "name": "walk",
@@ -1286,7 +1286,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/walk.png"
+        "image": "../sprites/c-muc/walk.webp"
       },
       {
         "name": "run",
@@ -1295,7 +1295,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/run.png"
+        "image": "../sprites/c-muc/run.webp"
       },
       {
         "name": "sleep",
@@ -1304,7 +1304,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/sleep.png"
+        "image": "../sprites/c-muc/sleep.webp"
       },
       {
         "name": "react",
@@ -1313,7 +1313,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/react.png"
+        "image": "../sprites/c-muc/react.webp"
       },
       {
         "name": "fall",
@@ -1322,7 +1322,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/fall.png"
+        "image": "../sprites/c-muc/fall.webp"
       },
       {
         "name": "dragged",
@@ -1331,7 +1331,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/dragged.png"
+        "image": "../sprites/c-muc/dragged.webp"
       },
       {
         "name": "land",
@@ -1340,7 +1340,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/land.png"
+        "image": "../sprites/c-muc/land.webp"
       },
       {
         "name": "dizzy",
@@ -1349,7 +1349,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/dizzy.png"
+        "image": "../sprites/c-muc/dizzy.webp"
       },
       {
         "name": "climb",
@@ -1358,7 +1358,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/climb.png"
+        "image": "../sprites/c-muc/climb.webp"
       },
       {
         "name": "perch",
@@ -1367,7 +1367,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/perch.png"
+        "image": "../sprites/c-muc/perch.webp"
       },
       {
         "name": "jump",
@@ -1376,7 +1376,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-muc/jump.png"
+        "image": "../sprites/c-muc/jump.webp"
       }
     ]
   },
@@ -1392,7 +1392,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/idle.png"
+        "image": "../sprites/c-dua/idle.webp"
       },
       {
         "name": "walk",
@@ -1401,7 +1401,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/walk.png"
+        "image": "../sprites/c-dua/walk.webp"
       },
       {
         "name": "run",
@@ -1410,7 +1410,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/run.png"
+        "image": "../sprites/c-dua/run.webp"
       },
       {
         "name": "sleep",
@@ -1419,7 +1419,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/sleep.png"
+        "image": "../sprites/c-dua/sleep.webp"
       },
       {
         "name": "react",
@@ -1428,7 +1428,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/react.png"
+        "image": "../sprites/c-dua/react.webp"
       },
       {
         "name": "fall",
@@ -1437,7 +1437,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/fall.png"
+        "image": "../sprites/c-dua/fall.webp"
       },
       {
         "name": "dragged",
@@ -1446,7 +1446,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/dragged.png"
+        "image": "../sprites/c-dua/dragged.webp"
       },
       {
         "name": "land",
@@ -1455,7 +1455,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/land.png"
+        "image": "../sprites/c-dua/land.webp"
       },
       {
         "name": "dizzy",
@@ -1464,7 +1464,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/dizzy.png"
+        "image": "../sprites/c-dua/dizzy.webp"
       },
       {
         "name": "climb",
@@ -1473,7 +1473,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/climb.png"
+        "image": "../sprites/c-dua/climb.webp"
       },
       {
         "name": "perch",
@@ -1482,7 +1482,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/perch.png"
+        "image": "../sprites/c-dua/perch.webp"
       },
       {
         "name": "jump",
@@ -1491,7 +1491,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-dua/jump.png"
+        "image": "../sprites/c-dua/jump.webp"
       }
     ]
   },
@@ -1507,7 +1507,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/idle.png"
+        "image": "../sprites/c-su/idle.webp"
       },
       {
         "name": "walk",
@@ -1516,7 +1516,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/walk.png"
+        "image": "../sprites/c-su/walk.webp"
       },
       {
         "name": "run",
@@ -1525,7 +1525,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/run.png"
+        "image": "../sprites/c-su/run.webp"
       },
       {
         "name": "sleep",
@@ -1534,7 +1534,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/sleep.png"
+        "image": "../sprites/c-su/sleep.webp"
       },
       {
         "name": "react",
@@ -1543,7 +1543,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/react.png"
+        "image": "../sprites/c-su/react.webp"
       },
       {
         "name": "fall",
@@ -1552,7 +1552,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/fall.png"
+        "image": "../sprites/c-su/fall.webp"
       },
       {
         "name": "dragged",
@@ -1561,7 +1561,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/dragged.png"
+        "image": "../sprites/c-su/dragged.webp"
       },
       {
         "name": "land",
@@ -1570,7 +1570,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/land.png"
+        "image": "../sprites/c-su/land.webp"
       },
       {
         "name": "dizzy",
@@ -1579,7 +1579,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/dizzy.png"
+        "image": "../sprites/c-su/dizzy.webp"
       },
       {
         "name": "climb",
@@ -1588,7 +1588,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/climb.png"
+        "image": "../sprites/c-su/climb.webp"
       },
       {
         "name": "perch",
@@ -1597,7 +1597,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/perch.png"
+        "image": "../sprites/c-su/perch.webp"
       },
       {
         "name": "jump",
@@ -1606,7 +1606,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-su/jump.png"
+        "image": "../sprites/c-su/jump.webp"
       }
     ]
   },
@@ -1622,7 +1622,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/idle.png"
+        "image": "../sprites/c-bap/idle.webp"
       },
       {
         "name": "walk",
@@ -1631,7 +1631,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/walk.png"
+        "image": "../sprites/c-bap/walk.webp"
       },
       {
         "name": "run",
@@ -1640,7 +1640,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/run.png"
+        "image": "../sprites/c-bap/run.webp"
       },
       {
         "name": "sleep",
@@ -1649,7 +1649,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/sleep.png"
+        "image": "../sprites/c-bap/sleep.webp"
       },
       {
         "name": "react",
@@ -1658,7 +1658,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/react.png"
+        "image": "../sprites/c-bap/react.webp"
       },
       {
         "name": "fall",
@@ -1667,7 +1667,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/fall.png"
+        "image": "../sprites/c-bap/fall.webp"
       },
       {
         "name": "dragged",
@@ -1676,7 +1676,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/dragged.png"
+        "image": "../sprites/c-bap/dragged.webp"
       },
       {
         "name": "land",
@@ -1685,7 +1685,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/land.png"
+        "image": "../sprites/c-bap/land.webp"
       },
       {
         "name": "dizzy",
@@ -1694,7 +1694,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/dizzy.png"
+        "image": "../sprites/c-bap/dizzy.webp"
       },
       {
         "name": "climb",
@@ -1703,7 +1703,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/climb.png"
+        "image": "../sprites/c-bap/climb.webp"
       },
       {
         "name": "perch",
@@ -1712,7 +1712,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/perch.png"
+        "image": "../sprites/c-bap/perch.webp"
       },
       {
         "name": "jump",
@@ -1721,7 +1721,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bap/jump.png"
+        "image": "../sprites/c-bap/jump.webp"
       }
     ]
   },
@@ -1737,7 +1737,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/idle.png"
+        "image": "../sprites/c-boggo/idle.webp"
       },
       {
         "name": "walk",
@@ -1746,7 +1746,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/walk.png"
+        "image": "../sprites/c-boggo/walk.webp"
       },
       {
         "name": "run",
@@ -1755,7 +1755,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/run.png"
+        "image": "../sprites/c-boggo/run.webp"
       },
       {
         "name": "sleep",
@@ -1764,7 +1764,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/sleep.png"
+        "image": "../sprites/c-boggo/sleep.webp"
       },
       {
         "name": "react",
@@ -1773,7 +1773,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/react.png"
+        "image": "../sprites/c-boggo/react.webp"
       },
       {
         "name": "fall",
@@ -1782,7 +1782,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/fall.png"
+        "image": "../sprites/c-boggo/fall.webp"
       },
       {
         "name": "dragged",
@@ -1791,7 +1791,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/dragged.png"
+        "image": "../sprites/c-boggo/dragged.webp"
       },
       {
         "name": "land",
@@ -1800,7 +1800,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/land.png"
+        "image": "../sprites/c-boggo/land.webp"
       },
       {
         "name": "dizzy",
@@ -1809,7 +1809,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/dizzy.png"
+        "image": "../sprites/c-boggo/dizzy.webp"
       },
       {
         "name": "climb",
@@ -1818,7 +1818,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/climb.png"
+        "image": "../sprites/c-boggo/climb.webp"
       },
       {
         "name": "perch",
@@ -1827,7 +1827,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/perch.png"
+        "image": "../sprites/c-boggo/perch.webp"
       },
       {
         "name": "jump",
@@ -1836,7 +1836,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-boggo/jump.png"
+        "image": "../sprites/c-boggo/jump.webp"
       }
     ]
   },
@@ -1852,7 +1852,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/idle.png"
+        "image": "../sprites/c-gloop/idle.webp"
       },
       {
         "name": "walk",
@@ -1861,7 +1861,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/walk.png"
+        "image": "../sprites/c-gloop/walk.webp"
       },
       {
         "name": "run",
@@ -1870,7 +1870,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/run.png"
+        "image": "../sprites/c-gloop/run.webp"
       },
       {
         "name": "sleep",
@@ -1879,7 +1879,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/sleep.png"
+        "image": "../sprites/c-gloop/sleep.webp"
       },
       {
         "name": "react",
@@ -1888,7 +1888,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/react.png"
+        "image": "../sprites/c-gloop/react.webp"
       },
       {
         "name": "fall",
@@ -1897,7 +1897,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/fall.png"
+        "image": "../sprites/c-gloop/fall.webp"
       },
       {
         "name": "dragged",
@@ -1906,7 +1906,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/dragged.png"
+        "image": "../sprites/c-gloop/dragged.webp"
       },
       {
         "name": "land",
@@ -1915,7 +1915,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/land.png"
+        "image": "../sprites/c-gloop/land.webp"
       },
       {
         "name": "dizzy",
@@ -1924,7 +1924,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/dizzy.png"
+        "image": "../sprites/c-gloop/dizzy.webp"
       },
       {
         "name": "climb",
@@ -1933,7 +1933,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/climb.png"
+        "image": "../sprites/c-gloop/climb.webp"
       },
       {
         "name": "perch",
@@ -1942,7 +1942,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/perch.png"
+        "image": "../sprites/c-gloop/perch.webp"
       },
       {
         "name": "jump",
@@ -1951,7 +1951,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-gloop/jump.png"
+        "image": "../sprites/c-gloop/jump.webp"
       }
     ]
   },
@@ -1967,7 +1967,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/idle.png"
+        "image": "../sprites/c-bep/idle.webp"
       },
       {
         "name": "walk",
@@ -1976,7 +1976,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/walk.png"
+        "image": "../sprites/c-bep/walk.webp"
       },
       {
         "name": "run",
@@ -1985,7 +1985,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/run.png"
+        "image": "../sprites/c-bep/run.webp"
       },
       {
         "name": "sleep",
@@ -1994,7 +1994,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/sleep.png"
+        "image": "../sprites/c-bep/sleep.webp"
       },
       {
         "name": "react",
@@ -2003,7 +2003,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/react.png"
+        "image": "../sprites/c-bep/react.webp"
       },
       {
         "name": "fall",
@@ -2012,7 +2012,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/fall.png"
+        "image": "../sprites/c-bep/fall.webp"
       },
       {
         "name": "dragged",
@@ -2021,7 +2021,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/dragged.png"
+        "image": "../sprites/c-bep/dragged.webp"
       },
       {
         "name": "land",
@@ -2030,7 +2030,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/land.png"
+        "image": "../sprites/c-bep/land.webp"
       },
       {
         "name": "dizzy",
@@ -2039,7 +2039,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/dizzy.png"
+        "image": "../sprites/c-bep/dizzy.webp"
       },
       {
         "name": "climb",
@@ -2048,7 +2048,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/climb.png"
+        "image": "../sprites/c-bep/climb.webp"
       },
       {
         "name": "perch",
@@ -2057,7 +2057,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/perch.png"
+        "image": "../sprites/c-bep/perch.webp"
       },
       {
         "name": "jump",
@@ -2066,7 +2066,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-bep/jump.png"
+        "image": "../sprites/c-bep/jump.webp"
       }
     ]
   },
@@ -2082,7 +2082,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/idle.png"
+        "image": "../sprites/c-frobu/idle.webp"
       },
       {
         "name": "walk",
@@ -2091,7 +2091,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/walk.png"
+        "image": "../sprites/c-frobu/walk.webp"
       },
       {
         "name": "run",
@@ -2100,7 +2100,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/run.png"
+        "image": "../sprites/c-frobu/run.webp"
       },
       {
         "name": "sleep",
@@ -2109,7 +2109,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/sleep.png"
+        "image": "../sprites/c-frobu/sleep.webp"
       },
       {
         "name": "react",
@@ -2118,7 +2118,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/react.png"
+        "image": "../sprites/c-frobu/react.webp"
       },
       {
         "name": "fall",
@@ -2127,7 +2127,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/fall.png"
+        "image": "../sprites/c-frobu/fall.webp"
       },
       {
         "name": "dragged",
@@ -2136,7 +2136,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/dragged.png"
+        "image": "../sprites/c-frobu/dragged.webp"
       },
       {
         "name": "land",
@@ -2145,7 +2145,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/land.png"
+        "image": "../sprites/c-frobu/land.webp"
       },
       {
         "name": "dizzy",
@@ -2154,7 +2154,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/dizzy.png"
+        "image": "../sprites/c-frobu/dizzy.webp"
       },
       {
         "name": "climb",
@@ -2163,7 +2163,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/climb.png"
+        "image": "../sprites/c-frobu/climb.webp"
       },
       {
         "name": "perch",
@@ -2172,7 +2172,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/perch.png"
+        "image": "../sprites/c-frobu/perch.webp"
       },
       {
         "name": "jump",
@@ -2181,7 +2181,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-frobu/jump.png"
+        "image": "../sprites/c-frobu/jump.webp"
       }
     ]
   },
@@ -2197,7 +2197,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "walk",
@@ -2206,7 +2206,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 1,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "run",
@@ -2215,7 +2215,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 2,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "sleep",
@@ -2224,7 +2224,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 3,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "react",
@@ -2233,7 +2233,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 4,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "fall",
@@ -2242,7 +2242,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 5,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "dragged",
@@ -2251,7 +2251,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 6,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "land",
@@ -2260,7 +2260,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 7,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "dizzy",
@@ -2269,7 +2269,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 8,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "climb",
@@ -2278,7 +2278,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 9,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "perch",
@@ -2287,7 +2287,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 10,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       },
       {
         "name": "jump",
@@ -2296,7 +2296,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 11,
-        "image": "../sprites/c-byte/atlas.png"
+        "image": "../sprites/c-byte/atlas.webp"
       }
     ]
   },
@@ -2312,7 +2312,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 0,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "walk",
@@ -2321,7 +2321,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 1,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "run",
@@ -2330,7 +2330,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 2,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "sleep",
@@ -2339,7 +2339,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 3,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "react",
@@ -2348,7 +2348,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 4,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "fall",
@@ -2357,7 +2357,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 5,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "dragged",
@@ -2366,7 +2366,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 6,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "land",
@@ -2375,7 +2375,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 7,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "dizzy",
@@ -2384,7 +2384,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 8,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "climb",
@@ -2393,7 +2393,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 9,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "perch",
@@ -2402,7 +2402,7 @@ window.SPRITE_PETS = [
         "loop": true,
         "frameSize": 192,
         "row": 10,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       },
       {
         "name": "jump",
@@ -2411,7 +2411,7 @@ window.SPRITE_PETS = [
         "loop": false,
         "frameSize": 192,
         "row": 11,
-        "image": "../sprites/c-patch/atlas.png"
+        "image": "../sprites/c-patch/atlas.webp"
       }
     ]
   }

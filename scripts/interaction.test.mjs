@@ -10,7 +10,7 @@ const code = ts.transpileModule(readFileSync(new URL("../desktop/src/overlay/int
 }).outputText;
 const { PetInteraction } = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
 
-function setup() {
+function setup(foot) {
   const target = new EventTarget();
   globalThis.window = target;
   const captured = new Set();
@@ -38,7 +38,7 @@ function setup() {
       pointer("lostpointercapture", 0, 0, 0, id);
     },
   };
-  const interaction = new PetInteraction(pet, { element, hitTest: () => true }, {
+  const interaction = new PetInteraction(pet, { element, hitTest: () => true, foot }, {
     onHold: (held) => calls.holds.push(held), onActivity: () => {},
   });
   function drag() {
@@ -107,4 +107,11 @@ test("a regular drag still follows the grab offset and throws on release", () =>
   assert.equal(pet.state, "fall");
   assert.deepEqual(calls.releases, [[1000, -2750]]);
   assert.deepEqual(calls.holds, [true, false]);
+});
+
+test("grabbing a flying pet keeps it where it was drawn, not where the sim already is", () => {
+  const { pet, pointer } = setup({ x: 80, y: 170 });
+  pointer("pointerdown");
+  pointer("pointermove", 120, 100, 20);
+  assert.deepEqual([pet.x, pet.y], [100, 80]);
 });

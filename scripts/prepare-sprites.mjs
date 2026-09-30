@@ -1,11 +1,12 @@
 // Normalize original atlases into detailed, bottom-aligned 192px sprite frames.
-// No image library or service is needed. Originals stay in assets/sprite-sources.
+// Source atlases (always PNG) are decoded with a built-in PNG reader; output
+// strips are encoded as WebP lossless via sharp for ~40% smaller sprites.
 // Usage: node scripts/prepare-sprites.mjs [--check] [--only-new] [--pet=source]
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deflateSync, inflateSync } from "node:zlib";
+import { inflateSync } from "node:zlib";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCES = join(ROOT, "assets/sprite-sources");
@@ -133,39 +134,40 @@ function paeth(a, b, c) {
   return da <= db && da <= dc ? a : db <= dc ? b : c;
 }
 
-function crc32(data) {
-  let crc = 0xffffffff;
-  for (const byte of data) {
-    crc ^= byte;
-    for (let i = 0; i < 8; i++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
+// sharp is a native module: load it only when WebP is actually encoded or
+// decoded, so the pure-JS unit tests never need libvips.
+const loadSharp = () => import("sharp").then((module) => module.default);
 
-function chunk(type, data) {
-  const name = Buffer.from(type);
-  const size = Buffer.alloc(4), crc = Buffer.alloc(4);
-  size.writeUInt32BE(data.length);
-  crc.writeUInt32BE(crc32(Buffer.concat([name, data])));
-  return Buffer.concat([size, name, data, crc]);
-}
-
-function savePng(path, image) {
+async function encodeWebp(image) {
   const { width, height, pixels } = image;
-  const header = Buffer.alloc(13);
-  header.writeUInt32BE(width, 0);
-  header.writeUInt32BE(height, 4);
-  header[8] = 8;
-  header[9] = 6;
-  const scanlines = Buffer.alloc(height * (width * 4 + 1));
-  for (let y = 0; y < height; y++) {
-    pixels.copy(scanlines, y * (width * 4 + 1) + 1, y * width * 4, (y + 1) * width * 4);
+  const sharp = await loadSharp();
+  return sharp(pixels, { raw: { width, height, channels: 4 } }).webp({ lossless: true, effort: 6 }).toBuffer();
+}
+
+// Pack images must be lossless WebP: sharp would decode anything (a renamed
+// PNG, a lossy WebP), so check the container before trusting the pixels.
+async function decodeWebp(path) {
+  const webp = readFileSync(path);
+  assert.ok(webp.toString("ascii", 0, 4) === "RIFF" && webp.toString("ascii", 8, 12) === "WEBP", `${path}: WebP signature`);
+  let lossless = false;
+  for (let p = 12; p + 8 <= webp.length;) {
+    const type = webp.toString("ascii", p, p + 4), length = webp.readUInt32LE(p + 4);
+    assert.notEqual(type, "VP8 ", `${path}: lossy WebP; regenerate sprites`);
+    if (type === "VP8L") lossless = true;
+    p += 8 + length + (length & 1);
   }
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, Buffer.concat([
-    Buffer.from("89504e470d0a1a0a", "hex"), chunk("IHDR", header),
-    chunk("IDAT", deflateSync(scanlines, { level: 9 })), chunk("IEND", Buffer.alloc(0)),
-  ]));
+  assert.ok(lossless, `${path}: lossless WebP required`);
+  const sharp = await loadSharp();
+  const { data, info } = await sharp(webp).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  return { width: info.width, height: info.height, pixels: data };
+}
+
+// Every image file under a pack folder, as paths relative to it with "/".
+function packImages(dir) {
+  return readdirSync(dir, { recursive: true })
+    .map((file) => file.replaceAll("\\", "/"))
+    .filter((file) => /\.(png|webp)$/i.test(file))
+    .sort();
 }
 
 function emptyImage(width, height) {
@@ -500,7 +502,7 @@ function rowIndex(name) {
 function animationSpec(pet, row) {
   const [name, fps, loop = true] = ROWS[row];
   return {
-    image: pet.singleSheet ? "atlas.png" : `${name}.png`,
+    image: pet.singleSheet ? "atlas.webp" : `${name}.webp`,
     // The source dizzy row mixes standing, seated and recovered poses. Keep
     // the initial dazed pose throughout the state; PetView supplies the sway
     // and DizzyStars supplies the orbiting stars without changing posture.
@@ -691,13 +693,13 @@ function finishFrames(pet, frames) {
   return palette;
 }
 
-function prepare(pet) {
+async function prepare(pet) {
   const frames = prepareFrames(pet);
   const palette = finishFrames(pet, frames);
   const dir = join(PACKS, pet.folder);
-  mkdirSync(dir, { recursive: true });
   const animations = {};
   const sheet = emptyImage(SIZE * COLUMNS, SIZE * ROWS.length);
+  const strips = new Map();
   for (const [row, [name]] of ROWS.entries()) {
     const strip = emptyImage(SIZE * COLUMNS, SIZE);
     for (let col = 0; col < COLUMNS; col++) {
@@ -705,15 +707,20 @@ function prepare(pet) {
       blit(sheet, frames[row * COLUMNS + col], col * SIZE, row * SIZE);
     }
     const spec = animationSpec(pet, row);
-    if (!pet.singleSheet) savePng(join(dir, spec.image), strip);
+    // Pack dải riêng không cần sheet gộp: trang xem thử (index.html) đọc thẳng các dải trong pack.
+    strips.set(spec.image, pet.singleSheet ? sheet : strip);
     animations[name] = spec;
   }
-  // Trước đây climb, perch, jump nằm riêng trong phase2/ vì engine chưa dùng.
-  rmSync(join(dir, "phase2"), { recursive: true, force: true });
+  // Encode hết trong bộ nhớ rồi mới đụng tới đĩa: một ảnh lỗi thì pack cũ còn nguyên, không bị nửa cũ nửa mới.
+  const files = new Map(await Promise.all([...strips].map(async ([file, image]) => [file, await encodeWebp(image)])));
+  mkdirSync(dir, { recursive: true });
+  for (const [file, data] of files) writeFileSync(join(dir, file), data);
   const manifest = { name: pet.name, frameWidth: SIZE, frameHeight: SIZE, scale: DISPLAY_SIZE / SIZE, pixelArt: true, facing: "right", anchor: { x: SIZE / 2, y: BASELINE + 1 }, animations };
   writeFileSync(join(dir, "pet.json"), JSON.stringify(manifest, null, 2) + "\n");
-  // Pack dải riêng không cần sheet gộp: trang xem thử (index.html) đọc thẳng các dải trong pack.
-  if (pet.singleSheet) savePng(join(dir, "atlas.png"), sheet);
+  // Ảnh pet.json không dùng tới (PNG trước khi đổi sang WebP, sheet gộp cũ...) thì xoá, Vite sẽ gom cả chúng vào bản build.
+  for (const file of packImages(dir)) if (!files.has(file)) rmSync(join(dir, file));
+  // Trước đây climb, perch, jump nằm riêng trong phase2/ vì engine chưa dùng.
+  rmSync(join(dir, "phase2"), { recursive: true, force: true });
   writeFileSync(join(SOURCES, pet.source, "palette.json"), JSON.stringify(palette.map((c) => "#" + c.map((v) => v.toString(16).padStart(2, "0")).join("")), null, 2) + "\n");
   console.log(`${pet.folder}: ${pet.singleSheet ? "1 sheet, 12 rows" : "12 strips"}, ${COLUMNS} frames each, ${SIZE}×${SIZE}, ${palette.length} colors`);
 }
@@ -736,14 +743,15 @@ async function check(pets = PETS) {
     assert.deepEqual(manifest.anchor, { x: SIZE / 2, y: BASELINE + 1 });
     assert.deepEqual(Object.keys(manifest.animations).sort(), [...ANIMATION_NAMES].sort());
     assert.ok(!existsSync(join(dir, "phase2")), `${pet.folder}: stale phase2/ folder; regenerate sprites`);
-    if (pet.singleSheet) {
-      assert.deepEqual(readdirSync(dir, { recursive: true }).filter((file) => /\.png$/i.test(file)).sort(), ["atlas.png"], `${pet.folder}: keep only the shared sheet`);
-    }
+    // Exactly the images pet.json uses: Vite bundles every image in the folder,
+    // so a leftover PNG strip or old shared sheet would ship in the exe unused.
+    const used = [...new Set(Object.values(manifest.animations).map((spec) => spec.image))].sort();
+    assert.deepEqual(packImages(dir), used, `${pet.folder}: pack images differ from pet.json; regenerate sprites`);
     const colors = new Set();
     for (const [row, [name]] of ROWS.entries()) {
       const spec = manifest.animations[name];
       const path = spec.image;
-      const image = decodePng(join(dir, path));
+      const image = await decodeWebp(join(dir, path));
       assert.equal(image.width, SIZE * COLUMNS, path);
       assert.equal(image.height, SIZE * (pet.singleSheet ? ROWS.length : 1), path);
       const rects = frameRects({ start: 0, row: 0, ...spec }, SIZE, SIZE, image.width, image.height);
@@ -792,26 +800,31 @@ async function main() {
   else {
     for (const pet of selectedPets) {
       if (process.argv.includes("--only-new") && existsSync(join(PACKS, pet.folder, "pet.json"))) continue;
-      prepare(pet);
+      await prepare(pet);
     }
-    const gallery = PETS.map((pet) => ({
-      name: pet.name,
-      folder: pet.folder,
-      source: pet.source,
-      animations: ROWS.map(([name], row) => {
-        const spec = animationSpec(pet, row);
-        return {
-          name, fps: spec.fps, frames: spec.frames, loop: spec.loop, frameSize: SIZE,
-          row: spec.row ?? 0,
-          image: `../sprites/${pet.folder}/${spec.image}`,
-        };
-      }),
-    }));
+    // Read each pack's pet.json from disk: with --pet or --only-new the other
+    // packs were not regenerated, and may still use older image names.
+    const gallery = PETS.filter((pet) => existsSync(join(PACKS, pet.folder, "pet.json"))).map((pet) => {
+      const { animations } = JSON.parse(readFileSync(join(PACKS, pet.folder, "pet.json"), "utf8"));
+      return {
+        name: pet.name,
+        folder: pet.folder,
+        source: pet.source,
+        animations: ROWS.map(([name]) => {
+          const spec = animations[name];
+          return {
+            name, fps: spec.fps, frames: spec.frames, loop: spec.loop, frameSize: SIZE,
+            row: spec.row ?? 0,
+            image: `../sprites/${pet.folder}/${spec.image}`,
+          };
+        }),
+      };
+    });
     writeFileSync(join(SOURCES, "gallery-data.js"), "// Generated by scripts/prepare-sprites.mjs\nwindow.SPRITE_PETS = " + JSON.stringify(gallery, null, 2) + ";\n");
     await check(selectedPets);
   }
 }
 
-export { PETS, ROWS, boundsOf, columnBoundaries, decodePng, emptyImage, extractCell, finishFrames, normalizeFrame, prepareFrames, resampleCell, rowBoundaries, savePng, smooth };
+export { PETS, ROWS, boundsOf, columnBoundaries, decodePng, decodeWebp, emptyImage, extractCell, finishFrames, normalizeFrame, prepareFrames, resampleCell, rowBoundaries, smooth };
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();

@@ -22,4 +22,9 @@ export class FixedStep {
     this.accumulated = Math.max(0, this.accumulated - steps * this.dt);
     return steps;
   }
+
+  /** Phần bước kế tiếp đã trôi (0–1), để vẽ vị trí nằm giữa hai bước (`StepBlend`). */
+  get alpha(): number {
+    return Math.min(1, this.accumulated / this.dt);
+  }
 }
