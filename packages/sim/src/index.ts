@@ -1,5 +1,4 @@
 export * from "./rng";
-export * from "./cursor";
 export * from "./fixedStep";
 export * from "./fsm";
 export * from "./math";
@@ -8,3 +7,4 @@ export * from "./moves";
 export * from "./pet";
 export * from "./snapshot";
 export * from "./world";
+export { TUNING } from "./tuning";

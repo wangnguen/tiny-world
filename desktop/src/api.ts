@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import {
   EVENTS,
   type CursorInfo,
+  type Rect,
   type ScreenChange,
   type ScreenInfo,
   type Settings,
@@ -21,6 +22,13 @@ export const api = {
   listWindows: () => invoke<WindowList>("list_windows"),
   /** `true`: chuột đi xuyên overlay xuống app bên dưới. */
   setClickThrough: (enabled: boolean) => invoke<void>("set_click_through", { enabled }),
+  /**
+   * Vùng quanh pet (CSS pixel của overlay) cần biết vị trí con trỏ; ngoài vùng này Rust chỉ báo lúc
+   * bấm/nhả chuột. `null`: mọi chỗ.
+   */
+  setCursorInterest: (rect: Rect | null) => invoke<void>("set_cursor_interest", { rect }),
+  /** Pet ngủ, vòng lặp vẽ dừng (`true`), hoặc thức dậy: Rust bảo WebView2 dùng ít RAM lúc ngủ. */
+  setResting: (resting: boolean) => invoke<void>("set_resting", { resting }),
   /** Trạng thái thế giới pet đã lưu, `null` nếu chưa có. */
   loadState: () => invoke<unknown>("load_state"),
   saveState: (state: unknown) => invoke<void>("save_state", { state }),
@@ -32,7 +40,7 @@ export const api = {
   setAutostart: (enabled: boolean) => invoke<void>("set_autostart", { enabled }),
   quit: () => invoke<void>("quit"),
 
-  /** Vị trí con trỏ và phím Ctrl, Rust chỉ gửi khi có thay đổi. */
+  /** Vị trí con trỏ và phím Ctrl, Rust chỉ gửi khi có thay đổi (xem `setCursorInterest`). */
   onCursorMoved: (callback: (cursor: CursorInfo) => void) =>
     listen<CursorInfo>(EVENTS.cursorMoved, (event) => callback(event.payload)),
   /** Overlay vừa sang màn hình khác, hoặc màn hình đổi độ phân giải, DPI, taskbar. */

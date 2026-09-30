@@ -9,32 +9,27 @@ const bounds = { left: 0, right: 1000, top: 0, floor: 700 };
 interface Sim {
   world: World;
   pet: Pet;
-  /** Đồng hồ (giây) cho các lần báo vị trí con trỏ. */
-  clock: number;
 }
 
-function setup(seed = 1, x = 500): Sim {
+function setup(seed = 1, x = 500, width = 60): Sim {
   const world = new World(bounds, seed);
-  const pet = world.spawn({ id: "p", x, width: 60, height: 60 });
-  return { world, pet, clock: 0 };
+  const pet = world.spawn({ id: "p", x, width, height: width });
+  return { world, pet };
 }
 
 /**
- * Chạy `seconds` giây; mỗi bước hỏi `cursor` vị trí con trỏ (theo số giây đã chạy) rồi báo cho world,
- * như Rust báo khoảng 60 lần/giây. `until` đúng thì dừng sớm, trả về `true`.
+ * Chạy `seconds` giây; mỗi bước hỏi `cursor` vị trí con trỏ (theo số giây đã chạy) rồi báo cho world.
+ * `until` đúng thì dừng sớm, trả về `true`.
  */
 function run(
   sim: Sim,
   seconds: number,
-  cursor?: (t: number) => { x: number; y: number; pressed?: boolean } | null,
+  cursor?: (t: number) => { x: number; y: number } | null,
   until?: (pet: Pet) => boolean,
 ): boolean {
   for (let t = 0; t < seconds; t += DT) {
-    for (const half of [0, DT / 2]) {
-      const at = cursor?.(t + half);
-      if (at) sim.world.moveCursor(at.x, at.y, at.pressed ?? false, sim.clock + half);
-    }
-    sim.clock += DT;
+    const at = cursor?.(t);
+    if (at) sim.world.moveCursor(at.x, at.y);
     sim.world.step(DT);
     if (until?.(sim.pet)) return true;
   }
@@ -72,134 +67,12 @@ describe("nhìn theo con trỏ", () => {
   });
 });
 
-describe("lại gần ngửi", () => {
-  it("con trỏ đứng yên ngang tầm thì đi tới cạnh, quay mặt vào", () => {
-    const sim = setup();
-    const target = { x: 650, y: 680 };
-    const arrived = run(
-      sim,
-      12,
-      () => target,
-      (pet) => pet.state === "idle" && Math.abs(pet.x - (target.x - 60 * TUNING.sniffGap)) < 1,
-    );
-    expect(arrived).toBe(true);
-    expect(sim.pet.facing).toBe(1);
-  });
-
-  it("con trỏ vừa dời sang chỗ khác thì chờ nó đứng yên lại rồi mới lại gần", () => {
-    const sim = setup();
-    run(sim, 3, () => ({ x: 900, y: 100 }));
-    sim.world.moveCursor(650, 680, false, sim.clock);
-    const early = run(sim, TUNING.sniffDelay - 0.2, () => ({ x: 650, y: 680 }), (pet) => pet.goal?.kind === "sniff");
-    expect(early).toBe(false);
-  });
-
-  it("con trỏ ở cao quá tầm thì không lại gần", () => {
-    const sim = setup();
-    const sniffed = run(sim, 12, () => ({ x: 650, y: 400 }), (pet) => pet.goal?.kind === "sniff");
-    expect(sniffed).toBe(false);
-  });
-});
-
-describe("đuổi theo con trỏ", () => {
-  it("con trỏ lướt qua chậm ngang tầm thì có lúc chạy đuổi theo", () => {
-    someSeed((seed) => {
-      const sim = setup(seed);
-      untilIdle(sim);
-      const start = sim.pet.x + 150;
-      // Con trỏ lướt sang phải 300 px/s, sát mặt đất.
-      const chased = run(sim, 3, (t) => ({ x: start + 300 * t, y: 680 }), (pet) => pet.goal?.kind === "chase");
-      if (!chased) return false;
-      expect(sim.pet.state).toBe("run");
-      expect(sim.pet.facing).toBe(1);
-      return true;
-    });
-  });
-
-  it("đuổi kịp thì đứng lại", () => {
-    someSeed((seed) => {
-      const sim = setup(seed);
-      untilIdle(sim);
-      const start = sim.pet.x + 150;
-      if (!run(sim, 3, (t) => ({ x: start + 300 * t, y: 680 }), (pet) => pet.goal?.kind === "chase")) return false;
-      // Con trỏ dừng lại tại chỗ, pet chạy tới sát.
-      const stop = { x: sim.world.cursor!.x, y: 680 };
-      expect(run(sim, 3, () => stop, (pet) => pet.state === "idle")).toBe(true);
-      expect(Math.abs(stop.x - sim.pet.x)).toBeLessThanOrEqual(60 * TUNING.sniffGap + 5);
-      return true;
-    });
-  });
-
-  it("đang giữ chuột (kéo cửa sổ, bôi đen chữ) thì không đuổi", () => {
-    for (let seed = 1; seed <= 10; seed++) {
-      const sim = setup(seed);
-      untilIdle(sim);
-      const start = sim.pet.x + 150;
-      const chased = run(
-        sim,
-        3,
-        (t) => ({ x: start + 300 * t, y: 680, pressed: true }),
-        (pet) => pet.goal?.kind === "chase",
-      );
-      expect(chased).toBe(false);
-    }
-  });
-});
-
-describe("né và giật mình", () => {
-  it("con trỏ lao tới nhanh thì chạy né về phía ngược lại", () => {
-    const sim = setup();
-    untilIdle(sim);
-    const from = sim.pet.x - 140;
-    run(sim, 0.1, (t) => ({ x: from + 1500 * t, y: 670 }));
-    expect(sim.pet.goal?.kind).toBe("flee");
-    expect(sim.pet.state).toBe("run");
-    expect(sim.pet.facing).toBe(1);
-  });
-
-  it("giật chuột quét qua người thì nhảy dựng lên rồi ngã choáng", () => {
-    const sim = setup();
-    untilIdle(sim);
-    const x0 = sim.pet.x;
-    // Quét ngang qua bụng pet với tốc độ 4000 px/s.
-    run(sim, 0.1, (t) => ({ x: x0 - 200 + 4000 * t, y: 670 }));
-    expect(sim.pet.state).toBe("react");
-    expect(run(sim, 2, undefined, (pet) => pet.state === "dizzy")).toBe(true);
-  });
-
-  it("giật chuột ở xa thì không sao, giật mình xong một lúc sau mới giật mình lại", () => {
-    const sim = setup();
-    untilIdle(sim);
-    const x0 = sim.pet.x;
-    run(sim, 0.1, (t) => ({ x: x0 - 200 + 4000 * t, y: 400 }));
-    expect(sim.pet.state).not.toBe("react");
-
-    run(sim, 0.1, (t) => ({ x: x0 - 200 + 4000 * t, y: 670 }));
-    expect(sim.pet.state).toBe("react");
-    run(sim, TUNING.reactTime + TUNING.dizzyTime + 0.2);
-    untilIdle(sim);
-    const x1 = sim.pet.x;
-    run(sim, 0.1, (t) => ({ x: x1 + 200 - 4000 * t, y: 670 }));
-    expect(sim.pet.state).not.toBe("react");
-  });
-
-  it("đang ngủ thì con trỏ không làm gì được", () => {
-    const sim = setup();
-    sim.pet.sinceInteraction = TUNING.sleepAfter;
-    run(sim, 10, undefined, (pet) => pet.state === "sleep");
-    expect(sim.pet.state).toBe("sleep");
-    const x0 = sim.pet.x;
-    run(sim, 3, (t) => ({ x: x0 - 200 + 4000 * (t % 0.1), y: 670 }));
-    expect(sim.pet.state).toBe("sleep");
-  });
-});
-
 describe("sang màn hình bên cạnh", () => {
   /** Màn hình bên phải cao bằng, cùng DPI. */
   const right = { x: 1000, y: 0, width: 800, height: 700 };
 
-  function leave(seed: number): Sim | null {
-    const sim = setup(seed, 900);
+  function leave(seed: number, width = 60): Sim | null {
+    const sim = setup(seed, 900, width);
     sim.world.setScreen(bounds, [right]);
     return run(sim, 40, undefined, (pet) => pet.leaving !== null) ? sim : null;
   }
@@ -229,6 +102,21 @@ describe("sang màn hình bên cạnh", () => {
     expect(pet.crossing).toBeNull();
     expect(pet.x).toBeGreaterThanOrEqual(30);
     expect(pet.y).toBe(700);
+  });
+
+  it("pet to đi bộ chậm ra mép vẫn kịp ra tới chỗ chờ overlay sang", () => {
+    // Pet 96 px đi 30 px/s: từ đầu mặt đất tới lúc giữa thân qua mép mất 1,6 giây, lâu hơn crossTimeout.
+    someSeed((seed) => leave(seed, 96) !== null);
+  });
+
+  it("màn hình đổi tại chỗ (taskbar, DPI) lúc đang đi ra mép thì vào lại trong màn hình, không đi lạc", () => {
+    let sim: Sim | null = null;
+    someSeed((seed) => (sim = leave(seed)) !== null);
+    const { world, pet } = sim!;
+    world.setScreen(bounds, [right], { scale: 1, x: 0, y: 0 });
+    run(sim!, 5);
+    expect(pet.crossing).toBeNull();
+    expect(pet.x).toBeLessThanOrEqual(970);
   });
 
   it("overlay không sang được thì quay lại", () => {
@@ -286,6 +174,104 @@ describe("sang màn hình bên cạnh", () => {
     sim.pet.release(1500, -200);
     expect(run(sim, 1, undefined, (pet) => pet.leaving !== null)).toBe(true);
     expect(sim.pet.state).toBe("fall");
+  });
+
+  it("ném qua mép mà rơi chạm đất vẫn chờ overlay sang, không bị kéo về", () => {
+    const sim = setup(1, 800);
+    sim.world.setScreen(bounds, [right]);
+    sim.pet.grab();
+    sim.pet.dragTo(900, 300);
+    sim.pet.release(1500, -200);
+    run(sim, 0.5, undefined, (pet) => pet.leaving !== null);
+    expect(sim.pet.crossing?.phase).toBe("out");
+    // Chạy thêm 0,8 giây (đủ rơi chạm đất nhưng chưa hết crossTimeout 1,5 giây).
+    run(sim, 0.8);
+    expect(sim.pet.y).toBe(700);
+    expect(sim.pet.crossing?.phase).toBe("out");
+    expect(sim.pet.leaving).not.toBeNull();
+  });
+
+  /** Overlay sang màn hình bên phải: gốc toạ độ dời sang phải 1000 px. */
+  function overlayMovesRight(sim: Sim) {
+    sim.world.setScreen({ left: 0, right: 800, top: 0, floor: 700 }, [{ x: -1000, y: 0, width: 1000, height: 700 }], {
+      scale: 1,
+      x: -1000,
+      y: 0,
+    });
+  }
+
+  it("ném qua mép, rơi chạm đất rồi overlay sang thì đáp bình thường", () => {
+    const sim = setup(1, 800);
+    sim.world.setScreen(bounds, [right]);
+    sim.pet.grab();
+    sim.pet.dragTo(900, 300);
+    sim.pet.release(1500, -200);
+    run(sim, 0.5, undefined, (pet) => pet.leaving !== null);
+    run(sim, 0.8);
+    expect(sim.pet.crossing?.phase).toBe("out");
+    overlayMovesRight(sim);
+    expect(sim.pet.crossing?.phase).toBe("in");
+    run(sim, 2, undefined, (p) => p.crossing === null);
+    expect(sim.pet.crossing).toBeNull();
+    expect(sim.pet.y).toBe(700);
+  });
+
+  it("ném thấp qua mép, chạm đất lúc mới qua mép một phần rồi overlay sang thì đi bộ vào, không giật vào", () => {
+    const sim = setup(1, 800);
+    sim.world.setScreen(bounds, [right]);
+    sim.pet.grab();
+    sim.pet.dragTo(970, 680);
+    sim.pet.release(300, 0);
+    run(sim, 0.5, undefined, (pet) => pet.leaving !== null);
+    run(sim, 0.3);
+    // Đứng chờ trên đất, giữa thân đã qua mép nhưng một phần thân còn bên này.
+    expect(sim.pet.crossing?.phase).toBe("out");
+    expect(sim.pet.y).toBe(700);
+    expect(sim.pet.x).toBeGreaterThan(1000);
+    expect(sim.pet.x).toBeLessThan(1030);
+    overlayMovesRight(sim);
+    expect(sim.pet.crossing?.phase).toBe("in");
+    // Mỗi bước chỉ nhích một chút (đi bộ vào), không nhảy vọt cả bề ngang pet vào trong màn hình.
+    let x = sim.pet.x;
+    const jumps: number[] = [];
+    run(sim, 4, undefined, (p) => {
+      jumps.push(Math.abs(p.x - x));
+      x = p.x;
+      return p.crossing === null;
+    });
+    expect(sim.pet.crossing).toBeNull();
+    expect(sim.pet.state).toBe("walk");
+    expect(sim.pet.x).toBeGreaterThanOrEqual(30);
+    expect(sim.pet.y).toBe(700);
+    expect(Math.max(...jumps)).toBeLessThan(5);
+  });
+
+  it("ném mạnh qua mép, overlay sang lúc pet còn đang bay thì bay tiếp vào, không rơi thẳng ngoài mép", () => {
+    const sim = setup(1, 800);
+    sim.world.setScreen(bounds, [right]);
+    sim.pet.grab();
+    sim.pet.dragTo(900, 300);
+    sim.pet.release(3000, -200);
+    // Bay ra hẳn ngoài mép, bị giữ lại chờ overlay sang.
+    expect(run(sim, 0.5, undefined, (pet) => pet.x === 1030)).toBe(true);
+    overlayMovesRight(sim);
+    run(sim, 0.1);
+    expect(sim.pet.state).toBe("fall");
+    expect(sim.pet.y).toBeLessThan(700);
+    expect(sim.pet.x).toBeGreaterThan(30);
+    expect(sim.pet.crossing).toBeNull();
+  });
+
+  it("thả sát mép hơi hất ra, chạm đất lúc giữa thân chưa qua mép thì đáp luôn, không đứng khựng chờ", () => {
+    const sim = setup(1, 800);
+    sim.world.setScreen(bounds, [right]);
+    sim.pet.grab();
+    sim.pet.dragTo(965, 690);
+    sim.pet.release(100, 0);
+    const landed = run(sim, 0.5, undefined, (pet) => pet.state === "land");
+    expect(landed).toBe(true);
+    expect(sim.pet.crossing).toBeNull();
+    expect(sim.pet.x).toBeLessThanOrEqual(970);
   });
 
   it("không có màn hình bên cạnh thì ném vào mép vẫn nảy lại", () => {

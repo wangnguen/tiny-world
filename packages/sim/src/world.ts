@@ -1,5 +1,4 @@
-import type { Rect, Remap, WindowInfo } from "@tinyworld/core";
-import { Pointer, type CursorView } from "./cursor";
+import type { Point, Rect, Remap, WindowInfo } from "@tinyworld/core";
 import { clamp } from "./math";
 import { Pet, type Facing, type PetEnv, type PetOptions } from "./pet";
 import { Rng } from "./rng";
@@ -17,7 +16,8 @@ export class World implements PetEnv {
   terrain: Terrain;
   /** Vùng làm việc của các màn hình khác, toạ độ của overlay này (`ScreenInfo.neighbors`). */
   neighbors: readonly Rect[] = [];
-  private pointer: Pointer | null = null;
+  /** Con trỏ chuột (CSS pixel của overlay), `null` khi chưa biết. */
+  cursor: Point | null = null;
 
   constructor(bounds: Bounds, seed: number) {
     this.rng = new Rng(seed);
@@ -26,10 +26,6 @@ export class World implements PetEnv {
 
   get bounds(): Bounds {
     return this.terrain.bounds;
-  }
-
-  get cursor(): CursorView | null {
-    return this.pointer;
   }
 
   /** Thêm pet đứng trên mặt đất; `x` bị kẹp lại để cả con nằm trong màn hình. */
@@ -74,7 +70,9 @@ export class World implements PetEnv {
       this.terrain.windows.map(({ id, rect }) => ({ id, rect: map(rect) })),
     );
     this.neighbors = neighbors;
-    if (remap) this.pointer?.remap(remap.scale, remap.x, remap.y);
+    if (remap && this.cursor) {
+      this.cursor = { x: this.cursor.x * remap.scale + remap.x, y: this.cursor.y * remap.scale + remap.y };
+    }
     for (const pet of this.pets) {
       if (remap) pet.remap(remap);
       pet.rebound();
@@ -89,10 +87,9 @@ export class World implements PetEnv {
     });
   }
 
-  /** Con trỏ vừa di chuyển (CSS pixel của overlay); `time` tính bằng giây, dùng để đo tốc độ. */
-  moveCursor(x: number, y: number, pressed: boolean, time: number): void {
-    if (this.pointer) this.pointer.move(x, y, pressed, time);
-    else this.pointer = new Pointer(x, y, pressed, time);
+  /** Con trỏ vừa di chuyển (CSS pixel của overlay). */
+  moveCursor(x: number, y: number): void {
+    this.cursor = { x, y };
   }
 
   /** Các cửa sổ đang che một phần `pet` (pet đứng trên cửa sổ nằm dưới chúng). */
@@ -114,7 +111,6 @@ export class World implements PetEnv {
 
   step(dt: number): void {
     for (const pet of this.pets) pet.step(dt);
-    this.pointer?.settle(dt);
   }
 
   snapshot(): WorldSnapshot {

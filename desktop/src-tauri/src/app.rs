@@ -1,3 +1,4 @@
+use crate::cursor::CursorInterest;
 use crate::settings::SettingsStore;
 use crate::storage::Storage;
 use crate::window_list::{self, Windows};
@@ -20,6 +21,7 @@ pub fn run() {
             app.manage(SettingsStore::load(&data_dir));
             app.manage(Storage::new(data_dir));
             app.manage(Windows::default());
+            app.manage(CursorInterest::default());
             overlay::setup(app.handle())?;
             overlay::watch(app.handle().clone());
             tray::setup(app.handle())?;
@@ -33,6 +35,8 @@ pub fn run() {
             commands::move_overlay,
             commands::list_windows,
             commands::set_click_through,
+            commands::set_cursor_interest,
+            commands::set_resting,
             commands::load_state,
             commands::save_state,
             commands::get_settings,
