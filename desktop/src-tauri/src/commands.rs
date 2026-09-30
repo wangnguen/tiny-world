@@ -1,9 +1,10 @@
 //! Tauri commands gọi từ frontend qua `invoke()`.
 
 use crate::autostart;
+use crate::cursor::CursorInterest;
 use crate::error::{AppError, AppResult};
 use crate::events;
-use crate::overlay::{self, Overlay, ScreenInfo};
+use crate::overlay::{self, Overlay, Rect, ScreenInfo};
 use crate::settings::{Settings, SettingsStore};
 use crate::storage::Storage;
 use crate::window_list::{WindowList, Windows};
@@ -37,6 +38,18 @@ pub fn set_click_through(window: WebviewWindow, enabled: bool) -> AppResult<()> 
     }
     window.set_ignore_cursor_events(enabled)?;
     Ok(())
+}
+
+/// Vùng quanh pet (CSS pixel của overlay) cần biết vị trí con trỏ; `null`: mọi chỗ (cursor.rs).
+#[tauri::command]
+pub fn set_cursor_interest(interest: State<'_, CursorInterest>, rect: Option<Rect>) {
+    interest.set(rect);
+}
+
+/// Pet ngủ, overlay dừng vòng lặp vẽ (`true`), hoặc thức dậy (`false`).
+#[tauri::command]
+pub fn set_resting(app: AppHandle, resting: bool) {
+    overlay::set_resting(&app, resting);
 }
 
 /// Trạng thái thế giới pet đã lưu, `null` nếu chưa có.

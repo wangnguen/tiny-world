@@ -69,6 +69,8 @@ export interface WindowList {
   windows: WindowInfo[];
   /** Cửa sổ vừa bị đóng hẳn (không phải thu nhỏ hay ẩn) kể từ lần gửi trước, kèm khung lúc còn hiện. */
   closed: WindowInfo[];
+  /** Taskbar tự ẩn đang trồi lên che mép dưới overlay: mép trên của nó (CSS pixel), pet đứng trên đó. */
+  taskbarTop: number | null;
 }
 
 /** Cài đặt người dùng (command `get_settings` / `set_settings`), khớp `Settings` trong settings.rs. */

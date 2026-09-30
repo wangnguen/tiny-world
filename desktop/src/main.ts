@@ -3,11 +3,12 @@ import {
   errorMessage,
   type CursorInfo,
   type Point,
+  type Rect,
   type ScreenInfo,
   type Settings,
   type WindowList,
 } from "@tinyworld/core";
-import { FixedStep, World, parseWorldSnapshot, type Bounds } from "@tinyworld/sim";
+import { FixedStep, TUNING, World, clamp, parseWorldSnapshot, type Bounds } from "@tinyworld/sim";
 import { api } from "./api";
 import { AutoSave } from "./overlay/autosave";
 import { ClickThrough } from "./overlay/clickThrough";
@@ -17,6 +18,28 @@ import { loadSpriteSet, resolvePack } from "./overlay/sprites";
 
 /** Tần số mô phỏng và vẽ tối đa: sprite thường chỉ 8–12 fps nên 30 là đủ mượt mà vẫn nhẹ. */
 const FPS = 30;
+/**
+ * Vẽ bằng hẹn giờ rồi mới xin `requestAnimationFrame`, chứ không xin rAF liên tục: rAF chạy theo tần số
+ * màn hình (60–144 Hz), WebView phải thức dậy gấp mấy lần cần. Hẹn sớm chừng này ms để chờ tới lần làm
+ * tươi màn hình kế tiếp thì vừa đúng nhịp.
+ */
+const VSYNC_SLACK_MS = 8;
+const FRAME_MS = 1000 / FPS - VSYNC_SLACK_MS;
+/**
+ * Pet đứng yên (đứng, ngồi mép) thì chỉ cần thức dậy lúc đổi frame (animation đứng yên chỉ 3–6 fps),
+ * nhưng tối đa chừng này ms một lần để mô phỏng không dồn quá `MAX_STEPS` bước một lượt.
+ */
+const CALM_MAX_MS = 250;
+/** Số bước mô phỏng tối đa mỗi lượt vẽ: 10 bước là 333 ms, dư cho lần chờ lâu nhất lúc pet đứng yên. */
+const MAX_STEPS = 10;
+const CALM_STATES: ReadonlySet<string> = new Set(["idle", "perch"]);
+/**
+ * Rust chỉ gửi vị trí con trỏ khi nó ở gần pet: pet thức thì trong tầm nhìn theo con trỏ, ngủ thì chỉ quanh
+ * thân để bắt click. Báo rộng thêm `INTEREST_SLACK` để pet đi một đoạn mới phải báo lại.
+ */
+const INTEREST_AWAKE = TUNING.lookRange;
+const INTEREST_ASLEEP = 16;
+const INTEREST_SLACK = 64;
 /** Khoảng cách từ mép phải vùng làm việc tới pet lúc xuất hiện lần đầu (CSS pixel). */
 const SPAWN_MARGIN = 48;
 /** Chu kỳ lưu world.json (chỉ ghi khi có thay đổi). */
@@ -24,10 +47,27 @@ const SAVE_INTERVAL_MS = 30_000;
 /** Hai lần xin Rust cho overlay sang màn hình khác cách nhau ít nhất chừng này (ms). */
 const MOVE_INTERVAL_MS = 200;
 
-/** Pet sống trong vùng làm việc; mặt đất là mép dưới, tức là mép trên taskbar. */
-function boundsOf(screen: ScreenInfo): Bounds {
+/**
+ * Pet sống trong vùng làm việc; mặt đất là mép dưới, tức là mép trên taskbar. Taskbar tự ẩn đang trồi
+ * lên (`taskbarTop`) thì mặt đất là mép trên của nó.
+ */
+function boundsOf(screen: ScreenInfo, taskbarTop: number | null = null): Bounds {
   const { x, y, width, height } = screen.workArea;
-  return { left: x, right: x + width, top: y, floor: y + height };
+  const floor = taskbarTop === null ? y + height : Math.min(y + height, taskbarTop);
+  return { left: x, right: x + width, top: y, floor };
+}
+
+function inflate(r: Rect, by: number): Rect {
+  return { x: r.x - by, y: r.y - by, width: r.width + 2 * by, height: r.height + 2 * by };
+}
+
+function containsRect(outer: Rect, inner: Rect): boolean {
+  return (
+    inner.x >= outer.x &&
+    inner.y >= outer.y &&
+    inner.x + inner.width <= outer.x + outer.width &&
+    inner.y + inner.height <= outer.y + outer.height
+  );
 }
 
 /** File hỏng hay đọc lỗi thì bắt đầu lại từ đầu, lần lưu sau sẽ ghi đè. */
@@ -71,8 +111,11 @@ async function start(): Promise<void> {
   autosave.start(SAVE_INTERVAL_MS);
 
   let paused = false;
+  /** Màn hình overlay đang phủ, và mép trên taskbar tự ẩn đang trồi lên (`WindowList.taskbarTop`). */
+  let current = screen;
+  let taskbarTop: number | null = null;
   // Khai báo trước khi đăng ký event: event có thể tới ngay khi vừa đăng ký xong.
-  const step = new FixedStep(1 / FPS);
+  const step = new FixedStep(1 / FPS, MAX_STEPS);
   let last = 0;
   let running = false;
   let hidden = false;
@@ -89,43 +132,87 @@ async function start(): Promise<void> {
       wake();
     }
     cursor = info;
-    // Con trỏ là một thứ sống trên màn hình với pet. Chỉ báo lúc vòng lặp đang chạy: pet đang ngủ không
-    // để ý con trỏ, và lúc chạy lại không bị tính một cú giật chuột từ chỗ cũ tới chỗ mới.
-    if (running) world.moveCursor(info.x, info.y, info.pressed, performance.now() / 1000);
+    // Pet đứng yên thì quay đầu nhìn theo con trỏ. Pet đang ngủ không để ý con trỏ.
+    if (running) world.moveCursor(info.x, info.y);
     refreshClickThrough();
   });
   window.addEventListener("contextmenu", (event) => event.preventDefault());
 
+  /** Vùng đã báo Rust (`api.setCursorInterest`), lúc báo pet có đang ngủ không. */
+  let interest: Rect | null = null;
+  let interestAsleep = false;
+  const refreshInterest = () => {
+    const box = view.bounds;
+    if (!box) return;
+    const asleep = pet.state === "sleep";
+    const needed = inflate(box, asleep ? INTEREST_ASLEEP : INTEREST_AWAKE);
+    if (interest && asleep === interestAsleep && containsRect(interest, needed)) return;
+    interest = inflate(needed, INTEREST_SLACK);
+    interestAsleep = asleep;
+    api
+      .setCursorInterest(interest)
+      .catch((error: unknown) => console.warn("Không báo được vùng quanh pet:", errorMessage(error)));
+  };
+
+  /** Hẹn giờ đang chờ để vẽ lần sau (0: không có), và lần đó có phải là chờ lâu lúc pet đứng yên không. */
+  let timer = 0;
+  let calmWait = false;
+  /** Đã báo Rust pet đang ngủ (`api.setResting`). */
+  let resting = false;
+  const setResting = (value: boolean) => {
+    if (value === resting) return;
+    resting = value;
+    api.setResting(value).catch((error: unknown) => console.warn("Không báo được pet ngủ/thức:", errorMessage(error)));
+  };
+  const schedule = (delay: number) => {
+    calmWait = delay > FRAME_MS;
+    timer = window.setTimeout(() => {
+      timer = 0;
+      requestAnimationFrame(frame);
+    }, delay);
+  };
+  const nextDelay = () => {
+    if (!CALM_STATES.has(pet.state)) return FRAME_MS;
+    return clamp(view.nextFrameIn(pet) * 1000 - VSYNC_SLACK_MS, FRAME_MS, CALM_MAX_MS);
+  };
   const frame = (now: number) => {
     if (hidden || paused) {
       running = false;
       return;
     }
     const elapsed = (now - last) / 1000;
-    // rAF chạy theo tần số màn hình (60–144 Hz), bỏ bớt lượt để giữ tối đa FPS.
-    if (elapsed >= 1 / FPS - 0.002) {
-      last = now;
-      for (let n = step.advance(elapsed); n > 0; n--) world.step(step.dt);
-      // Pet đang đi hoặc bay ra khỏi mép giáp màn hình khác: overlay sang bên đó.
-      const leaving = pet.leaving;
-      if (leaving) moveOverlay(leaving);
-      redraw();
-      // Pet ngủ thì dừng hẳn vòng lặp; click hoặc kéo sẽ chạy lại.
-      if (world.resting) {
-        running = false;
-        return;
-      }
+    last = now;
+    for (let n = step.advance(elapsed); n > 0; n--) world.step(step.dt);
+    // Pet đang đi hoặc bay ra khỏi mép giáp màn hình khác: overlay sang bên đó.
+    const leaving = pet.leaving;
+    if (leaving) moveOverlay(leaving);
+    redraw();
+    // Pet ngủ thì dừng hẳn vòng lặp; click hoặc kéo sẽ chạy lại.
+    if (world.resting) {
+      running = false;
+      setResting(true);
+      return;
     }
-    requestAnimationFrame(frame);
+    schedule(nextDelay());
   };
   /** Vẽ lại pet; pet đổi frame, bị cửa sổ che, hoặc đi dưới con trỏ đang đứng yên thì cũng tính lại click-through. */
   const redraw = () => {
     view.update(pet, world.occluders(pet));
     refreshClickThrough();
+    refreshInterest();
   };
+  /** Chạy lại vòng lặp; đang chờ lâu lúc pet đứng yên mà có chuyện (click, cửa sổ đổi) thì vẽ ngay lần sau. */
   const wake = () => {
-    if (running || hidden || paused) return;
+    if (hidden || paused) return;
+    if (running) {
+      if (timer !== 0 && calmWait) {
+        window.clearTimeout(timer);
+        schedule(0);
+      }
+      return;
+    }
     running = true;
+    setResting(false);
     last = performance.now();
     requestAnimationFrame(frame);
   };
@@ -162,6 +249,9 @@ async function start(): Promise<void> {
   // Overlay sang màn hình khác (pet bị kéo, ném, tự đi sang), hoặc màn hình đổi độ phân giải, DPI, taskbar:
   // đổi toạ độ pet và cửa sổ sang overlay mới. Danh sách cửa sổ theo toạ độ mới tới ngay sau đó.
   await api.onScreenChanged(({ screen, remap }) => {
+    // Mép trên taskbar tự ẩn tính theo overlay cũ: bỏ, danh sách cửa sổ tới ngay sau đó sẽ báo lại.
+    current = screen;
+    taskbarTop = null;
     world.setScreen(boundsOf(screen), screen.neighbors, remap);
     interaction.remap(remap);
     view.resize();
@@ -180,8 +270,18 @@ async function start(): Promise<void> {
   let windowsSeen = false;
   const applyWindows = (list: WindowList) => {
     world.setWindows(list.windows, list.closed);
-    // Pet ngủ trên taskbar không bị cửa sổ ảnh hưởng: không chạy lại vòng lặp.
-    if (world.resting) return;
+    // Taskbar tự ẩn trồi lên hoặc thụt xuống: pet đứng lên mép trên của nó, hoặc rơi xuống lại đáy màn hình.
+    const top = list.taskbarTop ?? null;
+    const floorMoved = top !== taskbarTop;
+    if (floorMoved) {
+      taskbarTop = top;
+      world.setScreen(boundsOf(current, taskbarTop), current.neighbors);
+    }
+    // Pet ngủ trên taskbar không bị cửa sổ ảnh hưởng: không chạy lại vòng lặp, mặt đất đổi thì chỉ vẽ lại.
+    if (world.resting) {
+      if (floorMoved) redraw();
+      return;
+    }
     // Tạm dừng thì không có vòng lặp, pet đứng trên cửa sổ vẫn phải đi theo.
     if (paused) redraw();
     else wake();

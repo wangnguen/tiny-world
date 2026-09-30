@@ -1,5 +1,4 @@
 import type { AnimationName, Point, Rect, Remap } from "@tinyworld/core";
-import { segmentGap, type CursorView } from "./cursor";
 import { StateMachine, type StateTable } from "./fsm";
 import { clamp } from "./math";
 import {
@@ -34,7 +33,7 @@ export interface PetEnv {
   /** Hệ số tốc độ đi/chạy (Settings), 1 là bình thường. */
   readonly speed: number;
   /** Con trỏ chuột, `null` khi chưa biết. */
-  readonly cursor: CursorView | null;
+  readonly cursor: Point | null;
   /** Mép `side` của màn hình có giáp màn hình khác ở độ cao `y` không: pet đi hoặc bay sang được. */
   exit(side: Facing, y: number): boolean;
 }
@@ -57,12 +56,8 @@ export type Goal =
   | { kind: "peek"; dx: number }
   /** Buồn ngủ: đi tới đầu mép rồi xuống taskbar. */
   | { kind: "down" }
-  /** Chạy trốn cửa sổ đang bị kéo tới hoặc con trỏ lao tới: hết đường trên mép cửa sổ thì xuống luôn. */
-  | { kind: "flee" }
-  /** Đuổi theo con trỏ. */
-  | { kind: "chase" }
-  /** Con trỏ đứng yên gần đó: đi tới cạnh (`x`) rồi đứng ngửi. */
-  | { kind: "sniff"; x: number };
+  /** Chạy trốn cửa sổ đang bị kéo tới: hết đường trên mép cửa sổ thì xuống luôn. */
+  | { kind: "flee" };
 
 /** State pet đang tỉnh, đứng trên mặt đất hoặc mép cửa sổ và không bận việc gì: phản ứng được với cửa sổ. */
 const CALM: ReadonlySet<PetState> = new Set(["idle", "walk", "run", "perch", "land"]);
@@ -74,6 +69,11 @@ interface Crossing {
   phase: "out" | "in";
   /** Số giây ở phase hiện tại. */
   elapsed: number;
+  /**
+   * Bị ném ra quá mép: vận tốc ngang lúc bị giữ lại ngay ngoài mép chờ overlay sang. Overlay sang lúc
+   * pet còn đang rơi thì bay tiếp vào màn hình mới với vận tốc này, không rơi thẳng xuống ngoài mép.
+   */
+  vx?: number;
 }
 
 interface Climbing {
@@ -123,9 +123,6 @@ const STATES: StateTable<PetState, Pet> = {
   sleep: {},
   react: {
     update: (pet, time) => hop(pet, time),
-    exit: (pet) => {
-      pet.startled = false;
-    },
   },
   // Vị trí do chuột điều khiển qua `dragTo`.
   dragged: {},
@@ -197,12 +194,7 @@ export class Pet {
   hops = 0;
   /** Số giây kể từ lần ăn mừng trước. */
   private sinceCheer = Number.POSITIVE_INFINITY;
-  /** Vừa bị giật chuột dọa: nhảy xong thì ngã choáng. */
-  startled = false;
-  /** Số giây kể từ lần giật mình, lần ngửi con trỏ, lần bốc thăm đuổi con trỏ, lần quay đầu theo con trỏ. */
-  private sinceStartle = Number.POSITIVE_INFINITY;
-  private sinceSniff = Number.POSITIVE_INFINITY;
-  private sinceChaseRoll = Number.POSITIVE_INFINITY;
+  /** Số giây kể từ lần quay đầu theo con trỏ. */
   private sinceTurn = Number.POSITIVE_INFINITY;
   crossing: Crossing | null = null;
   private readonly brain = new StateMachine<PetState, Pet>(STATES, "idle");
@@ -342,12 +334,10 @@ export class Pet {
     this.sinceInteraction += dt;
     this.sincePoke += dt;
     this.sinceCheer += dt;
-    this.sinceStartle += dt;
-    this.sinceSniff += dt;
-    this.sinceChaseRoll += dt;
     this.sinceTurn += dt;
     if (this.crossing) {
-      this.crossing.elapsed += dt;
+      // Chỉ tính giờ chờ overlay sang từ lúc giữa thân qua mép: đi bộ từ đầu mặt đất ra tới đó mất hơn một giây.
+      if (this.leaving) this.crossing.elapsed += dt;
       // Bị click, bị kéo giữa chừng: thôi sang màn hình kia.
       if (this.state !== "walk" && this.state !== "run" && this.state !== "fall") this.stayInside();
     }
@@ -379,8 +369,12 @@ export class Pet {
     }
     // Đường leo, đường nhảy tính theo toạ độ cũ: buông ra rơi cho chắc (hiếm khi xảy ra đúng lúc này).
     if (this.state === "climb" || this.state === "jump") this.dropOff();
-    // Overlay đã sang màn hình pet đang đi tới.
-    if (this.crossing?.phase === "out") this.crossing = { ...this.crossing, phase: "in", elapsed: 0 };
+    // Overlay đã sang màn hình pet đang đi tới. Bị giữ ngay ngoài mép lúc đang bay thì bay tiếp vào.
+    const crossing = this.crossing;
+    if (crossing?.phase === "out") {
+      if (this.state === "fall" && crossing.vx !== undefined) this.vx = crossing.vx * scale;
+      this.crossing = { dir: crossing.dir, phase: "in", elapsed: 0 };
+    }
   }
 
   /** Vùng màn hình vừa đổi: giữ pet trong vùng mới, đang ở dưới đất thì đứng lên (hoặc rơi xuống) mặt đất mới. */
@@ -511,84 +505,12 @@ export class Pet {
     });
   }
 
-  /** Con trỏ chuột là một thứ sống trên màn hình: pet nhìn theo, đuổi, né, lại gần ngửi, bị giật chuột thì giật mình. */
+  /** Con trỏ ở gần thì pet quay về phía con trỏ. */
   private watchCursor(): void {
     const cursor = this.env.cursor;
-    if (!cursor || !CALM.has(this.state) || !this.grounded || this.crossing) return;
-    const half = this.width / 2;
-    // Giật chuột quét sát thân: nhảy dựng lên rồi ngã choáng. Chỉ tính phần thân, không tính khoảng trống quanh hình.
-    const body = { left: this.x - half * 0.7, right: this.x + half * 0.7, top: this.y - this.height * 0.8, bottom: this.y };
-    if (
-      cursor.peak >= TUNING.startleSpeed &&
-      this.sinceStartle >= TUNING.startleCooldown &&
-      segmentGap(cursor.fromX, cursor.fromY, cursor.x, cursor.y, body) <= TUNING.startleRange
-    ) {
-      this.sinceStartle = 0;
-      this.goal = null;
-      this.hops = 0;
-      this.brain.go(this, "react");
-      this.startled = true;
-      return;
-    }
-    // Người dùng đang giữ chuột (kéo cửa sổ, bôi đen chữ): chỉ nhìn theo.
-    const ground = groundOf(this);
+    if (!cursor || this.state !== "idle" || !this.grounded || this.crossing) return;
     const dx = cursor.x - this.x;
-    const level =
-      !cursor.pressed &&
-      cursor.y >= ground.y - this.height * TUNING.cursorAbove &&
-      cursor.y <= ground.y + this.height * TUNING.cursorBelow;
-    const speed = Math.hypot(cursor.vx, cursor.vy);
-    const goal = this.goal?.kind;
-    // Con trỏ lao tới: chạy né. Cú lao chỉ vài phần mười giây, nên xét tốc độ tức thời và hướng vừa đi
-    // trong bước này chứ không chờ vận tốc làm mượt.
     if (
-      level &&
-      cursor.peak >= TUNING.dodgeSpeed &&
-      Math.abs(dx) <= TUNING.dodgeRange &&
-      (cursor.x - cursor.fromX) * dx < 0
-    ) {
-      if (goal !== "flee") this.runFrom(dx > 0 ? -1 : 1);
-      return;
-    }
-    if (goal) return;
-    const free = this.state === "idle" || this.state === "walk" || this.state === "run";
-    if (
-      level &&
-      free &&
-      speed >= TUNING.chaseSpeed[0] &&
-      speed <= TUNING.chaseSpeed[1] &&
-      Math.abs(dx) <= TUNING.chaseRange &&
-      this.sinceChaseRoll >= TUNING.chaseRoll
-    ) {
-      this.sinceChaseRoll = 0;
-      if (this.env.rng.chance(TUNING.chaseChance)) {
-        this.facing = dx > 0 ? 1 : -1;
-        this.setOff("run", { kind: "chase" });
-        return;
-      }
-    }
-    if (
-      level &&
-      (this.state === "idle" || this.state === "walk") &&
-      cursor.still >= TUNING.sniffDelay &&
-      Math.abs(dx) <= TUNING.sniffRange &&
-      this.sinceSniff >= TUNING.sniffCooldown
-    ) {
-      this.sinceSniff = 0;
-      const side: Facing = dx >= 0 ? 1 : -1;
-      const x = clamp(cursor.x - side * this.width * TUNING.sniffGap, ground.from, ground.to);
-      if (Math.abs(x - this.x) < 2) {
-        this.facing = side;
-        if (this.state !== "idle") this.brain.go(this, "idle");
-        return;
-      }
-      this.facing = x > this.x ? 1 : -1;
-      this.setOff("walk", { kind: "sniff", x });
-      return;
-    }
-    // Đứng yên thì quay về phía con trỏ ở gần.
-    if (
-      this.state === "idle" &&
       Math.abs(dx) >= TUNING.lookDeadZone &&
       Math.hypot(dx, cursor.y - (this.y - this.height / 2)) <= TUNING.lookRange &&
       this.sinceTurn >= TUNING.lookTurn
@@ -642,29 +564,22 @@ function startMoving(pet: Pet, time: readonly [number, number]): void {
     plan(pet, TUNING.fleeTime);
     return;
   }
-  if (pet.goal?.kind === "chase") {
-    pet.planned = TUNING.chaseTime;
-    return;
-  }
   if (pet.goal) {
     pet.planned = TUNING.goalTime;
     return;
   }
   plan(pet, time);
-  if (pet.env.rng.chance(TUNING.turnChance)) pet.facing = pet.facing === 1 ? -1 : 1;
+  // Đang đi vào từ mép màn hình mới (bị ném sang, chạm đất ngoài mép) thì không quay đầu.
+  if (!pet.crossing && pet.env.rng.chance(TUNING.turnChance)) pet.facing = pet.facing === 1 ? -1 : 1;
 }
 
 function move(pet: Pet, speed: number, time: number, dt: number): PetState | undefined {
   const ground = groundOf(pet);
   if (ground.to - ground.from < 1) return "idle";
-  if (pet.goal?.kind === "chase") {
-    const next = chase(pet, ground);
-    if (next) return next;
-  }
   pet.x += pet.facing * speed * pet.env.speed * dt;
   if (pet.crossing) return cross(pet, pet.crossing, time);
   const goal = pet.goal;
-  if (goal && (goal.kind === "climb" || goal.kind === "peek" || goal.kind === "sniff")) {
+  if (goal && (goal.kind === "climb" || goal.kind === "peek")) {
     const target = goalX(pet, goal, ground);
     if (target === null) {
       pet.goal = null;
@@ -700,7 +615,6 @@ function goalX(pet: Pet, goal: Goal, ground: Ground): number | null {
     const rect = pet.mount && pet.env.terrain.window(pet.mount.id);
     return rect ? clamp(rect.x + goal.dx, ground.from, ground.to) : null;
   }
-  if (goal.kind === "sniff") return clamp(goal.x, ground.from, ground.to);
   return null;
 }
 
@@ -709,23 +623,7 @@ function arrive(pet: Pet, goal: Goal): PetState {
     const wall = pet.env.terrain.wall(goal.id, goal.side);
     if (wall) return climbOrGrab(pet, wall);
   }
-  // Tới cạnh con trỏ: quay mặt vào ngửi.
-  const cursor = pet.env.cursor;
-  if (goal.kind === "sniff" && cursor && Math.abs(cursor.x - pet.x) >= 1) pet.facing = cursor.x > pet.x ? 1 : -1;
   return "idle";
-}
-
-/** Đuổi con trỏ: quay về phía nó, tới sát thì đứng lại, mất dấu thì thôi. */
-function chase(pet: Pet, ground: Ground): PetState | undefined {
-  const cursor = pet.env.cursor;
-  if (!cursor || cursor.pressed) return "idle";
-  const dx = cursor.x - pet.x;
-  const level =
-    cursor.y >= ground.y - pet.height * TUNING.cursorAbove && cursor.y <= ground.y + pet.height * TUNING.cursorBelow;
-  if (!level || Math.abs(dx) > TUNING.chaseRange * TUNING.chaseLose) return "idle";
-  if (Math.abs(dx) <= pet.width * TUNING.sniffGap) return "idle";
-  pet.facing = dx > 0 ? 1 : -1;
-  return undefined;
 }
 
 /**
@@ -738,8 +636,9 @@ function cross(pet: Pet, crossing: Crossing, time: number): PetState | undefined
   // Không dừng lại giữa chừng lúc đang nằm vắt qua mép.
   pet.planned = Math.max(pet.planned, time + 1);
   if (crossing.phase === "in") {
-    // Vào hẳn rồi thì thôi; lỡ quay đầu ra lại thì vào luôn trong màn hình, không đi lạc ra ngoài.
-    if ((pet.x >= left + half && pet.x <= right - half) || pet.facing !== crossing.dir) pet.stayInside();
+    // Vào hẳn rồi thì thôi; lỡ quay đầu ra lại thì vào luôn trong màn hình, không đi lạc ra ngoài. Màn hình
+    // đổi tại chỗ (taskbar, DPI) lúc đang đi ra thì cũng thành "in" mà pet đang ở mép bên kia: vào luôn.
+    if (!entering(pet, crossing) || pet.facing !== crossing.dir) pet.stayInside();
     return undefined;
   }
   if (pet.facing !== crossing.dir) {
@@ -755,6 +654,13 @@ function cross(pet: Pet, crossing: Crossing, time: number): PetState | undefined
   return undefined;
 }
 
+/** Đã sang màn hình mới mà còn nằm ngoài (hoặc vắt qua) mép phía đi vào. */
+function entering(pet: Pet, crossing: Crossing): boolean {
+  const { left, right } = pet.env.bounds;
+  const half = pet.width / 2;
+  return crossing.dir > 0 ? pet.x < left + half : pet.x > right - half;
+}
+
 /**
  * Đi tới đầu mép. Mặt đất, hoặc cửa sổ chạm cạnh màn hình: quay đầu như chạm tường. Mép cửa sổ:
  * quay lại, ngồi mép hoặc xuống.
@@ -766,9 +672,8 @@ function atEnd(pet: Pet, ground: Ground, dir: Facing): PetState | undefined {
   const screenEdge = dir > 0 ? ground.to >= bounds.right - half : ground.from <= bounds.left + half;
   const goal = pet.goal?.kind;
   if (ledge && (goal === "down" || goal === "flee")) return stepOff(pet, ledge, dir);
-  // Chạy trốn mà bị dồn vào mép màn hình: đứng lại, không quay đầu chạy về phía cửa sổ. Đuổi hay đi tới
-  // con trỏ mà hết đường: đứng đó nhìn theo.
-  if (goal === "flee" || goal === "chase" || goal === "sniff") return "idle";
+  // Chạy trốn mà bị dồn vào mép màn hình: đứng lại, không quay đầu chạy về phía cửa sổ.
+  if (goal === "flee") return "idle";
   // Mép màn hình giáp màn hình khác: có khi đi sang bên đó.
   if (!ledge && !pet.goal && pet.env.exit(dir, pet.y - 1) && pet.env.rng.chance(TUNING.crossChance)) {
     pet.crossing = { dir, phase: "out", elapsed: 0 };
@@ -1052,8 +957,6 @@ function hop(pet: Pet, time: number): PetState | undefined {
     pet.hops--;
     return "react";
   }
-  // Bị giật chuột dọa: nhảy dựng lên xong thì ngã choáng.
-  if (pet.startled) return "dizzy";
   // Nhảy xong thì đi hoặc chạy tiếp luôn: đứng lại ngay sau khi bị click trông như bị đơ.
   return pet.env.rng.chance(TUNING.runAfterPoke) ? "run" : "walk";
 }
@@ -1091,7 +994,26 @@ function fall(pet: Pet, dt: number): PetState | undefined {
   const ground = ledge ? ledge.y : floor;
   if (pet.y < ground) return undefined;
 
-  // Chạm đất hoặc mép cửa sổ. Đang bay dở qua mép sang màn hình khác thì thôi, đáp trong màn hình này.
+  // Bay qua mép sang màn hình khác, giữa thân đã qua mép mà chạm đất: đứng lại chờ overlay sang bên kia,
+  // không kéo về. Chưa qua tới mép thì overlay không sang: đáp luôn trong màn hình này.
+  const crossing = pet.crossing;
+  if (crossing && pet.leaving) {
+    pet.y = ground;
+    pet.vx = 0;
+    pet.vy = 0;
+    // Đã đứng trên đất: overlay sang thì đi bộ vào, không bay tiếp.
+    crossing.vx = undefined;
+    return undefined;
+  }
+  // Đã sang màn hình mới mà chạm đất lúc còn ở ngoài mép: đi bộ vào, không hiện ra đột ngột trong màn hình.
+  if (crossing?.phase === "in" && !landing && entering(pet, crossing)) {
+    pet.y = ground;
+    pet.vx = 0;
+    pet.vy = 0;
+    pet.facing = crossing.dir;
+    return "walk";
+  }
+  // Chạm đất hoặc mép cửa sổ. Đang bay vào từ mép sang màn hình mới thì đáp luôn trong màn hình này.
   if (landing) pet.x = landing.x;
   if (pet.crossing) pet.stayInside();
   pet.y = ground;
@@ -1107,15 +1029,16 @@ function fall(pet: Pet, dt: number): PetState | undefined {
 
 /**
  * Bị ném vào mép `side` của màn hình: mép đó giáp màn hình khác thì bay qua luôn, không nảy lại. Bay ra
- * hẳn mà overlay chưa sang bên kia thì treo ngay ngoài mép chờ, lâu quá thì nảy lại vào trong.
+ * hẳn mà overlay chưa sang bên kia thì dừng ngay ngoài mép, rơi thẳng xuống chờ, lâu quá thì nảy lại vào trong.
+ * Overlay sang lúc pet còn đang rơi thì bay tiếp vào với vận tốc lúc bị giữ lại (`Crossing.vx`).
  */
 function throughEdge(pet: Pet, side: Facing): boolean {
-  const crossing = pet.crossing;
+  let crossing = pet.crossing;
   // Vừa sang màn hình mới, đang bay vào từ mép bên kia.
   if (crossing?.phase === "in") return crossing.dir === -side;
   if (!crossing) {
     if (pet.vx * side <= 0 || !pet.env.exit(side, pet.y - pet.height / 2)) return false;
-    pet.crossing = { dir: side, phase: "out", elapsed: 0 };
+    crossing = pet.crossing = { dir: side, phase: "out", elapsed: 0 };
   } else if (crossing.dir !== side || crossing.elapsed >= TUNING.crossTimeout) {
     pet.stayInside();
     return false;
@@ -1124,7 +1047,9 @@ function throughEdge(pet: Pet, side: Facing): boolean {
   const out = side > 0 ? right + pet.width / 2 : left - pet.width / 2;
   if ((pet.x - out) * side > 0) {
     pet.x = out;
+    crossing.vx ??= pet.vx;
     pet.vx = 0;
+    pet.vy = 0;
   }
   return true;
 }

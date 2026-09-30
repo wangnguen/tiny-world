@@ -10,7 +10,7 @@
 
 use crate::error::{AppError, AppResult};
 use crate::{events, window_list};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 use std::thread;
@@ -23,12 +23,18 @@ pub const LABEL: &str = "overlay";
 const WATCH_INTERVAL: Duration = Duration::from_secs(1);
 
 /// Hình chữ nhật theo CSS pixel, gốc là góc trên trái overlay. Khớp `Rect` trong packages/core.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Rect {
     pub x: f64,
     pub y: f64,
     pub width: f64,
     pub height: f64,
+}
+
+impl Rect {
+    pub fn contains(&self, x: f64, y: f64) -> bool {
+        x >= self.x && x < self.x + self.width && y >= self.y && y < self.y + self.height
+    }
 }
 
 /// Khớp `ScreenInfo` trong packages/core.
@@ -207,6 +213,8 @@ pub struct Overlay {
     auto_hidden: AtomicBool,
     /// Tray bật Tạm dừng: pet đứng yên, chuột đi xuyên qua pet.
     paused: AtomicBool,
+    /// Pet đang ngủ, overlay dừng vòng lặp vẽ (command `set_resting`).
+    resting: AtomicBool,
 }
 
 impl Overlay {
@@ -221,6 +229,11 @@ impl Overlay {
 
     pub fn is_visible(&self) -> bool {
         !self.user_hidden.load(Ordering::Relaxed) && !self.auto_hidden.load(Ordering::Relaxed)
+    }
+
+    /// Pet đang ngủ (trên taskbar), overlay dừng vòng lặp vẽ.
+    pub fn is_resting(&self) -> bool {
+        self.resting.load(Ordering::Relaxed)
     }
 }
 
@@ -258,6 +271,7 @@ pub fn setup(app: &AppHandle) -> AppResult<()> {
         user_hidden: AtomicBool::new(false),
         auto_hidden: AtomicBool::new(false),
         paused: AtomicBool::new(false),
+        resting: AtomicBool::new(false),
     });
     Ok(())
 }
@@ -399,6 +413,74 @@ fn apply_visibility(app: &AppHandle, overlay: &Overlay) {
     // Cửa sổ ẩn nhưng trang vẫn chạy như đang hiện, báo để frontend dừng vòng lặp vẽ.
     if let Err(e) = app.emit_to(LABEL, events::OVERLAY_VISIBILITY, visible) {
         eprintln!("Không báo được trạng thái ẩn/hiện cho overlay: {e}");
+    }
+    // Lúc ẩn luồng theo dõi cửa sổ gỡ hook; hiện lại thì đánh thức để nó gắn lại và đọc ngay.
+    if visible {
+        window_list::refresh();
+    }
+    apply_memory_level(&window, overlay);
+}
+
+/// Pet ngủ (frontend dừng vòng lặp vẽ) hoặc thức dậy.
+pub fn set_resting(app: &AppHandle, resting: bool) {
+    let Some(overlay) = app.try_state::<Overlay>() else {
+        return;
+    };
+    if overlay.resting.swap(resting, Ordering::Relaxed) == resting {
+        return;
+    }
+    // Luồng theo dõi cửa sổ đổi cách theo dõi (pet ngủ thì chỉ cần taskbar); thức dậy thì đọc lại ngay.
+    window_list::refresh();
+    if let Some(window) = app.get_webview_window(LABEL) {
+        apply_memory_level(&window, &overlay);
+    }
+}
+
+/// Pet ngủ hoặc overlay ẩn thì không có gì chuyển động: bảo WebView2 dùng ít RAM (bỏ bớt cache, đẩy
+/// phần không dùng ra khỏi RAM). Pet thức dậy thì trả về bình thường.
+fn apply_memory_level(window: &WebviewWindow, overlay: &Overlay) {
+    let low = overlay.resting.load(Ordering::Relaxed) || !overlay.is_visible();
+    if let Err(e) = memory::set_low(window, low) {
+        eprintln!("Không đổi được mức dùng RAM của WebView2: {e}");
+    }
+}
+
+#[cfg(windows)]
+mod memory {
+    use tauri::WebviewWindow;
+    use webview2_com::Microsoft::Web::WebView2::Win32::{
+        ICoreWebView2_19, COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW,
+        COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL,
+    };
+    use windows_core::Interface;
+
+    pub fn set_low(window: &WebviewWindow, low: bool) -> tauri::Result<()> {
+        window.with_webview(move |webview| {
+            let level = if low {
+                COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW
+            } else {
+                COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL
+            };
+            // SAFETY: `with_webview` chạy trên main thread, nơi controller WebView2 được tạo và dùng.
+            // WebView2 Runtime cũ (trước 1.0.2210) không có ICoreWebView2_19 thì thôi.
+            let result = unsafe {
+                webview
+                    .controller()
+                    .CoreWebView2()
+                    .and_then(|core| core.cast::<ICoreWebView2_19>())
+                    .and_then(|core| core.SetMemoryUsageTargetLevel(level))
+            };
+            if let Err(e) = result {
+                eprintln!("WebView2 không hỗ trợ đổi mức dùng RAM: {e}");
+            }
+        })
+    }
+}
+
+#[cfg(not(windows))]
+mod memory {
+    pub fn set_low(_window: &tauri::WebviewWindow, _low: bool) -> tauri::Result<()> {
+        Ok(())
     }
 }
 

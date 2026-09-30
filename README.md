@@ -70,8 +70,7 @@ Tương tác với pet:
 | Kéo cửa sổ pet đang đứng | Pet đi theo cửa sổ; kéo lên sát mép trên màn hình thì hết chỗ đứng, pet rơi |
 | Thu nhỏ hoặc đóng cửa sổ đó | Pet rơi xuống cửa sổ bên dưới hoặc taskbar |
 | Cửa sổ khác đè lên | Pet bị che mất phần nằm dưới cửa sổ đó (click vào đó là click cửa sổ), lát sau đi ra chỗ không bị che |
-| Con trỏ ở gần | Đứng yên thì quay về phía con trỏ. Con trỏ đứng yên ngang tầm (trong khoảng 250 px) thì lại gần ngửi, 15 giây một lần. Lướt chậm qua thì có lúc chạy đuổi theo, đuổi kịp thì đứng lại. Lao nhanh tới thì chạy né. Đang giữ chuột (kéo cửa sổ, bôi đen chữ) thì chỉ nhìn theo |
-| Giật chuột thật nhanh quét qua người pet | Giật mình nhảy dựng lên rồi ngã choáng (10 giây mới giật mình lại) |
+| Con trỏ ở gần | Đứng yên thì quay về phía con trỏ |
 | Click | Nhảy lên một cái rồi đi hoặc chạy tiếp; đang ngủ thì thức dậy; đang leo thì tuột tay. Click dồn dập chỉ nhảy một lần |
 | Kéo lên rồi thả | Rơi xuống mép cửa sổ bên dưới hoặc taskbar, nảy nhẹ khi chạm đất; thả từ cao thì choáng: lảo đảo, sao bay quanh đầu |
 | Kéo rồi vung chuột và buông | Bị ném bay theo quán tính, đập tường thì bật lại; ném về phía màn hình khác thì bay sang bên đó |
@@ -81,10 +80,12 @@ Tương tác với pet:
 
 Đổi độ phân giải, tỉ lệ DPI, chỗ đặt hay cỡ taskbar, cắm hoặc rút màn hình trong lúc app đang chạy thì
 overlay tự khớp lại trong khoảng một giây: pet đứng lên mặt đất mới, pet đang đứng trên cửa sổ thì
-vẫn đứng đúng mép cửa sổ đó, màn hình pet đang ở bị rút ra thì pet về màn hình chính.
+vẫn đứng đúng mép cửa sổ đó, màn hình pet đang ở bị rút ra thì pet về màn hình chính. Taskbar để tự
+ẩn thì lúc taskbar trồi lên pet đứng lên trên nó, taskbar thụt xuống thì pet rơi xuống đáy màn hình.
+App chỉ hỗ trợ tỉ lệ 100%.
 
-Click pet không làm mất focus của app đang dùng. Có app fullscreen (video, game, trình chiếu) thì pet
-tự ẩn, thoát fullscreen thì hiện lại. Lúc ẩn (kể cả ẩn từ tray) app dừng hẳn vòng lặp, pet đứng nguyên
+Click pet không làm mất focus của app đang dùng. Có app fullscreen (video, game, trình chiếu: cửa sổ
+phủ kín cả màn hình, không tính cửa sổ phóng to) thì pet tự ẩn, thoát fullscreen thì hiện lại. Lúc ẩn (kể cả ẩn từ tray) app dừng hẳn vòng lặp, pet đứng nguyên
 chỗ cũ chờ hiện lại.
 
 ## Build bản phát hành
@@ -152,7 +153,9 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
   event `windows-changed` khi có gì khác, không có gì đổi thì ngủ (2 giây đọc lại một lần phòng sót).
   Chỉ lấy khung nhìn thấy (DWM, không tính viền trong suốt), thứ tự chồng và tên lớp để bỏ desktop,
   taskbar; không đọc tiêu đề hay nội dung. Bỏ cửa sổ thu nhỏ, ẩn, ở desktop ảo khác, cửa sổ công cụ và
-  cửa sổ để chuột đi xuyên.
+  cửa sổ để chuột đi xuyên. Windows báo cả lúc con trỏ di chuyển (cùng event với cửa sổ di chuyển),
+  nên pet ngủ thì việc di chuyển chỉ theo dõi cửa sổ của explorer (taskbar) và 10 giây mới đọc lại;
+  overlay ẩn (app fullscreen) thì gỡ hẳn hook.
 - **Địa hình** (`packages/sim/src/terrain.ts`): mép trên cửa sổ là chỗ đứng, cạnh bên là tường để
   leo, trừ phần bị cửa sổ nằm trên che. Pet đứng trên taskbar hoặc đang bay thì nằm trước mọi cửa sổ;
   đứng hay leo trên cửa sổ nào thì phần bị cửa sổ nằm trên che không được vẽ (xoá trên canvas) và
@@ -166,10 +169,19 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
   `move_overlay` với điểm nằm bên kia mép; điểm đó thuộc màn hình khác thì Rust chuyển overlay sang,
   rồi gửi event `screen-changed` kèm cách đổi toạ độ cũ sang mới (`remap`). Cứ mỗi giây Rust đo lại
   màn hình; độ phân giải, DPI, taskbar đổi hay màn hình bị rút thì đặt lại overlay và gửi cùng event đó.
-- **Con trỏ**: sim nhận vị trí từ `cursor-moved` (chỉ lúc vòng lặp đang chạy), tự tính vận tốc, tốc
-  độ lớn nhất trong mỗi bước và thời gian đứng yên (`packages/sim/src/cursor.ts`).
+- **Con trỏ** (`src-tauri/src/cursor.rs`): Rust đọc con trỏ khoảng 60 lần/giây nhưng chỉ gửi
+  `cursor-moved` khi con trỏ ở trong vùng quanh pet mà frontend báo (`set_cursor_interest`: pet thức thì
+  trong tầm nhìn theo 300 px, ngủ thì chỉ quanh thân), lúc vừa ra khỏi vùng, lúc bấm/nhả chuột (click ở
+  đâu pet đang ngủ cũng dậy) và lúc vùng vừa đổi. Nhờ vậy chuột di chuyển ở xa pet không đánh thức
+  WebView. Pet chỉ dùng vị trí con trỏ để quay đầu nhìn theo và để bật/tắt click-through.
+- **Taskbar tự ẩn**: lúc trồi lên, taskbar che mép dưới overlay. Luồng theo dõi cửa sổ đọc khung
+  taskbar cùng lúc với danh sách cửa sổ và gửi mép trên của nó (`taskbarTop` trong `windows-changed`);
+  mép đó cao hơn mép dưới vùng làm việc thì frontend lấy nó làm mặt đất.
 - **Pet**: mỗi pet là một `<canvas>` nhỏ đúng bằng một frame, di chuyển bằng CSS transform, chỉ vẽ
-  lại khi đổi frame. Vòng lặp tối đa 30 fps.
+  lại khi đổi frame. Vòng lặp tối đa 30 fps, hẹn giờ rồi mới xin `requestAnimationFrame` (xin rAF liên
+  tục thì WebView thức dậy theo tần số màn hình, 60–144 lần/giây). Pet đứng yên hay ngồi mép thì chỉ
+  thức dậy lúc đổi frame (khoảng 7 lần/giây), ngủ thì dừng hẳn và Rust bảo WebView2 dùng ít RAM
+  (`MemoryUsageTargetLevel`), overlay ẩn cũng vậy. Mặt nạ alpha để bắt chuột lưu 1 bit mỗi pixel.
 - **Logic** (`packages/sim`): không phụ thuộc DOM hay Tauri, test bằng vitest. Bước thời gian cố
   định nên hành vi không phụ thuộc fps; RNG có seed để test được hành vi ngẫu nhiên.
 - **Cửa sổ cài đặt** (`src/settings/`, `src-tauri/src/settings.rs`): trang React riêng
