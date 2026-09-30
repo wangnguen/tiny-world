@@ -66,33 +66,6 @@ export const TUNING = {
   lookDeadZone: 12,
   /** Hai lần quay đầu theo con trỏ cách nhau ít nhất chừng này giây. */
   lookTurn: 0.3,
-  /**
-   * Con trỏ phải ở ngang tầm chỗ pet đứng mới đuổi hay lại gần được: cao hơn mép chỗ đứng tối đa chừng
-   * này lần chiều cao pet, thấp hơn tối đa `cursorBelow` lần.
-   */
-  cursorAbove: 1.5,
-  cursorBelow: 0.3,
-  /** Con trỏ đứng yên chừng này giây trong tầm `sniffRange` thì lại gần ngửi, dừng cách `sniffGap` lần bề ngang. */
-  sniffDelay: 1.2,
-  sniffRange: 250,
-  sniffGap: 0.4,
-  sniffCooldown: 15,
-  /** Con trỏ lướt qua trong tầm `chaseRange` với tốc độ trong khoảng này thì có thể đuổi (xác suất `chaseChance`). */
-  chaseRange: 300,
-  chaseSpeed: [60, 900],
-  chaseChance: 0.5,
-  /** Đuổi tối đa chừng này giây; con trỏ vượt quá `chaseLose` lần tầm đuổi thì bỏ. */
-  chaseTime: 6,
-  chaseLose: 1.5,
-  /** Lần bốc thăm đuổi trước chưa quá chừng này giây thì không bốc lại. */
-  chaseRoll: 5,
-  /** Con trỏ lao tới nhanh hơn `dodgeSpeed` trong tầm `dodgeRange` thì chạy né. */
-  dodgeRange: 150,
-  dodgeSpeed: 1000,
-  /** Giật chuột (nhanh hơn `startleSpeed`) quét sát thân pet trong `startleRange` thì giật mình ngã. */
-  startleSpeed: 2500,
-  startleRange: 16,
-  startleCooldown: 10,
 
   // Đa màn hình.
   /** Đi tới mép màn hình giáp màn hình khác thì sang bên đó với xác suất này. */

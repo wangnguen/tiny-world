@@ -1,5 +1,6 @@
 //! Theo dõi các cửa sổ đang hiện để pet đứng, leo, nhảy trên đó. Chỉ lấy khung, thứ tự chồng và tên
-//! lớp (để bỏ desktop, taskbar); không đọc tiêu đề hay nội dung cửa sổ.
+//! lớp (để bỏ desktop, taskbar); không đọc tiêu đề hay nội dung cửa sổ. Taskbar tự ẩn đang trồi lên
+//! thì báo kèm mép trên của nó để pet đứng lên trên.
 //!
 //! Windows báo mỗi khi cửa sổ mở, đóng, di chuyển, đổi thứ tự chồng (`SetWinEventHook`). Luồng nền
 //! gom các lần báo lại, đọc danh sách tối đa 30 lần/giây và chỉ gửi cho overlay khi có gì khác. Không
@@ -19,6 +20,8 @@ use tauri::{AppHandle, Emitter, Manager};
 const MIN_INTERVAL: Duration = Duration::from_millis(33);
 /// Không có event nào thì cứ chừng này đọc lại một lần.
 const REFRESH: Duration = Duration::from_secs(2);
+/// Pet đang ngủ trên taskbar thì cửa sổ không ảnh hưởng gì: đọc lại thưa hơn.
+const RESTING_REFRESH: Duration = Duration::from_secs(10);
 /// Cửa sổ nhỏ hơn chừng này (CSS pixel) thì bỏ: không đủ chỗ đứng, thường là cửa sổ phụ.
 const MIN_SIZE: f64 = 24.0;
 /// Cửa sổ biến khỏi danh sách mà chưa bị huỷ (đang ẩn trước khi đóng, thu nhỏ) thì theo dõi chừng này
@@ -27,6 +30,11 @@ const DEPARTURE_WINDOW: Duration = Duration::from_secs(3);
 /// Đang theo dõi cửa sổ vừa biến mất thì đọc lại ít nhất chừng này một lần: huỷ cửa sổ đã ẩn không
 /// phải lúc nào cũng có event.
 const DEPARTURE_POLL: Duration = Duration::from_millis(250);
+/// Taskbar tự ẩn che mép dưới overlay ít hơn chừng này (pixel vật lý) thì coi như đang ẩn: lúc ẩn nó vẫn
+/// thò lên 2 pixel.
+const TASKBAR_SLIVER: i64 = 4;
+/// Overlay đang ẩn thì cứ chừng này mới xem lại; hiện lại thì `refresh` đánh thức ngay.
+const HIDDEN_WAIT: Duration = Duration::from_secs(5);
 
 /// Khớp `WindowInfo` trong packages/core.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
@@ -39,29 +47,28 @@ pub struct WindowInfo {
 
 /// Khớp `WindowList` trong packages/core. `windows` xếp từ trên xuống dưới theo thứ tự chồng.
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WindowList {
     pub windows: Vec<WindowInfo>,
     /// Cửa sổ vừa bị đóng hẳn (không phải thu nhỏ hay ẩn) kể từ lần gửi trước, kèm khung lúc còn hiện.
     pub closed: Vec<WindowInfo>,
+    /// Taskbar tự ẩn đang trồi lên che mép dưới overlay: mép trên của nó (CSS pixel), pet đứng trên đó.
+    pub taskbar_top: Option<f64>,
 }
 
-/// Danh sách gửi lần gần nhất, cho command `list_windows` lúc overlay vừa mở.
+/// Danh sách gửi lần gần nhất (không có `closed`), cho command `list_windows` lúc overlay vừa mở.
 #[derive(Default)]
-pub struct Windows(Mutex<Vec<WindowInfo>>);
+pub struct Windows(Mutex<WindowList>);
 
 impl Windows {
     pub fn current(&self) -> WindowList {
-        let windows = self.0.lock().map(|w| w.clone()).unwrap_or_default();
-        WindowList {
-            windows,
-            closed: Vec::new(),
-        }
+        self.0.lock().map(|list| list.clone()).unwrap_or_default()
     }
 
-    fn set(&self, windows: &[WindowInfo]) {
+    fn set(&self, list: &WindowList) {
         if let Ok(mut current) = self.0.lock() {
-            current.clear();
-            current.extend_from_slice(windows);
+            current.windows.clone_from(&list.windows);
+            current.taskbar_top = list.taskbar_top;
         }
     }
 }
@@ -83,6 +90,19 @@ pub fn to_overlay(raw: &[RawWindow], geometry: &Geometry) -> Vec<WindowInfo> {
         })
         .filter(|w| w.rect.width >= MIN_SIZE && w.rect.height >= MIN_SIZE)
         .collect()
+}
+
+/// Taskbar nằm ngang ở đáy màn hình đang che mép dưới overlay (taskbar tự ẩn đang trồi lên): mép trên
+/// của nó theo CSS pixel của overlay. Taskbar bình thường nằm ngoài vùng làm việc nên không che overlay.
+pub fn taskbar_top(taskbars: &[PhysicalRect], geometry: &Geometry) -> Option<f64> {
+    let window = geometry.window;
+    let bottom = |r: PhysicalRect| i64::from(r.y) + i64::from(r.height);
+    taskbars
+        .iter()
+        .filter(|r| r.width > r.height && intersects(**r, window) && bottom(**r) >= bottom(window))
+        .filter(|r| bottom(window) - i64::from(r.y) >= TASKBAR_SLIVER)
+        .map(|r| geometry.to_local(f64::from(r.x), f64::from(r.y)).1)
+        .reduce(f64::min)
 }
 
 /// Cửa sổ vừa biến khỏi danh sách. Đóng cửa sổ thì Windows ẩn nó trước rồi mới huỷ; lần đọc rơi vào
@@ -147,17 +167,38 @@ pub fn spawn(app: AppHandle) {
         .and_then(|window| window.hwnd().ok())
         .map_or(0, |hwnd| hwnd.0 as isize);
     thread::spawn(move || {
-        win32::install_hooks();
-        let mut sent: Vec<WindowInfo> = Vec::new();
+        win32::init();
+        let mut hooks: Option<win32::Hooks> = None;
+        let mut sent = WindowList::default();
         let mut departures = Departures::default();
         let mut last_read: Option<Instant> = None;
         loop {
+            // Overlay ẩn (app fullscreen, tray): không có pet để đứng trên cửa sổ. Gỡ hook để game hay video
+            // không đánh thức luồng này mỗi lần chuột hay cửa sổ đổi; hiện lại thì gắn lại và đọc ngay.
+            let overlay = app.state::<Overlay>();
+            if !overlay.is_visible() {
+                hooks = None;
+                win32::wait(HIDDEN_WAIT);
+                continue;
+            }
+            // Pet ngủ trên taskbar: cửa sổ di chuyển không ảnh hưởng gì, chỉ cần biết taskbar tự ẩn trồi lên.
+            // Hook việc di chuyển của mọi cửa sổ thì Windows đánh thức luồng này mỗi lần chuột nhích (con trỏ
+            // cũng báo `EVENT_OBJECT_LOCATIONCHANGE`), nên lúc đó chỉ hook của taskbar. Thức dậy thì hook lại
+            // toàn bộ và đọc ngay.
+            let resting = overlay.is_resting();
+            if hooks.as_ref().is_none_or(|h| h.taskbar_only() != resting) {
+                // Gỡ hook cũ trước rồi mới gắn hook mới.
+                drop(hooks.take());
+                hooks = Some(win32::Hooks::install(resting));
+                last_read = None;
+            }
             let now = Instant::now();
+            let refresh = if resting { RESTING_REFRESH } else { REFRESH };
             let due = match last_read {
                 None => now,
                 Some(last) if win32::dirty() => last + MIN_INTERVAL,
                 Some(last) if departures.pending() => last + DEPARTURE_POLL,
-                Some(last) => last + REFRESH,
+                Some(last) => last + refresh,
             };
             if now < due {
                 win32::wait(due - now);
@@ -168,19 +209,24 @@ pub fn spawn(app: AppHandle) {
             last_read = Some(now);
             let geometry = app.state::<Overlay>().geometry();
             let windows = to_overlay(&win32::list(overlay_hwnd), &geometry);
-            let closed = departures.update(&sent, &windows, win32::alive, now);
-            if windows == sent && closed.is_empty() {
+            let taskbar = taskbar_top(&win32::taskbars(), &geometry);
+            let closed = departures.update(&sent.windows, &windows, win32::alive, now);
+            if windows == sent.windows && taskbar == sent.taskbar_top && closed.is_empty() {
                 continue;
             }
-            app.state::<Windows>().set(&windows);
             let list = WindowList {
-                windows: windows.clone(),
+                windows,
                 closed,
+                taskbar_top: taskbar,
             };
+            app.state::<Windows>().set(&list);
             if let Err(e) = app.emit_to(overlay::LABEL, events::WINDOWS_CHANGED, &list) {
                 eprintln!("Không gửi được danh sách cửa sổ: {e}");
             }
-            sent = windows;
+            sent = WindowList {
+                closed: Vec::new(),
+                ..list
+            };
         }
     });
 }
@@ -197,10 +243,11 @@ mod win32 {
     use windows_sys::Win32::Graphics::Dwm::{
         DwmGetWindowAttribute, DWMWA_CLOAKED, DWMWA_EXTENDED_FRAME_BOUNDS,
     };
-    use windows_sys::Win32::UI::Accessibility::{SetWinEventHook, HWINEVENTHOOK};
+    use windows_sys::Win32::UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK};
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        DispatchMessageW, EnumWindows, GetAncestor, GetClassNameW, GetWindowLongPtrW,
-        GetWindowRect, IsIconic, IsWindow, IsWindowVisible, MsgWaitForMultipleObjects,
+        DispatchMessageW, EnumWindows, FindWindowExW, GetAncestor, GetClassNameW, GetWindowLongPtrW,
+        GetWindowRect, GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible,
+        MsgWaitForMultipleObjects,
         PeekMessageW, PostThreadMessageW, CHILDID_SELF, EVENT_OBJECT_CLOAKED, EVENT_OBJECT_CREATE,
         EVENT_OBJECT_DESTROY, EVENT_OBJECT_LOCATIONCHANGE, EVENT_OBJECT_REORDER,
         EVENT_OBJECT_UNCLOAKED, EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_MINIMIZEEND,
@@ -229,6 +276,8 @@ mod win32 {
 
     /// Desktop (hình nền) và taskbar: không phải cửa sổ để pet đứng.
     const SHELL_CLASSES: [&str; 4] = ["Progman", "WorkerW", "Shell_TrayWnd", "Shell_SecondaryTrayWnd"];
+    /// Taskbar của màn hình chính và của các màn hình phụ.
+    const TASKBAR_CLASSES: [&str; 2] = ["Shell_TrayWnd", "Shell_SecondaryTrayWnd"];
 
     pub fn dirty() -> bool {
         DIRTY.load(Ordering::Relaxed)
@@ -238,17 +287,77 @@ mod win32 {
         DIRTY.store(false, Ordering::Relaxed);
     }
 
-    /// Hook chạy trên luồng gọi hàm này, luồng đó phải xử lý message (`wait`).
-    pub fn install_hooks() {
+    /// Ghi lại luồng theo dõi cửa sổ (luồng gọi hàm này) để `wake` đánh thức được.
+    pub fn init() {
         // SAFETY: GetCurrentThreadId không có điều kiện gì.
         THREAD.store(unsafe { GetCurrentThreadId() }, Ordering::Relaxed);
-        for (min, max) in EVENTS {
-            // SAFETY: `on_event` đúng chữ ký WINEVENTPROC; WINEVENT_OUTOFCONTEXT không cần DLL.
-            let hook = unsafe {
-                SetWinEventHook(min, max, std::ptr::null_mut(), Some(on_event), 0, 0, WINEVENT_OUTOFCONTEXT)
-            };
-            if hook.is_null() {
-                eprintln!("Không theo dõi được cửa sổ (event {min:#x}–{max:#x}).");
+    }
+
+    /// Các hook đang gắn; bỏ đi (drop) thì gỡ.
+    pub struct Hooks {
+        hooks: Vec<HWINEVENTHOOK>,
+        taskbar_only: bool,
+    }
+
+    impl Hooks {
+        /// Hook chạy trên luồng gọi hàm này, luồng đó phải xử lý message (`wait`) và cũng phải là luồng
+        /// gỡ hook. `taskbar_only`: việc di chuyển chỉ theo dõi các cửa sổ của explorer (taskbar), còn
+        /// mở, đóng, ẩn, hiện vẫn theo dõi mọi cửa sổ.
+        pub fn install(taskbar_only: bool) -> Self {
+            let explorer = if taskbar_only { explorer_process() } else { 0 };
+            let mut hooks = Vec::with_capacity(EVENTS.len());
+            for (min, max) in EVENTS {
+                let process = if min == EVENT_OBJECT_LOCATIONCHANGE { explorer } else { 0 };
+                // SAFETY: `on_event` đúng chữ ký WINEVENTPROC; WINEVENT_OUTOFCONTEXT không cần DLL.
+                let hook = unsafe {
+                    SetWinEventHook(
+                        min,
+                        max,
+                        std::ptr::null_mut(),
+                        Some(on_event),
+                        process,
+                        0,
+                        WINEVENT_OUTOFCONTEXT,
+                    )
+                };
+                if hook.is_null() {
+                    eprintln!("Không theo dõi được cửa sổ (event {min:#x}–{max:#x}).");
+                } else {
+                    hooks.push(hook);
+                }
+            }
+            DIRTY.store(true, Ordering::Relaxed);
+            Self {
+                hooks,
+                taskbar_only,
+            }
+        }
+
+        pub fn taskbar_only(&self) -> bool {
+            self.taskbar_only
+        }
+    }
+
+    /// Process của taskbar chính (explorer); không tìm thấy thì 0, nghĩa là mọi process.
+    fn explorer_process() -> u32 {
+        let class: Vec<u16> = TASKBAR_CLASSES[0].encode_utf16().chain(Some(0)).collect();
+        let mut process = 0;
+        // SAFETY: `class` là chuỗi UTF-16 kết thúc bằng 0; `process` là biến cục bộ hợp lệ.
+        unsafe {
+            let null = std::ptr::null_mut();
+            let taskbar = FindWindowExW(null, null, class.as_ptr(), std::ptr::null());
+            if !taskbar.is_null() {
+                GetWindowThreadProcessId(taskbar, &mut process);
+            }
+        }
+        process
+    }
+
+    impl Drop for Hooks {
+        fn drop(&mut self) {
+            for hook in self.hooks.drain(..) {
+                // SAFETY: `hook` do SetWinEventHook trả về trên chính luồng này, chưa gỡ lần nào.
+                unsafe { UnhookWinEvent(hook) };
             }
         }
     }
@@ -308,6 +417,30 @@ mod win32 {
     pub fn alive(id: isize) -> bool {
         // SAFETY: IsWindow chỉ kiểm tra handle.
         unsafe { IsWindow(id as HWND) != 0 }
+    }
+
+    /// Khung các taskbar đang hiện, toạ độ desktop. Taskbar tự ẩn trượt lên xuống thì Windows báo
+    /// `EVENT_OBJECT_LOCATIONCHANGE` như mọi cửa sổ khác, nên đọc cùng lúc với danh sách cửa sổ.
+    pub fn taskbars() -> Vec<PhysicalRect> {
+        let mut found = Vec::new();
+        for class in TASKBAR_CLASSES {
+            let class: Vec<u16> = class.encode_utf16().chain(Some(0)).collect();
+            let mut after: HWND = std::ptr::null_mut();
+            loop {
+                // SAFETY: `class` là chuỗi UTF-16 kết thúc bằng 0, còn sống suốt lúc gọi.
+                after = unsafe {
+                    FindWindowExW(std::ptr::null_mut(), after, class.as_ptr(), std::ptr::null())
+                };
+                if after.is_null() {
+                    break;
+                }
+                // SAFETY: chỉ đọc thông tin của cửa sổ, handle hỏng thì trả về 0/lỗi.
+                if unsafe { IsWindowVisible(after) } != 0 {
+                    found.extend(unsafe { frame(after) });
+                }
+            }
+        }
+        found
     }
 
     unsafe extern "system" fn collect(hwnd: HWND, lparam: LPARAM) -> BOOL {
@@ -392,13 +525,23 @@ mod win32 {
 #[cfg(not(windows))]
 mod win32 {
     use super::RawWindow;
+    use crate::overlay::PhysicalRect;
     use std::time::Duration;
 
     pub fn dirty() -> bool {
         false
     }
     pub fn clear_dirty() {}
-    pub fn install_hooks() {}
+    pub fn init() {}
+    pub struct Hooks(bool);
+    impl Hooks {
+        pub fn install(taskbar_only: bool) -> Self {
+            Self(taskbar_only)
+        }
+        pub fn taskbar_only(&self) -> bool {
+            self.0
+        }
+    }
     pub fn wake() {}
     pub fn wait(timeout: Duration) {
         std::thread::sleep(timeout);
@@ -408,6 +551,9 @@ mod win32 {
     }
     pub fn alive(_id: isize) -> bool {
         false
+    }
+    pub fn taskbars() -> Vec<PhysicalRect> {
+        Vec::new()
     }
 }
 
@@ -482,6 +628,56 @@ mod tests {
                 },
             ]
         );
+    }
+
+    fn physical(x: i32, y: i32, width: u32, height: u32) -> PhysicalRect {
+        PhysicalRect {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+
+    /// Màn hình 1920×1080, taskbar tự ẩn: vùng làm việc trùng cả màn hình (overlay bớt 1 pixel).
+    fn autohide_screen(scale_factor: f64) -> Geometry {
+        let monitor = physical(0, 0, 1920, 1080);
+        let display = Display {
+            name: "1".into(),
+            monitor,
+            work_area: monitor,
+            scale_factor,
+        };
+        Geometry::new(&display, &[])
+    }
+
+    #[test]
+    fn taskbar_tu_an_troi_len_thi_bao_mep_tren_de_pet_dung_len() {
+        let g = autohide_screen(1.0);
+        // Trồi lên hẳn, đang trượt giữa chừng.
+        assert_eq!(taskbar_top(&[physical(0, 1040, 1920, 40)], &g), Some(1040.0));
+        assert_eq!(taskbar_top(&[physical(0, 1060, 1920, 40)], &g), Some(1060.0));
+        // Đang ẩn: chỉ thò lên 2 pixel.
+        assert_eq!(taskbar_top(&[physical(0, 1078, 1920, 40)], &g), None);
+        // Taskbar của màn hình khác, taskbar dọc bên trái.
+        assert_eq!(taskbar_top(&[physical(1920, 1040, 1920, 40)], &g), None);
+        assert_eq!(taskbar_top(&[physical(0, 0, 62, 1080)], &g), None);
+        // Scale 150%: CSS pixel.
+        let g = autohide_screen(1.5);
+        assert_eq!(taskbar_top(&[physical(0, 1020, 1920, 60)], &g), Some(680.0));
+    }
+
+    #[test]
+    fn taskbar_binh_thuong_nam_ngoai_vung_lam_viec_thi_khong_bao() {
+        let monitor = physical(0, 0, 1920, 1080);
+        let display = Display {
+            name: "1".into(),
+            monitor,
+            work_area: physical(0, 0, 1920, 1040),
+            scale_factor: 1.0,
+        };
+        let g = Geometry::new(&display, &[]);
+        assert_eq!(taskbar_top(&[physical(0, 1040, 1920, 40)], &g), None);
     }
 
     fn info(id: isize) -> WindowInfo {

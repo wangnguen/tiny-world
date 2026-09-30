@@ -47,7 +47,7 @@ Khác đi:
 |---|---|---|---|
 | 0 | Base | Monorepo, overlay trong suốt click-through, pet tạm, tray, CI | Xong: test pass, đã chạy thử trên máy thật (overlay trong suốt, click-through theo alpha, click → phản ứng) |
 | 1 | MVP | 1 pet: tự đi, quay đầu ở mép, click phản ứng, kéo thả + rơi, bỏ mặc thì ngủ | Xong, đã thử trên máy thật: hành vi, vật lý, kéo thả/ném, Ctrl xuyên pet, không cướp focus, tự ẩn khi fullscreen, lưu trạng thái, tray Tạm dừng, Settings (nhân vật, cỡ, tốc độ, chạy cùng Windows). Đo 10 phút: heap JS ~2 MB không tăng; còn chạy thử 8 tiếng |
-| 2 | Desktop awareness | Đứng/leo/nhảy trên cửa sổ thật, ngủ trên taskbar, con trỏ là thực thể, đa màn hình | Đang làm: 2a–2d xong, đã thử trên máy thật; 2e xong phần code và test, chờ thử trên máy có 2 màn hình và DPI khác 100% |
+| 2 | Desktop awareness | Đứng/leo/nhảy trên cửa sổ thật, ngủ trên taskbar, nhìn theo con trỏ, đa màn hình | Xong: 2a–2e đã thử trên máy thật (2 màn hình 1920×1080). Chỉ hỗ trợ scale 100% |
 | 3 | Bộ lạc | Nhiều pet, tính cách, quan hệ, nhật ký sự kiện, speech bubble, skin | |
 | 4 | Thế giới sống | Căn cứ + xây nhà, nhu cầu, thời tiết thật quanh pet (theo thành phố tự nhập), ngày/đêm, sự kiện hiếm | |
 | 5 | Thói quen user | Thống kê app theo giờ, nhắc khuya, phản ứng gõ phím (chỉ trên máy, tự bật) | |
@@ -90,8 +90,8 @@ Khác đi:
 
 - Rust Win32: danh sách cửa sổ (khung thật qua DWM, thứ tự chồng, minimize, tên process), taskbar, màn hình + DPI; theo dõi thay đổi rồi gửi cho overlay
 - Mép trên cửa sổ là nền để đứng, cạnh bên là tường để leo: ngồi mép, leo, nhảy giữa cửa sổ, rơi khi minimize/đóng, bám theo khi kéo cửa sổ, bị che khi cửa sổ khác đè lên, ngủ trên taskbar, chạy trốn khi cửa sổ bị kéo tới, ăn mừng khi app đóng
-- Con trỏ là thực thể: nhìn theo, đuổi/né, lại gần ngửi khi đứng yên, giật mình ngã khi giật chuột
-- Đa màn hình, DPI khác nhau
+- Con trỏ: pet đứng yên thì quay đầu nhìn theo (đuổi, né, lại gần ngửi, giật mình ngã đã làm rồi bỏ: gây phiền lúc đang làm việc)
+- Đa màn hình, chỉ hỗ trợ scale 100%
 
 Chia 5 bước, xong bước nào thử trên máy thật bước đó:
 
@@ -100,8 +100,8 @@ Chia 5 bước, xong bước nào thử trên máy thật bước đó:
 | 2a | `window_list.rs`: `SetWinEventHook` + đọc lại tối đa 30 lần/giây, chỉ gửi khi đổi, không đổi thì ngủ (2 giây đọc lại một lần). `packages/sim/src/terrain.ts`: mép trên là chỗ đứng, cạnh bên là tường, trừ phần bị cửa sổ nằm trên che. Pet đứng/đi trên mép, đi theo khi kéo cửa sổ, rơi khi thu nhỏ/đóng/hết chỗ đứng, thả lên mép thì đáp; bị che thì phần bị che không vẽ, không bắt chuột, lát sau đi ra | Xong, đã thử trên máy thật (Notepad làm địa hình): khung cửa sổ khớp tới từng pixel, pet đi theo khi kéo, rơi khi thu nhỏ/đóng/kéo sát mép trên, `closed` báo đúng cửa sổ bị đóng, phần bị che mất đúng chỗ |
 | 2b | `climb`, `perch`, `jump` vào `pet.json` (21 pack). Leo lên/xuống cạnh cửa sổ, nhảy sang cửa sổ khác hoặc xuống taskbar, ngồi mép, buồn ngủ thì xuống taskbar rồi mới ngủ, click lúc đang leo thì tuột tay | Xong, đã thử trên máy thật: tay chạm đúng cạnh cửa sổ lúc leo, lên tới đỉnh nhún qua mép, nhảy sang cửa sổ khác đáp đúng chỗ ngắm, ngồi mép, buồn ngủ thì nhảy xuống taskbar rồi ngủ |
 | 2c | Chạy trốn khi cửa sổ bị kéo tới (giữ nguyên cỡ mà lại gần dưới 90 px), ăn mừng khi app đóng (cách dưới 400 px, nhảy 2 cái, xác suất 0,8, 15 giây một lần). Cửa sổ lơ lửng: nhảy thẳng lên bám cạnh rồi leo | Xong, đã thử trên máy thật: nhảy lên bám góc dưới cửa sổ lơ lửng rồi leo lên mép; kéo cửa sổ tới thì chạy (trên mép cửa sổ hết đường thì leo xuống); đóng 3 lần thì cả 3 lần nhảy 2 cái |
-| 2d | Con trỏ là thực thể: đứng yên thì nhìn theo con trỏ trong 300 px; con trỏ đứng yên ngang tầm 1,2 giây thì lại gần ngửi (15 giây một lần); lướt qua 60–900 px/s thì có lúc đuổi (xác suất 0,5, bốc thăm 5 giây một lần, tối đa 6 giây); lao tới nhanh hơn 1000 px/s thì né; giật chuột nhanh hơn 2500 px/s quét sát thân thì nhảy dựng lên rồi ngã choáng (10 giây một lần); đang giữ chuột thì chỉ nhìn | Xong, đã thử trên máy thật (bơm vị trí con trỏ vào sim): quay đầu theo con trỏ, đi tới cạnh rồi quay mặt vào ngửi, chạy đuổi con trỏ lướt 250 px/s, né 3/3 lần, giật chuột 4000 px/s thì nhảy rồi choáng 2,5 giây |
-| 2e | Đa màn hình và DPI: mỗi giây đo lại màn hình, đổi độ phân giải/DPI/taskbar hay rút màn hình thì đặt lại overlay (`screen-changed` kèm `remap`); kéo, ném hoặc tự đi ra khỏi mép giáp màn hình khác thì overlay sang bên đó | Xong phần code, test sim và Rust. Trên máy thật (lúc thử chỉ còn 1 màn hình 100%): đo lại mỗi giây không gửi event thừa, CPU luồng Rust lúc pet ngủ dưới 0,1% một nhân; đi ra mép giáp màn hình giả thì gọi `move_overlay` mỗi 200 ms, không sang được thì 1,5 giây sau quay vào; taskbar cao lên/thấp xuống (event giả) thì pet đứng lên/rơi xuống mặt đất mới. Chưa thử sang màn hình thật và DPI 125–200% |
+| 2d | Con trỏ: đứng yên thì quay đầu nhìn theo con trỏ trong 300 px. Đã làm rồi bỏ hẳn (gây phiền lúc đang làm việc): lại gần ngửi khi con trỏ đứng yên, đuổi khi con trỏ lướt qua, né khi lao tới, nhảy dựng lên rồi ngã choáng khi giật chuột quét qua người | Xong, đã thử trên máy thật (bơm vị trí con trỏ vào sim): quay đầu theo con trỏ. Các hành vi đã bỏ không còn trong code, tuning và test |
+| 2e | Đa màn hình và DPI: mỗi giây đo lại màn hình, đổi độ phân giải/DPI/taskbar hay rút màn hình thì đặt lại overlay (`screen-changed` kèm `remap`); kéo, ném hoặc tự đi ra khỏi mép giáp màn hình khác thì overlay sang bên đó | Xong, đã thử trên máy thật (2 màn hình 1920×1080 cạnh nhau, 100%, taskbar tự ẩn; điều khiển pet qua remote debugging): tự đi sang và đi về cả hai chiều, `move_overlay` gọi đúng một lần, pet đi tiếp liền mạch; ném cao bay qua mép không giật; ném sát đất thì chạm đất bên ngoài mép rồi sang; thả sát mép hơi hất ra thì đáp luôn; kéo sang màn hình kia vẫn đang cầm, buông thì rơi; bật/tắt tự ẩn taskbar thì pet lên/xuống mặt đất mới trong 1 giây; taskbar tự ẩn trồi lên thì pet đứng lên trên, thụt xuống thì rơi xuống đáy. Trước đó (1 màn hình): đo lại mỗi giây không gửi event thừa, CPU luồng Rust lúc pet ngủ dưới 0,1% một nhân. Chỉ hỗ trợ scale 100%, không thử DPI khác |
 
 Đã chốt trong 2a–2e:
 
@@ -115,11 +115,38 @@ Chia 5 bước, xong bước nào thử trên máy thật bước đó:
   bước thì pet rơi nhanh hơn đường đã ngắm, đáp hụt tới 17 px, trượt khỏi mép khi chỗ đáp sát đầu mép
 - CPU đo trên bản debug, máy 4 nhân (tinyworld + các tiến trình WebView2): pet đang đi trên cửa sổ khoảng
   0,8% tổng CPU; kéo cửa sổ liên tục gần như không tăng (luồng theo dõi cửa sổ khoảng 0,2% một nhân)
-- `exit` của walk/run xoá việc đang làm, nên đổi việc từ bên ngoài (chạy trốn, đuổi, ngửi) phải đặt việc mới
-  sau `exit` (`StateMachine.go` có `prepare`). Trước đó pet đang đi mà bị cửa sổ kéo tới thì chỉ chạy chơi
-- Con trỏ chỉ được báo cho sim lúc vòng lặp đang chạy, nên lúc chạy lại không bị tính một cú giật chuột từ
-  chỗ cũ tới chỗ mới. Né xét tốc độ tức thời trong mỗi bước chứ không chờ vận tốc làm mượt: cú lao chỉ
-  khoảng 0,1 giây
+- `exit` của walk/run xoá việc đang làm, nên đổi việc từ bên ngoài (chạy trốn) phải đặt việc mới sau
+  `exit` (`StateMachine.go` có `prepare`). Trước đó pet đang đi mà bị cửa sổ kéo tới thì chỉ chạy chơi
+- Con trỏ chỉ để pet quay đầu nhìn theo. Đuổi, né, lại gần ngửi, giật mình ngã đã bỏ: pet tự chạy tới
+  chỗ con trỏ, nhảy dựng lên khi lia chuột, gây phiền lúc đang làm việc
+- Giờ chờ overlay sang (`crossTimeout`, 1,5 giây) chỉ tính từ lúc giữa thân pet qua mép. Tính từ lúc bắt
+  đầu đi ra thì pet 96 px đi 30 px/s không bao giờ kịp qua mép (test sim dùng pet 60 px nên không bắt được)
+- Ném qua mép mà chạm đất lúc giữa thân đã qua mép thì đứng chờ overlay sang, không bị kéo về; chưa qua
+  mép thì overlay không sang nên đáp luôn trong màn hình này. Màn hình đổi tại chỗ (taskbar, DPI) lúc pet
+  đang đi ra mép thì vào lại trong màn hình, không đi mãi ra ngoài
+- Taskbar tự ẩn: vùng làm việc trùng cả màn hình, overlay phủ hết (bớt 1 pixel). Taskbar trồi lên che mép
+  dưới overlay thì Rust gửi mép trên của nó kèm danh sách cửa sổ (`taskbarTop`, theo cùng hook
+  `SetWinEventHook`), frontend lấy đó làm mặt đất: pet đứng lên trên, taskbar thụt xuống thì pet rơi xuống
+- Bị ném ra quá mép thì bị giữ ngay ngoài mép, nhớ vận tốc ngang: overlay sang lúc pet còn đang rơi thì
+  bay tiếp vào màn hình mới; đã chạm đất ngoài mép thì overlay sang rồi đi bộ vào, không giật vào trong
+- Hiệu năng (bản debug, máy 4 nhân, đo cả tinyworld lẫn các tiến trình WebView2):
+  - Chuột di chuyển thì Rust chỉ gửi vị trí khi con trỏ ở gần pet (`set_cursor_interest`). Trước đó
+    WebView nhận khoảng 50 event/giây dù pet ngủ ở tít đáy màn hình: pet ngủ mà chuột di chuyển tốn
+    2,27% một nhân, nay 0% (chuột trên cửa sổ app khác) hoặc 0,16% (chuột trên desktop)
+  - Windows báo `EVENT_OBJECT_LOCATIONCHANGE` cả khi con trỏ di chuyển, gán cho process của cửa sổ dưới
+    con trỏ; hook mọi process thì luồng theo dõi cửa sổ thức dậy mỗi lần chuột nhích. Pet ngủ thì chỉ hook
+    việc di chuyển của explorer (taskbar tự ẩn vẫn bắt ngay), thức dậy thì hook lại toàn bộ và đọc ngay;
+    overlay ẩn (app fullscreen, game) thì gỡ hẳn hook, luồng đọc con trỏ cũng đọc thưa lại
+  - Vòng lặp vẽ hẹn giờ rồi mới xin rAF: đi bộ 30 lần/giây thay vì 60–144; đứng yên, ngồi mép chỉ thức
+    dậy lúc đổi frame, khoảng 7 lần/giây. Pet thức (đi, đứng xen kẽ) từ 2,58% xuống khoảng 2%; chạy
+    liên tục 30 lần/giây thì phần lớn là renderer và GPU ghép hình
+  - Pet ngủ hoặc overlay ẩn thì WebView2 `MemoryUsageTargetLevel = Low`: working set cả nhóm tiến trình
+    từ khoảng 360 MB xuống 60–140 MB (renderer 84 MB còn 2–18 MB), private từ 162 MB xuống 146 MB
+  - Mặt nạ alpha 1 bit mỗi pixel, tính sẵn khung chứa phần có hình: 45 frame từ 1,58 MB còn 203 KB,
+    JS heap sau GC còn 2,4 MB
+- Tự ẩn khi fullscreen: cửa sổ đang dùng phủ kín cả màn hình, kể cả chỗ taskbar. Cửa sổ phóng to còn thanh
+  tiêu đề không tính: taskbar tự ẩn hay màn hình không có taskbar thì nó cũng phủ kín màn hình. Phóng to
+  mà bỏ viền (cách WPF, WinForms làm fullscreen) vẫn tính
 - Overlay chỉ phủ một màn hình tại một lúc và đi theo pet. Tự đi sang chỉ qua mép trái/phải, nơi vùng làm
   việc của màn hình bên kia có chỗ cho chân pet (màn hình bên kia thấp hơn thì không sang). Đổi toạ độ
   giữa hai màn hình qua toạ độ desktop nên pet sang bên kia liền mạch; đang leo, đang nhảy đúng lúc đổi
@@ -129,7 +156,7 @@ Chia 5 bước, xong bước nào thử trên máy thật bước đó:
   viền và chi tiết tương phản cao), PetView thu nhỏ frame một lần rồi dời từng hàng đúng số nguyên
   pixel màn hình
 
-**Xong khi:** pet đứng đúng mép cửa sổ ở scale 100–200%, CPU vẫn trong ngân sách.
+**Xong khi:** pet đứng đúng mép cửa sổ ở scale 100% (chỉ hỗ trợ 100%), CPU vẫn trong ngân sách.
 
 ### Phase 3 — Bộ lạc
 
@@ -189,8 +216,8 @@ phố thì vẫn có thời tiết giả lập, không có lỗi nào hiện ra.
 | Click-through đổi chậm → click đầu tiên lọt xuống app bên dưới | Đọc con trỏ khoảng 60 lần/giây; đang kéo thì giữ quyền nhận chuột |
 | Toạ độ Win32 (pixel vật lý) lệch với CSS pixel khi DPI khác nhau | Một quy ước toạ độ (CSS pixel của overlay), Rust đổi toạ độ, có test |
 | Overlay trong suốt phủ màn hình tốn GPU khi vẽ liên tục | Giới hạn fps, chỉ vẽ lại canvas của pet khi đổi frame, dừng vòng lặp khi không có gì chuyển động |
-| Overlay đè lên video/game fullscreen | Tự ẩn khi app đang dùng chiếm trọn màn hình (Phase 1) |
-| Overlay luôn trên mà che kín màn hình bị Windows coi là app fullscreen: tắt thông báo (Focus Assist), pet tự ẩn/hiện mỗi giây | Overlay chỉ phủ vùng làm việc; taskbar tự ẩn (vùng làm việc trùng màn hình) thì thấp đi 1 pixel. Phase 2 giữ quy tắc này: pet đứng trên mép taskbar, không vẽ lên taskbar |
+| Overlay đè lên video/game fullscreen | Tự ẩn khi app đang dùng chiếm trọn màn hình (Phase 1); cửa sổ phóng to còn thanh tiêu đề không tính (Phase 2) |
+| Overlay luôn trên mà che kín màn hình bị Windows coi là app fullscreen: tắt thông báo (Focus Assist), pet tự ẩn/hiện mỗi giây | Overlay chỉ phủ vùng làm việc; taskbar tự ẩn (vùng làm việc trùng màn hình) thì thấp đi 1 pixel. Phase 2 giữ quy tắc này: pet đứng trên mép taskbar, không vẽ lên taskbar; taskbar tự ẩn trồi lên thì pet đứng lên trên nó |
 | Hook bàn phím dễ bị antivirus nghi ngờ | Tuỳ chọn riêng, mặc định tắt, có thể bỏ |
 | Mỗi lượt sinh lại sprite bằng AI có thể làm mất hoặc đổi màu tay chân mà `--check` không bắt được | Soát từng frame so với atlas gốc trước khi nhận sheet mới; lỗi nhỏ sửa bằng tuỳ chọn trong `PETS` của script thay vì sinh lại |
 | Open-Meteo lỗi, đổi API hoặc chặn vì quá hạn mức | Không có thời tiết thật thì dùng thời tiết giả lập; 30 phút mới hỏi một lần, lỗi thì chờ lâu dần |

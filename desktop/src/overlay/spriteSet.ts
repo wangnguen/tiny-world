@@ -6,10 +6,51 @@ const ALPHA_THRESHOLD = 32;
 export interface Animation {
   image: CanvasImageSource;
   frames: Rect[];
-  /** Mặt nạ alpha của từng frame (1 = có hình), để click vào chỗ trống quanh pet vẫn lọt xuống. */
-  masks: Uint8Array[];
+  /** Mặt nạ alpha của từng frame, để click vào chỗ trống quanh pet vẫn lọt xuống. */
+  masks: Mask[];
   fps: number;
   loop: boolean;
+}
+
+/**
+ * Pixel nào của một frame có hình, 1 bit mỗi pixel (một pack khoảng 45 frame 192×192 chỉ tốn chừng
+ * 200 KB). Tính sẵn khung chứa phần có hình để khỏi quét lại cả frame.
+ */
+export class Mask {
+  private readonly bits: Uint8Array;
+  /** Cột ngoài cùng bên trái, bên phải có hình; frame trống thì `left` > `right`. */
+  readonly left: number;
+  readonly right: number;
+  /** Hàng trên cùng có hình (frame trống thì bằng `height`). */
+  readonly top: number;
+
+  /** `solid(i)`: pixel thứ `i` (theo hàng, từ góc trên trái) có hình không. */
+  constructor(
+    readonly width: number,
+    readonly height: number,
+    solid: (i: number) => boolean,
+  ) {
+    this.bits = new Uint8Array(Math.ceil((width * height) / 8));
+    let left = width;
+    let right = -1;
+    let top = height;
+    for (let i = 0; i < width * height; i++) {
+      if (!solid(i)) continue;
+      this.bits[i >> 3] |= 1 << (i & 7);
+      const x = i % width;
+      left = Math.min(left, x);
+      right = Math.max(right, x);
+      top = Math.min(top, Math.floor(i / width));
+    }
+    this.left = left;
+    this.right = right;
+    this.top = top;
+  }
+
+  has(x: number, y: number): boolean {
+    const i = y * this.width + x;
+    return (this.bits[i >> 3] & (1 << (i & 7))) !== 0;
+  }
 }
 
 /** Sprite đã nạp xong, sẵn sàng để vẽ. */
@@ -73,18 +114,16 @@ export interface Head {
   centerX: number;
 }
 
-export function headOf(mask: Uint8Array, width: number): Head {
-  const height = mask.length / width;
-  const first = mask.indexOf(1);
-  if (first < 0) return { top: 0, centerX: width / 2 };
-  const top = Math.floor(first / width);
+export function headOf(mask: Mask): Head {
+  const { width, height, top } = mask;
+  if (mask.right < 0) return { top: 0, centerX: width / 2 };
   // Lấy vài hàng trên cùng (tai, đỉnh đầu) chứ không lấy cả hình, để đuôi hay tay không kéo lệch tâm.
   const rows = Math.max(1, Math.round(height / 8));
   let min = width;
   let max = -1;
   for (let y = top; y < Math.min(height, top + rows); y++) {
-    for (let x = 0; x < width; x++) {
-      if (mask[y * width + x] === 0) continue;
+    for (let x = mask.left; x <= mask.right; x++) {
+      if (!mask.has(x, y)) continue;
       min = Math.min(min, x);
       max = Math.max(max, x);
     }
@@ -92,13 +131,11 @@ export function headOf(mask: Uint8Array, width: number): Head {
   return { top, centerX: (min + max + 1) / 2 };
 }
 
-function alphaMask(image: CanvasImageSource, frame: Rect): Uint8Array {
+function alphaMask(image: CanvasImageSource, frame: Rect): Mask {
   const canvas = new OffscreenCanvas(frame.width, frame.height);
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("Không tạo được canvas để đọc sprite.");
   ctx.drawImage(image, frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height);
   const { data } = ctx.getImageData(0, 0, frame.width, frame.height);
-  const mask = new Uint8Array(frame.width * frame.height);
-  for (let i = 0; i < mask.length; i++) mask[i] = data[i * 4 + 3] > ALPHA_THRESHOLD ? 1 : 0;
-  return mask;
+  return new Mask(frame.width, frame.height, (i) => data[i * 4 + 3] > ALPHA_THRESHOLD);
 }

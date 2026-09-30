@@ -1,7 +1,7 @@
 import { frameIndex, type AnimationName, type Point, type Rect } from "@tinyworld/core";
 import { contains, type Bounds, type Pet } from "@tinyworld/sim";
 import { DizzyStars, dizzyLean, dizzyReach, leanShift, ringRow } from "./dizzy";
-import { headOf, type Animation, type Head, type SpriteSet } from "./spriteSet";
+import { headOf, type Animation, type Head, type Mask, type SpriteSet } from "./spriteSet";
 
 /**
  * Một pet trên màn hình: canvas nhỏ bằng một frame (chừa thêm vài cột mỗi bên cho lúc lảo đảo),
@@ -102,12 +102,28 @@ export class PetView {
     return this.width + 2 * this.pad * this.scale;
   }
 
+  /** Khung canvas đang vẽ (CSS pixel của overlay); `null` khi chưa vẽ lần nào. */
+  get bounds(): Rect | null {
+    if (Number.isNaN(this.left)) return null;
+    return { x: this.left - this.pad * this.scale, y: this.top, width: this.canvasWidth, height: this.height };
+  }
+
+  /** Còn bao nhiêu giây nữa thì animation của `pet` đổi sang frame khác; `Infinity` nếu không đổi nữa. */
+  nextFrameIn(pet: Pet): number {
+    const animation = this.sprite.animations[pet.state];
+    const count = animation.frames.length;
+    if (pet.pose !== undefined || count < 2) return Number.POSITIVE_INFINITY;
+    const fps = animationFps(pet, animation);
+    const time = Math.max(0, pet.stateTime);
+    const index = Math.floor(time * fps);
+    if (!animation.loop && index >= count - 1) return Number.POSITIVE_INFINITY;
+    return (index + 1) / fps - time;
+  }
+
   /** `occluders`: cửa sổ đang che pet (`World.occluders`), phần bị che không vẽ. */
   update(pet: Pet, occluders: readonly Rect[] = []): void {
     const animation = this.sprite.animations[pet.state];
-    // Đi/chạy/leo nhanh hơn (Settings) thì chân tay cũng nhanh hơn, không trượt.
-    const moving = pet.state === "walk" || pet.state === "run" || pet.state === "climb";
-    const fps = moving ? animation.fps * pet.env.speed : animation.fps;
+    const fps = animationFps(pet, animation);
     const count = animation.frames.length;
     const frame =
       pet.pose === undefined
@@ -160,7 +176,7 @@ export class PetView {
   /** Đo lại đầu nhân vật cho animation mới, tắt sao choáng khi hết choáng. */
   private enterState(state: AnimationName, animation: Animation): void {
     this.shownState = state;
-    this.head = headOf(animation.masks[0], this.sprite.frameWidth);
+    this.head = headOf(animation.masks[0]);
     if (state !== "dizzy") this.stars.hide();
   }
 
@@ -186,7 +202,7 @@ export class PetView {
     let x = Math.floor((point.x - this.left) / scale - this.shift((point.y - this.top) / scale));
     if (x < 0 || x >= frameWidth) return false;
     if (this.flip) x = frameWidth - 1 - x;
-    return this.animation.masks[this.frame][y * frameWidth + x] === 1;
+    return this.animation.masks[this.frame].has(x, y);
   }
 
   /** Hàng `y` của frame (có thể lẻ) đang bị đẩy ngang bao nhiêu pixel của frame (lảo đảo). */
@@ -204,16 +220,10 @@ export class PetView {
    * Giữ phần bị đẩy ngang lúc lảo đảo trong phần canvas chừa sẵn và trong màn hình: pet đứng sát mép thì
    * nghiêng ít lại chứ không để mất một phần hình.
    */
-  private fitLean(lean: number, mask: Uint8Array, flip: boolean, left: number, bounds: Bounds): number {
+  private fitLean(lean: number, mask: Mask, flip: boolean, left: number, bounds: Bounds): number {
     if (lean === 0) return 0;
     const { frameWidth } = this.sprite;
-    let min = frameWidth;
-    let max = -1;
-    for (let i = 0; i < mask.length; i++) {
-      if (mask[i] === 0) continue;
-      min = Math.min(min, i % frameWidth);
-      max = Math.max(max, i % frameWidth);
-    }
+    const { left: min, right: max } = mask;
     if (max < 0) return 0;
     // Cột có hình ngoài cùng bên trái / phải, theo chiều trên màn hình.
     const first = flip ? frameWidth - 1 - max : min;
@@ -265,16 +275,19 @@ export class PetView {
   }
 }
 
+/** Đi/chạy/leo nhanh hơn (Settings) thì chân tay cũng nhanh hơn, không trượt. */
+function animationFps(pet: Pet, animation: Animation): number {
+  const moving = pet.state === "walk" || pet.state === "run" || pet.state === "climb";
+  return moving ? animation.fps * pet.env.speed : animation.fps;
+}
+
 /** Khoảng từ điểm chân tới mép tay xa nhất trong animation `climb` (pixel của frame): chỗ tay chạm tường. */
 function climbReach(sprite: SpriteSet): number {
   const { frameWidth, anchor } = sprite;
   let reach = 0;
   for (const mask of sprite.animations.climb.masks) {
-    for (let i = 0; i < mask.length; i++) {
-      if (mask[i] === 0) continue;
-      const x = i % frameWidth;
-      reach = Math.max(reach, sprite.facing === "right" ? x + 1 - anchor.x : anchor.x - x);
-    }
+    if (mask.right < 0) continue;
+    reach = Math.max(reach, sprite.facing === "right" ? mask.right + 1 - anchor.x : anchor.x - mask.left);
   }
   return Math.max(reach, frameWidth * 0.1);
 }
