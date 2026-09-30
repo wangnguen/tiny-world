@@ -69,7 +69,7 @@ Tương tác với pet:
 | Đóng một cửa sổ ở gần (trong khoảng 400 px) | Pet quay về phía đó nhảy cẫng lên hai cái ăn mừng (không phải lần nào cũng vậy, 15 giây mới ăn mừng một lần) |
 | Kéo cửa sổ pet đang đứng | Pet đi theo cửa sổ; kéo lên sát mép trên màn hình thì hết chỗ đứng, pet rơi |
 | Thu nhỏ hoặc đóng cửa sổ đó | Pet rơi xuống cửa sổ bên dưới hoặc taskbar |
-| Cửa sổ khác đè lên | Pet bị che mất phần nằm dưới cửa sổ đó (click vào đó là click cửa sổ), lát sau đi ra chỗ không bị che |
+| Cửa sổ khác đè lên | Pet bị che mất phần nằm dưới cửa sổ đó (click vào đó là click cửa sổ), lát sau đi ra chỗ không bị che. Bị che hết (ví dụ bấm vào cửa sổ phóng to nằm dưới) thì rơi ngay ra trước mọi cửa sổ, đang leo thì buông tay |
 | Con trỏ ở gần | Đứng yên thì quay về phía con trỏ |
 | Click | Nhảy lên một cái rồi đi hoặc chạy tiếp; đang ngủ thì thức dậy; đang leo thì tuột tay. Click dồn dập chỉ nhảy một lần |
 | Kéo lên rồi thả | Rơi xuống mép cửa sổ bên dưới hoặc taskbar, nảy nhẹ khi chạm đất; thả từ cao thì choáng: lảo đảo, sao bay quanh đầu |
