@@ -134,6 +134,19 @@ describe("đứng trên cửa sổ", () => {
     simulate(world, 6);
     expect(world.terrain.covered(1, pet.x, pet.y - 1)).toBe(false);
   });
+
+  it("cửa sổ phóng to lên trước che hết mép thì rơi ngay ra trước mọi cửa sổ, xuống đất", () => {
+    // Đúng cảnh trên máy thật: pet đứng trên cửa sổ lơ lửng, bấm vào trình duyệt phóng to nằm dưới nó.
+    const { world, pet } = setup([win(1, 300, 150, 400, 400)]);
+    standOn(world, pet, 500, 150);
+    world.setWindows([win(2, 0, 0, 1000, 700), win(1, 300, 150, 400, 400)]);
+    world.step(DT);
+    expect(pet.state).toBe("fall");
+    expect(pet.mount).toBeNull();
+    expect(world.occluders(pet)).toEqual([]);
+    simulate(world, 3, (p) => expect(p.mount).toBeNull());
+    expect(pet.y).toBe(700);
+  });
 });
 
 describe("leo, nhảy, ngồi mép", () => {
@@ -239,6 +252,45 @@ describe("leo, nhảy, ngồi mép", () => {
     pet.poke();
     expect(pet.state).toBe("fall");
     expect(pet.mount).toBeNull();
+  });
+
+  it("đang leo mà bị cửa sổ khác che hết thì buông tay", () => {
+    const pet = firstPet(
+      (seed) => setup([win(1, 600, 300, 300, 400)], seed, 450),
+      (p) => p.state === "climb" && p.y < 600,
+    );
+    const world = pet.env as World;
+    world.setWindows([win(2, 0, 0, 1000, 700), win(1, 600, 300, 300, 400)]);
+    world.step(DT);
+    expect(pet.state).toBe("fall");
+    expect(pet.mount).toBeNull();
+    simulate(world, 2, (p) => expect(p.mount).toBeNull());
+    expect(pet.y).toBe(700);
+  });
+
+  it("cửa sổ nằm trên đặt sát cạnh mà không che cạnh thì vẫn leo lên tới mép, không buông tay", () => {
+    // Cửa sổ 2 nằm trên, cách cạnh trái cửa sổ 1 có 10 px: che chỗ chân pet lúc bám, không che cạnh.
+    let climbed = false;
+    firstPet(
+      (seed) => setup([win(2, 400, 500, 190, 200), win(1, 600, 450, 300, 250)], seed, 450),
+      (p) => {
+        if (p.state === "climb" && p.mount?.id === 1) climbed = true;
+        else if (p.state !== "jump") climbed = false;
+        // Leo tới đỉnh thì nhún qua mép (`jump`) rồi đáp lên cửa sổ 1.
+        return climbed && p.state === "jump" && p.mount?.id === 1;
+      },
+    );
+  });
+
+  it("xuống khỏi mép mà cạnh bên bị cửa sổ khác che thì nhảy khỏi mép, không leo xuống khuất sau nó", () => {
+    // Mép cửa sổ 1 cao hơn đất 500 px, quá tầm nhảy xuống; cửa sổ 2 nằm trên, che cạnh phải cửa sổ 1.
+    const { world, pet } = setup([win(2, 690, 150, 200, 450), win(1, 300, 200, 400, 500)]);
+    standOn(world, pet, 600, 200);
+    pet.sinceInteraction = TUNING.sleepAfter;
+    pet.planned = 0;
+    expect(simulate(world, 30)).not.toContain("climb");
+    expect(pet.state).toBe("sleep");
+    expect(pet.y).toBe(700);
   });
 
   it("buồn ngủ trên cửa sổ thì xuống taskbar rồi mới ngủ", () => {

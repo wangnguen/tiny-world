@@ -90,6 +90,29 @@ export function nearestOpenX(pet: Pet, ground: Ground): number | null {
   return best;
 }
 
+/**
+ * Pet bị che mà không còn chỗ nào để ra: bị che gần hết trên mép bị che hết (bấm vào cửa sổ phóng to
+ * nằm dưới cửa sổ đang đứng, kéo cửa sổ khác đè lên), hoặc chỗ đang bám trên cạnh cửa sổ bị che.
+ */
+export function buried(pet: Pet): boolean {
+  const { mount, climbing } = pet;
+  if (!mount) return false;
+  if (pet.state === "climb") {
+    // Xét cột pixel ngoài cạnh như lúc chọn cạnh để leo (`openWall`), không xét thân pet: cửa sổ nằm trên
+    // sát cạnh mà không che cạnh thì pet leo được, không bám vào rồi buông ra mãi.
+    const wall = climbing && pet.env.terrain.wall(mount.id, climbing.side);
+    if (!wall) return false;
+    return !openSpanAt(wall.open, clamp(pet.y - pet.height / 2, wall.from, wall.to));
+  }
+  return hidden(pet) && nearestOpenX(pet, groundOf(pet)) === null;
+}
+
+/** Cạnh `wall` không bị che từ mép trên xuống tới `bottom`: leo trên đó không bị khuất. */
+export function openWall(wall: Wall, bottom = wall.to): boolean {
+  const to = Math.min(bottom, wall.to);
+  return wall.open.some((span) => span.from <= wall.from + 1 && span.to >= to - 1);
+}
+
 /** Các chỗ nhảy tới được: mép cửa sổ khác trong tầm, và mặt đất nếu đang ở trên cửa sổ không quá cao. */
 export function jumpTargets(pet: Pet): JumpTarget[] {
   const { terrain, bounds } = pet.env;
@@ -140,8 +163,7 @@ export function climbTargets(pet: Pet, ground: Ground): Wall[] {
     const contact = wall.x + wall.side * pet.reach;
     if (contact < ground.from || contact > ground.to) return false;
     if (Math.abs(contact - pet.x) > TUNING.climbSearch) return false;
-    const bottom = Math.min(ground.y, wall.to);
-    if (!wall.open.some((span) => span.from <= wall.from + 1 && span.to >= bottom - 1)) return false;
+    if (!openWall(wall, ground.y)) return false;
     const top = wall.side < 0 ? ledge.from + margin : ledge.to - margin;
     return openSpanAt(ledge.open, top) !== undefined;
   });

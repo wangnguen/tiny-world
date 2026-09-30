@@ -106,6 +106,12 @@ Chia 5 bước, xong bước nào thử trên máy thật bước đó:
 Đã chốt trong 2a–2e:
 
 - Pet trên taskbar hoặc đang bay nằm trước mọi cửa sổ; đứng/leo trên cửa sổ nào thì bị các cửa sổ nằm trên cửa sổ đó che. Đáp chỉ lên phần mép nhìn thấy được
+- Bị che hết thì rơi ngay ra trước mọi cửa sổ: mép đang đứng không còn chỗ nào không bị che (bấm vào
+  cửa sổ phóng to nằm dưới cửa sổ pet đứng, kéo cửa sổ khác đè lên), hoặc chỗ đang bám trên cạnh bị che
+  (buông tay). Xét mỗi bước, không chờ hết lượt đứng yên. Trước đó pet đi ra đầu mép rồi leo xuống cạnh
+  cũng bị che, khuất sau cửa sổ cả chục giây như đã biến mất (thử trên máy thật: pet đứng trên cửa sổ
+  lơ lửng, bấm vào trình duyệt phóng to). Bị che một phần thì vẫn đi ra chỗ không bị che; xuống khỏi
+  mép thì chỉ leo cạnh không bị che, không thì nhảy khỏi mép
 - Chưa đọc tên process: Phase 2 chưa cần, để Phase 5. Chỉ đọc tên lớp cửa sổ để bỏ desktop và taskbar
 - Đóng cửa sổ thì Windows ẩn trước rồi mới huỷ: cửa sổ biến khỏi danh sách được theo dõi thêm 3 giây
   (đọc lại mỗi 250 ms), bị huỷ trong lúc đó mới báo `closed`, kèm khung lúc còn hiện
