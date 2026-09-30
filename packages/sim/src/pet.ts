@@ -2,12 +2,14 @@ import type { AnimationName, Point, Rect, Remap } from "@tinyworld/core";
 import { StateMachine, type StateTable } from "./fsm";
 import { clamp } from "./math";
 import {
+  buried,
   climbTargets,
   groundOf,
   hidden,
   jumpTargets,
   landingLedge,
   nearestOpenX,
+  openWall,
   roomy,
   type Ground,
   type JumpTarget,
@@ -343,6 +345,13 @@ export class Pet {
     }
     // Cửa sổ đang đứng vừa đóng, thu nhỏ, bị kéo tới chỗ không đứng được: rơi.
     if (this.mount && !this.mountHolds()) this.dropOff();
+    // Bị che hết: rơi ra trước mọi cửa sổ (đang leo thì buông tay), không đáp lại mép đó. Trước đó pet
+    // đi ra đầu mép rồi leo xuống, khuất sau cửa sổ cả chục giây như đã biến mất.
+    else if (this.mount && buried(this)) {
+      this.skipLedge = this.mount.id;
+      if (this.state === "climb") this.letGo();
+      else this.dropOff();
+    }
     this.watchCursor();
     this.brain.update(this, dt);
   }
@@ -541,9 +550,10 @@ function nextActivity(pet: Pet): PetState {
   const ground = groundOf(pet);
   // Chỉ ngủ trên taskbar: đang ở trên cửa sổ thì xuống trước.
   if (pet.sinceInteraction >= TUNING.sleepAfter) return ground.ledge ? goDown(pet, ground) : "sleep";
+  // Bị che hết thì `Pet.step` đã cho rơi: ở đây còn chỗ để ra.
   if (hidden(pet)) {
     const x = nearestOpenX(pet, ground);
-    return x === null ? goDown(pet, ground) : walkTo(pet, x);
+    if (x !== null) return walkTo(pet, x);
   }
   const { rng } = pet.env;
   // Chỉ bốc số ngẫu nhiên khi có chỗ để nhảy / leo, để không có cửa sổ thì pet sống y như Phase 1.
@@ -703,7 +713,10 @@ function leavePerch(pet: Pet): PetState {
   return stepOff(pet, ledge, pet.facing);
 }
 
-/** Xuống khỏi mép cửa sổ về phía `dir`: nhảy xuống chỗ thấp hơn nếu với tới, không thì leo xuống, không nữa thì nhảy khỏi mép. */
+/**
+ * Xuống khỏi mép cửa sổ về phía `dir`: nhảy xuống chỗ thấp hơn nếu với tới, không thì leo xuống (cạnh
+ * không bị che), không nữa thì nhảy khỏi mép.
+ */
 function stepOff(pet: Pet, ledge: Ledge, dir: Facing): PetState {
   pet.goal = null;
   pet.facing = dir;
@@ -714,7 +727,7 @@ function stepOff(pet: Pet, ledge: Ledge, dir: Facing): PetState {
   }
   const wall = pet.env.terrain.wall(ledge.id, dir);
   const { bounds } = pet.env;
-  if (wall) {
+  if (wall && openWall(wall)) {
     const x = wall.x + dir * pet.reach;
     if (x >= bounds.left + pet.width / 2 && x <= bounds.right - pet.width / 2) {
       return startClimb(pet, wall, 1);

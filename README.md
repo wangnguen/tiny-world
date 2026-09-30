@@ -69,7 +69,7 @@ Tương tác với pet:
 | Đóng một cửa sổ ở gần (trong khoảng 400 px) | Pet quay về phía đó nhảy cẫng lên hai cái ăn mừng (không phải lần nào cũng vậy, 15 giây mới ăn mừng một lần) |
 | Kéo cửa sổ pet đang đứng | Pet đi theo cửa sổ; kéo lên sát mép trên màn hình thì hết chỗ đứng, pet rơi |
 | Thu nhỏ hoặc đóng cửa sổ đó | Pet rơi xuống cửa sổ bên dưới hoặc taskbar |
-| Cửa sổ khác đè lên | Pet bị che mất phần nằm dưới cửa sổ đó (click vào đó là click cửa sổ), lát sau đi ra chỗ không bị che |
+| Cửa sổ khác đè lên | Pet bị che mất phần nằm dưới cửa sổ đó (click vào đó là click cửa sổ), lát sau đi ra chỗ không bị che. Bị che hết (ví dụ bấm vào cửa sổ phóng to nằm dưới) thì rơi ngay ra trước mọi cửa sổ, đang leo thì buông tay |
 | Con trỏ ở gần | Đứng yên thì quay về phía con trỏ |
 | Click | Nhảy lên một cái rồi đi hoặc chạy tiếp; đang ngủ thì thức dậy; đang leo thì tuột tay. Click dồn dập chỉ nhảy một lần |
 | Kéo lên rồi thả | Rơi xuống mép cửa sổ bên dưới hoặc taskbar, nảy nhẹ khi chạm đất; thả từ cao thì choáng: lảo đảo, sao bay quanh đầu |
@@ -105,13 +105,14 @@ Mỗi lần push lên `main`, workflow [`.github/workflows/build.yml`](.github/w
 typecheck, test, `cargo test` rồi build file `.exe` cho Windows (mất khoảng 10–15 phút lần đầu, các
 lần sau nhanh hơn nhờ cache).
 
-Tải về: GitHub → tab **Actions** → bấm vào lần chạy mới nhất → mục **Artifacts** ở cuối trang →
-tải `TinyWorld-<version>-<số lần chạy>-<commit>` (file zip, giữ 30 ngày). Trong zip có:
+Tải về: GitHub → tab **Actions** → bấm vào lần chạy mới nhất → mục **Artifacts** ở cuối trang. Mỗi
+file là một artifact, tải về là file `.exe` luôn, không phải zip (giữ 30 ngày). Trước đây cả hai nằm
+chung một zip, mà Explorer hiện file exe nằm trong zip bằng icon exe chung, trông như app mất icon.
 
 | File | Dùng khi |
 |---|---|
-| `TinyWorld_<version>_x64-setup.exe` | Cài vào máy (có shortcut, gỡ được trong Settings) |
-| `TinyWorld_<version>_x64-portable.exe` | Chạy thẳng không cần cài (cần WebView2, Windows 10/11 bản mới có sẵn) |
+| `TinyWorld_<version>-<số lần chạy>-<commit>_x64-setup.exe` | Cài vào máy (có shortcut, gỡ được trong Settings) |
+| `TinyWorld_<version>-<số lần chạy>-<commit>_x64-portable.exe` | Chạy thẳng không cần cài (cần WebView2, Windows 10/11 bản mới có sẵn) |
 
 Test hỏng thì không build ra file. Push liên tục thì lần build cũ bị huỷ, chỉ giữ lần mới nhất.
 Push chỉ sửa file `.md` hoặc `release.yml` thì không build (sửa sprite, icon trong `assets/` vẫn
