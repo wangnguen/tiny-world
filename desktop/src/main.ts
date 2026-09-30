@@ -8,7 +8,7 @@ import {
   type Settings,
   type WindowList,
 } from "@tinyworld/core";
-import { FixedStep, TUNING, World, clamp, parseWorldSnapshot, type Bounds } from "@tinyworld/sim";
+import { FixedStep, StepBlend, TUNING, World, clamp, parseWorldSnapshot, type Bounds } from "@tinyworld/sim";
 import { api } from "./api";
 import { AutoSave } from "./overlay/autosave";
 import { ClickThrough } from "./overlay/clickThrough";
@@ -16,8 +16,17 @@ import { PetInteraction } from "./overlay/interaction";
 import { PetView } from "./overlay/petView";
 import { loadSpriteSet, resolvePack } from "./overlay/sprites";
 
-/** Tần số mô phỏng và vẽ tối đa: sprite thường chỉ 8–12 fps nên 30 là đủ mượt mà vẫn nhẹ. */
+/**
+ * Tần số mô phỏng, cũng là tần số vẽ lúc pet đi đứng bình thường: sprite thường chỉ 8–12 fps nên 30 là đủ
+ * mượt mà vẫn nhẹ. Lúc bay hay bị kéo (`FAST_STATES`) thì vẽ theo tần số màn hình.
+ */
 const FPS = 30;
+/**
+ * Pet đang bay (bị ném, rơi, nhảy) hoặc đang bị kéo: vẽ lại mỗi lần làm tươi màn hình, ở vị trí nội suy giữa
+ * hai bước mô phỏng (`StepBlend`). Vẽ 30 fps thì pet bị ném nhanh nhảy cóc từng đoạn dài, nhìn giật.
+ * Chỉ kéo dài vài giây nên không tốn thêm CPU đáng kể.
+ */
+const FAST_STATES: ReadonlySet<string> = new Set(["fall", "jump", "dragged"]);
 /**
  * Vẽ bằng hẹn giờ rồi mới xin `requestAnimationFrame`, chứ không xin rAF liên tục: rAF chạy theo tần số
  * màn hình (60–144 Hz), WebView phải thức dậy gấp mấy lần cần. Hẹn sớm chừng này ms để chờ tới lần làm
@@ -116,6 +125,7 @@ async function start(): Promise<void> {
   let taskbarTop: number | null = null;
   // Khai báo trước khi đăng ký event: event có thể tới ngay khi vừa đăng ký xong.
   const step = new FixedStep(1 / FPS, MAX_STEPS);
+  const blend = new StepBlend();
   let last = 0;
   let running = false;
   let hidden = false;
@@ -182,7 +192,7 @@ async function start(): Promise<void> {
     }
     const elapsed = (now - last) / 1000;
     last = now;
-    for (let n = step.advance(elapsed); n > 0; n--) world.step(step.dt);
+    for (let n = step.advance(elapsed); n > 0; n--) blend.step(pet, () => world.step(step.dt));
     // Pet đang đi hoặc bay ra khỏi mép giáp màn hình khác: overlay sang bên đó.
     const leaving = pet.leaving;
     if (leaving) moveOverlay(leaving);
@@ -193,11 +203,12 @@ async function start(): Promise<void> {
       setResting(true);
       return;
     }
-    schedule(nextDelay());
+    if (FAST_STATES.has(pet.state)) requestAnimationFrame(frame);
+    else schedule(nextDelay());
   };
   /** Vẽ lại pet; pet đổi frame, bị cửa sổ che, hoặc đi dưới con trỏ đang đứng yên thì cũng tính lại click-through. */
   const redraw = () => {
-    view.update(pet, world.occluders(pet));
+    view.update(pet, world.occluders(pet), blend.at(pet, step.alpha));
     refreshClickThrough();
     refreshInterest();
   };

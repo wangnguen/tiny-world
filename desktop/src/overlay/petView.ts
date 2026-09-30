@@ -34,6 +34,8 @@ export class PetView {
   /** Góc trên bên trái của frame (không tính phần chừa), CSS pixel của overlay. */
   private left = Number.NaN;
   private top = Number.NaN;
+  /** Điểm chân lúc vẽ lần cuối (CSS pixel của overlay), có thể trễ hơn `pet.x/y` một bước mô phỏng. */
+  foot: Point | null = null;
   /** Đỉnh đầu đang lệch bao nhiêu pixel của frame lúc lảo đảo (dương: sang phải màn hình); 0 là đứng thẳng. */
   private lean = 0;
   /** Cửa sổ đang che pet (CSS pixel của overlay): không vẽ, không bắt chuột ở đó. */
@@ -120,8 +122,11 @@ export class PetView {
     return (index + 1) / fps - time;
   }
 
-  /** `occluders`: cửa sổ đang che pet (`World.occluders`), phần bị che không vẽ. */
-  update(pet: Pet, occluders: readonly Rect[] = []): void {
+  /**
+   * `occluders`: cửa sổ đang che pet (`World.occluders`), phần bị che không vẽ. `at`: điểm chân để vẽ, mặc định
+   * đúng chỗ của pet; vòng lặp truyền vị trí nội suy giữa hai bước mô phỏng (`StepBlend`).
+   */
+  update(pet: Pet, occluders: readonly Rect[] = [], at: Point = pet): void {
     const animation = this.sprite.animations[pet.state];
     const fps = animationFps(pet, animation);
     const count = animation.frames.length;
@@ -137,9 +142,10 @@ export class PetView {
     const anchorX = flip ? frameWidth - anchor.x : anchor.x;
     // Làm tròn gốc canvas một lần; vùng bắt chuột dùng đúng gốc frame đã vẽ.
     // Làm tròn riêng frame rồi canvas sẽ lệch tới nửa pixel ở DPI 125%.
-    const canvasLeft = snap(pet.x - (anchorX + this.pad) * scale);
+    const canvasLeft = snap(at.x - (anchorX + this.pad) * scale);
     const left = canvasLeft + this.pad * scale;
-    const top = snap(pet.y - anchor.y * scale);
+    const top = snap(at.y - anchor.y * scale);
+    this.foot = { x: at.x, y: at.y };
     // Choáng: lảo đảo qua lại quanh điểm chân, đỉnh đầu lệch `lean` pixel của frame.
     const lean =
       pet.state === "dizzy"

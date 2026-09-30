@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FixedStep } from "./fixedStep";
 import { StateMachine, type StateTable } from "./fsm";
 import { Rng } from "./rng";
+import { StepBlend } from "./stepBlend";
 
 describe("Rng", () => {
   it("cùng seed cho cùng chuỗi số", () => {
@@ -40,6 +41,40 @@ describe("FixedStep", () => {
 
   it("bỏ qua thời gian âm", () => {
     expect(new FixedStep(1 / 30).advance(-1)).toBe(0);
+  });
+
+  it("alpha là phần bước kế tiếp đã trôi", () => {
+    const step = new FixedStep(1 / 30);
+    expect(step.alpha).toBe(0);
+    step.advance(1 / 60);
+    expect(step.alpha).toBeCloseTo(0.5);
+    step.advance(1 / 30);
+    expect(step.alpha).toBeCloseTo(0.5);
+  });
+});
+
+describe("StepBlend", () => {
+  it("vẽ giữa hai bước theo alpha", () => {
+    const blend = new StepBlend();
+    const pet = { x: 0, y: 100 };
+    blend.step(pet, () => {
+      pet.x = 50;
+      pet.y = 80;
+    });
+    expect(blend.at(pet, 0)).toEqual({ x: 0, y: 100 });
+    expect(blend.at(pet, 0.5)).toEqual({ x: 25, y: 90 });
+    expect(blend.at(pet, 1)).toEqual({ x: 50, y: 80 });
+  });
+
+  it("chưa có bước nào, hoặc bị dời ngoài mô phỏng, thì vẽ đúng chỗ", () => {
+    const blend = new StepBlend();
+    const pet = { x: 10, y: 20 };
+    expect(blend.at(pet, 0.5)).toEqual({ x: 10, y: 20 });
+    blend.step(pet, () => {
+      pet.x = 50;
+    });
+    pet.x = 300;
+    expect(blend.at(pet, 0.5)).toEqual({ x: 300, y: 20 });
   });
 });
 
