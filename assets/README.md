@@ -7,7 +7,7 @@ ra; thay file gốc ở đây rồi chạy lại lệnh tạo.
 |---|---|
 | `icon.png` | Logo TinyWorld nền trong suốt: pet màu kem ôm hành tinh xanh, có mầm cây; dùng cho app, tray, setup và portable |
 | `branding/logo-prompt.txt` | Prompt gốc để tạo logo bằng imagegen |
-| `sprites/<pack>/` | Sprite pack chạy trong app: `pet.json` + ảnh PNG, do `scripts/prepare-sprites.mjs` tạo ra |
+| `sprites/<pack>/` | Sprite pack chạy trong app: `pet.json` + ảnh WebP, do `scripts/prepare-sprites.mjs` tạo ra |
 | `sprite-sources/` | Atlas, prompt gốc của 21 nhân vật và trang xem animation ([README](sprite-sources/README.md)) |
 
 ## Sprite pack
@@ -21,22 +21,22 @@ hoặc pack đã chọn không còn, thì dùng pack **đầu tiên theo tên th
 ```
 assets/sprites/a-momo/
 ├── pet.json
-├── idle.png
-├── walk.png
+├── idle.webp
+├── walk.webp
 └── ...              # đủ 12 animation (cả climb, perch, jump), mỗi file một dải 4 frame
 ```
 
 21 pack có sẵn đều do script tạo từ atlas trong `sprite-sources/`: mỗi animation 4 frame
 **192×192**, alpha 0 hoặc 255, viền tối vẽ sẵn trong ảnh, chân cùng hàng y=179, quay sang phải.
 `scale: 0.5` cho khung 96×96 CSS pixel ở cỡ 100%; ở cỡ 200% một pixel ảnh là một CSS pixel. Byte
-và Patch gộp cả 12 hàng vào một `atlas.png` 768×2304 và dùng `row` trong manifest.
+và Patch gộp cả 12 hàng vào một `atlas.webp` 768×2304 và dùng `row` trong manifest.
 
 ## Thêm nhân vật
 
 - **Cùng kiểu với các nhân vật có sẵn** (nên dùng): đặt atlas 4 cột × 12 hàng vào
   `sprite-sources/<tên>/`, khai báo trong `PETS` của `scripts/prepare-sprites.mjs` rồi chạy script.
   Chi tiết: [sprite-sources/README.md](sprite-sources/README.md).
-- **Pack tự làm**: tạo `sprites/<tên-pack>/` gồm các PNG và `pet.json` (xem bên dưới). Pack này
+- **Pack tự làm**: tạo `sprites/<tên-pack>/` gồm các ảnh PNG hoặc WebP và `pet.json` (xem bên dưới). Pack này
   không qua script nên `--check` không kiểm tra. App vẽ nguyên ảnh, không thêm viền, nên nhân vật
   màu sáng cần có viền tối vẽ sẵn để không chìm vào nền sáng.
 
@@ -44,7 +44,7 @@ Vite gom pack vào bản build, nên thêm hoặc sửa pack chỉ cần chạy 
 
 ## `pet.json`
 
-Ví dụ rút gọn từ `a-momo`, mỗi animation một file PNG dải ngang:
+Ví dụ rút gọn từ `a-momo`, mỗi animation một file WebP dải ngang:
 
 ```json
 {
@@ -54,10 +54,10 @@ Ví dụ rút gọn từ `a-momo`, mỗi animation một file PNG dải ngang:
   "scale": 0.5,
   "anchor": { "x": 96, "y": 180 },
   "animations": {
-    "idle": { "image": "idle.png", "frames": 4, "fps": 5 },
-    "walk": { "image": "walk.png", "frames": 4, "fps": 8 },
-    "react": { "image": "react.png", "frames": 4, "fps": 8, "loop": false },
-    "dizzy": { "image": "dizzy.png", "frames": 1, "fps": 1 }
+    "idle": { "image": "idle.webp", "frames": 4, "fps": 5 },
+    "walk": { "image": "walk.webp", "frames": 4, "fps": 8 },
+    "react": { "image": "react.webp", "frames": 4, "fps": 8, "loop": false },
+    "dizzy": { "image": "dizzy.webp", "frames": 1, "fps": 1 }
   }
 }
 ```
@@ -65,7 +65,7 @@ Ví dụ rút gọn từ `a-momo`, mỗi animation một file PNG dải ngang:
 Nhiều animation chung một sheet thì dùng `row` (như Byte và Patch):
 
 ```json
-"walk": { "image": "atlas.png", "row": 1, "frames": 4, "fps": 8 }
+"walk": { "image": "atlas.webp", "row": 1, "frames": 4, "fps": 8 }
 ```
 
 | Trường | Bắt buộc | Mặc định | Ý nghĩa |
