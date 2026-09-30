@@ -1,5 +1,6 @@
 export * from "./rng";
 export * from "./fixedStep";
+export * from "./stepBlend";
 export * from "./fsm";
 export * from "./math";
 export * from "./terrain";

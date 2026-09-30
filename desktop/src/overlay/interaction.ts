@@ -74,10 +74,12 @@ export class PetInteraction {
     if (!this.view.hitTest(point)) return;
     // Vẫn nhận chuột khi con trỏ chạy ra ngoài overlay, ví dụ kéo sang màn hình khác.
     this.view.element.setPointerCapture(event.pointerId);
+    // Tính theo chỗ pet đang hiện (trễ `pet.x/y` tới một bước lúc bay), để bắt pet giữa không trung nó không nhảy.
+    const foot = this.view.foot ?? this.pet;
     this.press = {
       id: event.pointerId,
       start: point,
-      offset: { x: this.pet.x - point.x, y: this.pet.y - point.y },
+      offset: { x: foot.x - point.x, y: foot.y - point.y },
       dragging: false,
       samples: [{ ...point, t: event.timeStamp }],
     };

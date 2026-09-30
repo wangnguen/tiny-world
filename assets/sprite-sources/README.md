@@ -72,7 +72,9 @@ node scripts/prepare-sprites.mjs --check      # chỉ kiểm tra, không ghi fil
 pnpm test:sprites                             # test của script + --check (CI chạy qua pnpm test)
 ```
 
-Script không gọi AI và không cần thư viện ảnh. Với mỗi nhân vật trong `PETS`:
+Script không gọi AI. Atlas và sheet nguồn (PNG) được đọc bằng bộ giải mã PNG viết sẵn trong script;
+ảnh pack ghi ra dạng WebP lossless qua [`sharp`](https://sharp.pixelplumbing.com/) (có sẵn sau
+`pnpm install`). Với mỗi nhân vật trong `PETS`:
 
 1. Cắt atlas theo khoảng trong suốt giữa 12 hàng và giữa 4 pose của mỗi hàng (ảnh sinh không cách
    đều). Bố cục không rõ đủ hàng/cột, hoặc pose chạm ranh giới cắt, thì báo lỗi. Bỏ alpha < 128 và
@@ -87,8 +89,9 @@ Script không gọi AI và không cần thư viện ảnh. Với mỗi nhân v�
    giữ bóng đổ lấm tấm của ảnh sinh ra, mà app giữ nguyên frame đó suốt lúc choáng và cho lảo đảo nên
    trông như nhiễu. Bước làm mịn (lọc Kuwahara) làm phẳng các pixel xen kẽ hai màu gần nhau, giữ viền,
    đồng tử, mắt xoáy (màu tối) và chi tiết tương phản cao như chữ trên áo.
-5. Ghi mỗi animation thành dải 768×192 (4 frame 192×192), hoặc một sheet 768×2304 với `singleSheet`
-   (Byte, Patch), rồi ghi `pet.json` đủ 12 animation.
+5. Ghi mỗi animation thành dải WebP 768×192 (4 frame 192×192), hoặc một sheet 768×2304 với
+   `singleSheet` (Byte, Patch), rồi ghi `pet.json` đủ 12 animation và xoá ảnh cũ mà `pet.json` không
+   dùng. Mọi ảnh được encode xong trong bộ nhớ trước khi ghi, nên lỗi giữa chừng không làm hỏng pack cũ.
 
 Thứ tự hàng: `idle`, `walk`, `run`, `sleep`, `react`, `fall`, `dragged`, `land`, `dizzy`, `climb`,
 `perch`, `jump`. `react` không lặp, đủ 4 frame trong state 0,5 giây; `land` không lặp, 16 fps để hiện
@@ -97,13 +100,15 @@ sao; cả 4 pose vẫn được lưu trong dải.
 
 `--check` dùng chính `parseSpriteManifest` và `frameRects` của app để kiểm tra manifest, kích thước
 ảnh, đủ animation, frame không trống/không bị cắt, alpha nhị phân, bảng màu và hàng chân, rồi so
-silhouette từng frame với kết quả cắt lại từ nguồn. Pack lệch nguồn làm `pnpm test` và CI lỗi.
+silhouette từng frame với kết quả cắt lại từ nguồn. Ảnh phải là WebP lossless, và trong pack chỉ có
+đúng các ảnh `pet.json` dùng (Vite gom mọi ảnh trong thư mục vào bản build). Pack lệch nguồn làm
+`pnpm test` và CI lỗi.
 
 ## Sửa pose
 
 Mỗi lượt sinh lại bằng AI có thể làm mất hoặc đổi màu tay chân, và `--check` không bắt được lỗi giải
 phẫu. Trước khi nhận sheet mới, soát từng frame so với atlas gốc. Lỗi nhỏ thì sửa bằng tùy chọn trong
-`PETS` thay vì sinh lại. Đừng sửa PNG trong `assets/sprites/`: script sẽ ghi đè.
+`PETS` thay vì sinh lại. Đừng sửa ảnh trong `assets/sprites/`: script sẽ ghi đè.
 
 Thêm một sheet sửa:
 
@@ -131,7 +136,7 @@ Các tùy chọn của mỗi nhân vật trong `PETS`:
 | `reuse` | Thứ tự cột của một hàng để thay frame hỏng bằng frame tốt cùng hàng, ví dụ `{ fall: [0, 3, 0, 3] }` |
 | `recolor` | `{ rows, frames?, box?, colors }`: đổi màu trong các hàng, có thể chỉ vài frame và một ô `[trái, trên, phải, dưới]` (toạ độ trong frame 192px). Nhiều luật thì dùng mảng |
 | `fill` | `[{ row, frame, at: [x, y], box?, color }]`: tô vùng được viền bao quanh điểm `at` |
-| `singleSheet` | Gộp 12 hàng vào một `atlas.png` trong pack (Byte, Patch) |
+| `singleSheet` | Gộp 12 hàng vào một `atlas.webp` trong pack (Byte, Patch) |
 
 Màu trong `recolor` / `fill` được so với màu gần nhất của bảng màu pack (lệch tối đa 24), nên luật
 vẫn chạy khi bảng màu xê dịch nhẹ sau khi thêm sheet mới; lệch xa hơn thì script báo lỗi để cập nhật luật.
