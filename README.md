@@ -105,13 +105,14 @@ Mỗi lần push lên `main`, workflow [`.github/workflows/build.yml`](.github/w
 typecheck, test, `cargo test` rồi build file `.exe` cho Windows (mất khoảng 10–15 phút lần đầu, các
 lần sau nhanh hơn nhờ cache).
 
-Tải về: GitHub → tab **Actions** → bấm vào lần chạy mới nhất → mục **Artifacts** ở cuối trang →
-tải `TinyWorld-<version>-<số lần chạy>-<commit>` (file zip, giữ 30 ngày). Trong zip có:
+Tải về: GitHub → tab **Actions** → bấm vào lần chạy mới nhất → mục **Artifacts** ở cuối trang. Mỗi
+file là một artifact, tải về là file `.exe` luôn, không phải zip (giữ 30 ngày). Trước đây cả hai nằm
+chung một zip, mà Explorer hiện file exe nằm trong zip bằng icon exe chung, trông như app mất icon.
 
 | File | Dùng khi |
 |---|---|
-| `TinyWorld_<version>_x64-setup.exe` | Cài vào máy (có shortcut, gỡ được trong Settings) |
-| `TinyWorld_<version>_x64-portable.exe` | Chạy thẳng không cần cài (cần WebView2, Windows 10/11 bản mới có sẵn) |
+| `TinyWorld_<version>-<số lần chạy>-<commit>_x64-setup.exe` | Cài vào máy (có shortcut, gỡ được trong Settings) |
+| `TinyWorld_<version>-<số lần chạy>-<commit>_x64-portable.exe` | Chạy thẳng không cần cài (cần WebView2, Windows 10/11 bản mới có sẵn) |
 
 Test hỏng thì không build ra file. Push liên tục thì lần build cũ bị huỷ, chỉ giữ lần mới nhất.
 Push chỉ sửa file `.md` hoặc `release.yml` thì không build (sửa sprite, icon trong `assets/` vẫn

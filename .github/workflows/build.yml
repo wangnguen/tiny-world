@@ -1,5 +1,6 @@
 # Mỗi lần push lên main: kiểm tra code rồi build file .exe cho Windows.
-# Tải về: GitHub → tab Actions → bấm vào lần chạy → mục Artifacts ở cuối trang (giữ 30 ngày).
+# Tải về: GitHub → tab Actions → bấm vào lần chạy → mục Artifacts ở cuối trang, mỗi file .exe là một
+# artifact tải thẳng về, không phải zip (giữ 30 ngày).
 # Phát hành chính thức lên trang Releases thì dùng workflow Release (release.yml, chạy tay).
 name: Build
 
@@ -54,15 +55,27 @@ jobs:
         shell: bash
         run: |
           version=$(jq -r .version desktop/src-tauri/tauri.conf.json)
+          # Tên artifact là tên file (xem bước upload): kèm số lần chạy và commit để phân biệt các bản build.
+          build="TinyWorld_${version}-${{ github.run_number }}-${GITHUB_SHA::7}_x64"
           mkdir -p out
           # Bản cài đặt (NSIS) và bản chạy thẳng không cần cài (cần WebView2, Windows 10/11 có sẵn).
-          cp desktop/src-tauri/target/release/bundle/nsis/*-setup.exe "out/TinyWorld_${version}_x64-setup.exe"
-          cp desktop/src-tauri/target/release/tinyworld.exe "out/TinyWorld_${version}_x64-portable.exe"
-          echo "artifact=TinyWorld-${version}-${{ github.run_number }}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          cp desktop/src-tauri/target/release/bundle/nsis/*-setup.exe "out/${build}-setup.exe"
+          cp desktop/src-tauri/target/release/tinyworld.exe "out/${build}-portable.exe"
+          echo "setup=out/${build}-setup.exe" >> "$GITHUB_OUTPUT"
+          echo "portable=out/${build}-portable.exe" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/upload-artifact@v4
+      # Mỗi file một artifact, không nén. Nén chung thành zip thì Explorer vẽ file exe nằm trong zip bằng
+      # icon exe chung (không đọc icon trong file), trông như app mất icon. Không nén thì mỗi artifact chỉ
+      # được một file, tên artifact là tên file (`name` bị bỏ qua).
+      - uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.files.outputs.artifact }}
-          path: out/*.exe
+          path: ${{ steps.files.outputs.setup }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.files.outputs.portable }}
+          archive: false
           if-no-files-found: error
           retention-days: 30
