@@ -1,7 +1,13 @@
-import { frameIndex, type AnimationName, type Point, type Rect } from "@tinyworld/core";
+import { frameIndex, type AnimationName, type Hat, type Point, type Rect } from "@tinyworld/core";
 import { contains, type Bounds, type Pet } from "@tinyworld/sim";
 import { DizzyStars, dizzyLean, dizzyReach, leanShift, ringRow } from "./dizzy";
+import { drawHat } from "./hats";
 import { headOf, type Animation, type Head, type Mask, type SpriteSet } from "./spriteSet";
+
+/** Đáy speech bubble (cả đuôi) cách đỉnh đầu pet chừng này CSS pixel. */
+const BUBBLE_LIFT = 12;
+/** Bị nhấc lên hay đang rơi thì nhân vật lộn ngược, chổng chân lên: mũ tạm cất, chạm đất lại đội. */
+const HATLESS: ReadonlySet<AnimationName> = new Set(["dragged", "fall"]);
 
 /**
  * Một pet trên màn hình: canvas nhỏ bằng một frame (chừa thêm vài cột mỗi bên cho lúc lảo đảo),
@@ -9,6 +15,11 @@ import { headOf, type Animation, type Head, type Mask, type SpriteSet } from "./
  */
 export class PetView {
   readonly element: HTMLCanvasElement;
+  /** Lớp chứa canvas và sao choáng của pet này, để đưa cả con lên trên các con khác (`raise`). */
+  private readonly layer: HTMLDivElement;
+  private static topDepth = 0;
+  /** Con có `depth` lớn hơn nằm trên: tạo sau hoặc vừa được đưa lên (`raise`). */
+  depth = ++PetView.topDepth;
   private readonly ctx: CanvasRenderingContext2D;
   private readonly stars: DizzyStars;
   /** Cỡ trong Settings (1 là cỡ gốc của pack). */
@@ -42,20 +53,53 @@ export class PetView {
   private occluders: readonly Rect[] = [];
   /** Khoảng từ điểm chân tới tường lúc leo (CSS pixel), đo theo tay nhân vật trong animation `climb`. */
   reach = 0;
+  /** Mũ đang đội (lịch sự kiện), vẽ thẳng vào canvas trên đỉnh đầu của từng frame. */
+  private hat: Hat = "none";
+  /** Speech bubble đang hiện (`pet.speech`), câu đang hiện và cỡ của nó (đo một lần khi đổi câu). */
+  private bubble: HTMLDivElement | null = null;
+  private bubbleText = "";
+  private bubbleSize = { width: 0, height: 0 };
 
   /** `size`: cỡ trong Settings (1 là cỡ gốc của pack). */
   constructor(
     private sprite: SpriteSet,
-    container: HTMLElement,
+    private readonly container: HTMLElement,
     size: number,
   ) {
+    this.layer = document.createElement("div");
+    this.layer.className = "pet-layer";
     this.element = document.createElement("canvas");
     const ctx = this.element.getContext("2d");
     if (!ctx) throw new Error("Không tạo được canvas cho pet.");
     this.ctx = ctx;
-    container.append(this.element);
+    this.layer.append(this.element);
+    container.append(this.layer);
     this.stars = new DizzyStars(this.element);
     this.setSprite(sprite, size);
+  }
+
+  /** Vẽ pet này lên trên các con khác (vừa bị bấm, bị kéo). */
+  raise(): void {
+    if (this.container.lastElementChild === this.layer) return;
+    this.container.append(this.layer);
+    this.depth = ++PetView.topDepth;
+  }
+
+  /** Bỏ pet khỏi màn hình (bớt nhân vật trong Settings). */
+  destroy(): void {
+    this.layer.remove();
+  }
+
+  /** Thêm một lớp vẽ đi cùng pet (hiệu ứng thời tiết), nằm trên pet và chung lớp với pet. */
+  attach(element: HTMLElement): void {
+    this.layer.append(element);
+  }
+
+  /** Đội mũ `hat` (`"none"`: bỏ mũ); vẽ lại ở lần `update` sau. */
+  setHat(hat: Hat): void {
+    if (hat === this.hat) return;
+    this.hat = hat;
+    this.drawnKey = "";
   }
 
   /**
@@ -177,6 +221,37 @@ export class PetView {
       this.element.style.transform = `translate(${canvasLeft}px, ${top}px)`;
     }
     if (pet.state === "dizzy") this.placeStars(pet.stateTime, flip);
+    this.placeBubble(pet, flip);
+  }
+
+  /** Speech bubble ngay trên đầu, luôn nằm trong màn hình; đuôi bubble chỉ vào giữa đầu. */
+  private placeBubble(pet: Pet, flip: boolean): void {
+    const text = pet.speech?.text ?? "";
+    if (text !== this.bubbleText) {
+      this.bubbleText = text;
+      if (!text) {
+        this.bubble?.remove();
+        this.bubble = null;
+        return;
+      }
+      if (!this.bubble) {
+        this.bubble = document.createElement("div");
+        this.bubble.className = "bubble";
+        this.layer.append(this.bubble);
+      }
+      this.bubble.textContent = text;
+      this.bubbleSize = { width: this.bubble.offsetWidth, height: this.bubble.offsetHeight };
+    }
+    const bubble = this.bubble;
+    if (!bubble) return;
+    const { frameWidth } = this.sprite;
+    const { left, right, top } = pet.env.bounds;
+    const { width, height } = this.bubbleSize;
+    const headX = this.left + (flip ? frameWidth - this.head.centerX : this.head.centerX) * this.scale;
+    const x = Math.round(Math.min(Math.max(headX - width / 2, left + 4), right - width - 4));
+    const y = Math.round(Math.max(this.top + this.head.top * this.scale - BUBBLE_LIFT - height, top + 4));
+    bubble.style.transform = `translate(${x}px, ${y}px)`;
+    bubble.style.setProperty("--tail", `${Math.min(Math.max(headX - x, 12), width - 12)}px`);
   }
 
   /** Đo lại đầu nhân vật cho animation mới, tắt sao choáng khi hết choáng. */
@@ -268,6 +343,10 @@ export class PetView {
     if (flip) target.setTransform(-1, 0, 0, 1, x + width, 0);
     else target.setTransform(1, 0, 0, 1, x, 0);
     target.drawImage(animation.image, source.x, source.y, source.width, source.height, 0, 0, width, element.height);
+    // Mũ theo đỉnh đầu của đúng frame này, nên nhún nhảy, lật, lảo đảo đều đi theo đầu.
+    if (this.hat !== "none" && !(this.shownState && HATLESS.has(this.shownState))) {
+      drawHat(target, this.hat, this.sprite, animation.masks[frame], this.density);
+    }
     if (target === ctx) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, element.width, element.height);
@@ -281,10 +360,10 @@ export class PetView {
   }
 }
 
-/** Đi/chạy/leo nhanh hơn (Settings) thì chân tay cũng nhanh hơn, không trượt. */
+/** Đi/chạy/leo nhanh hơn (Settings) hay chậm hơn (ban đêm) thì chân tay cũng theo, không trượt. */
 function animationFps(pet: Pet, animation: Animation): number {
   const moving = pet.state === "walk" || pet.state === "run" || pet.state === "climb";
-  return moving ? animation.fps * pet.env.speed : animation.fps;
+  return moving ? animation.fps * pet.pace : animation.fps;
 }
 
 /** Khoảng từ điểm chân tới mép tay xa nhất trong animation `climb` (pixel của frame): chỗ tay chạm tường. */

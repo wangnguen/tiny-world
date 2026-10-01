@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { errorMessage, type Settings } from "@tinyworld/core";
 import { api } from "../api";
-import { listPacks, resolvePack } from "../overlay/sprites";
-import { CubeIcon, InfoIcon, RunnerIcon, WindowsIcon } from "./icons";
+import { listPacks, resolvePacks } from "../overlay/sprites";
+import { ChatIcon, CubeIcon, InfoIcon, RunnerIcon, WindowsIcon } from "./icons";
 import { PetPicker } from "./PetPicker";
 import { PetPreview } from "./PetPreview";
 import { CornerDecor, HILL_SPOT, NightScene, PineDecor } from "./scenery";
+import { HealthSettings } from "./HealthSettings";
+import { Toggle } from "./Toggle";
+import { WorldSettings } from "./WorldSettings";
 
 interface Option {
   value: number;
@@ -25,11 +28,28 @@ const SPEEDS: Option[] = [
 
 const PACKS = listPacks();
 
+type Tab = "pet" | "world" | "health";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "pet", label: "Pet" },
+  { id: "world", label: "Thế giới" },
+  { id: "health", label: "Sức khoẻ" },
+];
+
+/** Dòng dưới tiêu đề: bản Release chỉ có số version, bản build khi push lên `main` kèm số lần chạy và commit. */
+function versionLabel(version: string): string {
+  // Chạy dev thì version trong tauri.conf.json không phải version thật (CI ghi vào lúc build).
+  if (import.meta.env.DEV) return "Bản dev";
+  const build = import.meta.env.VITE_BUILD;
+  return build ? `Phiên bản ${version} · build ${build}` : `Phiên bản ${version}`;
+}
+
 /** Cửa sổ cài đặt (tray → Cài đặt…). Đổi gì áp dụng ngay cho pet, không cần bấm lưu. */
 export function SettingsApp() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [autostart, setAutostart] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [version, setVersion] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("pet");
 
   useEffect(() => {
     Promise.all([api.getSettings(), api.getAutostart()])
@@ -38,6 +58,11 @@ export function SettingsApp() {
         setAutostart(enabled);
       })
       .catch((e) => setError(errorMessage(e)));
+    // Không đọc được version thì chỉ thiếu một dòng chữ, không báo lỗi.
+    api
+      .version()
+      .then(setVersion)
+      .catch((e: unknown) => console.warn("Không đọc được version:", errorMessage(e)));
   }, []);
 
   const update = async (patch: Partial<Settings>) => {
@@ -65,57 +90,92 @@ export function SettingsApp() {
     }
   };
 
-  // Pack đã chọn không còn thì overlay dùng pack đầu tiên, ở đây cũng đánh dấu đúng pack đó.
-  const pet = settings ? resolvePack(settings.pet) : null;
+  // Pack đã chọn không còn thì overlay bỏ qua (hết cả thì dùng pack đầu tiên), ở đây cũng đánh dấu đúng như vậy.
+  const pets = settings ? resolvePacks(settings.pets).flatMap((id) => id ?? []) : [];
 
   return (
     <main className="page">
       <header className="hero">
         <NightScene />
-        {settings && <PetPreview pet={pet} footX={HILL_SPOT.x} footY={HILL_SPOT.y} height={96} />}
+        {settings && <PetPreview pet={pets[0] ?? null} footX={HILL_SPOT.x} footY={HILL_SPOT.y} height={96} />}
         <h1>Cài đặt</h1>
+        {version && <p className="hero__version">{versionLabel(version)}</p>}
       </header>
 
       {!settings || autostart === null ? (
         <p className="muted loading">{error ?? "Đang tải..."}</p>
       ) : (
         <>
-          {PACKS.length > 1 && (
-            <PetPicker packs={PACKS} value={pet} onChange={(id) => update({ pet: id })} />
+          <nav className="tabs" role="tablist">
+            {TABS.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={tab === id}
+                className={tab === id ? "tab tab--active" : "tab"}
+                onClick={() => setTab(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          {tab === "world" && <WorldSettings settings={settings} onChange={update} />}
+          {tab === "health" && <HealthSettings settings={settings} onChange={update} />}
+          {tab === "pet" && (
+            <>
+              {PACKS.length > 1 && (
+                <PetPicker packs={PACKS} value={pets} onChange={(ids) => update({ pets: ids })} />
+              )}
+              <section className="field">
+                <h2 className="field__label">
+                  <CubeIcon />
+                  Cỡ nhân vật
+                </h2>
+                <Choices
+                  options={SIZES}
+                  value={settings.size}
+                  onChange={(size) => update({ size })}
+                  sparkle
+                />
+              </section>
+              <section className="field">
+                <h2 className="field__label">
+                  <RunnerIcon />
+                  Tốc độ đi lại
+                </h2>
+                <Choices options={SPEEDS} value={settings.speed} onChange={(speed) => update({ speed })} />
+              </section>
+              <section className="field">
+                <h2 className="field__label">
+                  <ChatIcon />
+                  Chat với pet
+                </h2>
+                <div className="toggles">
+                  <Toggle
+                    label="Click chuột phải vào pet để chat"
+                    hint="Hỏi nhanh tỉ giá, tin tức, đổi đơn vị... Cần mạng; đóng khung chat là xoá đoạn chat"
+                    checked={settings.chat}
+                    onChange={(chat) => update({ chat })}
+                  />
+                </div>
+              </section>
+              <label className="startup">
+                <WindowsIcon />
+                <input
+                  className="checkbox"
+                  type="checkbox"
+                  checked={autostart}
+                  onChange={(event) => toggleAutostart(event.target.checked)}
+                />
+                <span className="startup__text">
+                  <strong>Chạy cùng Windows</strong>
+                  <small>Tự mở TinyWorld khi đăng nhập Windows</small>
+                </span>
+                <PineDecor />
+              </label>
+            </>
           )}
-          <section className="field">
-            <h2 className="field__label">
-              <CubeIcon />
-              Cỡ nhân vật
-            </h2>
-            <Choices
-              options={SIZES}
-              value={settings.size}
-              onChange={(size) => update({ size })}
-              sparkle
-            />
-          </section>
-          <section className="field">
-            <h2 className="field__label">
-              <RunnerIcon />
-              Tốc độ đi lại
-            </h2>
-            <Choices options={SPEEDS} value={settings.speed} onChange={(speed) => update({ speed })} />
-          </section>
-          <label className="startup">
-            <WindowsIcon />
-            <input
-              className="checkbox"
-              type="checkbox"
-              checked={autostart}
-              onChange={(event) => toggleAutostart(event.target.checked)}
-            />
-            <span className="startup__text">
-              <strong>Chạy cùng Windows</strong>
-              <small>Tự mở TinyWorld khi đăng nhập Windows</small>
-            </span>
-            <PineDecor />
-          </label>
           {error && <p className="error">{error}</p>}
         </>
       )}
@@ -123,8 +183,9 @@ export function SettingsApp() {
       <footer className="note">
         <InfoIcon />
         Thay đổi được áp dụng ngay.
+        {/* Nằm trong footer để luôn ở góc dưới cùng của trang, kể cả khi trang dài phải cuộn. */}
+        <CornerDecor />
       </footer>
-      <CornerDecor />
     </main>
   );
 }

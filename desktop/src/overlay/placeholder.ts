@@ -81,6 +81,7 @@ export function createPlaceholderSprite(): SpriteSet {
     buildAnimation(sheet, frames.map(rect), fps, loop);
   const idleFrames = [F_BASE, F_BASE, F_BREATHE, F_BREATHE, F_BASE, F_BASE, F_BREATHE, F_BLINK];
   return {
+    id: null,
     name: "placeholder",
     frameWidth: SIZE,
     frameHeight: SIZE,

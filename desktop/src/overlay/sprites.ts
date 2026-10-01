@@ -1,5 +1,6 @@
 import {
   ANIMATION_NAMES,
+  MAX_PETS,
   frameRects,
   parseSpriteManifest,
   type AnimationName,
@@ -49,9 +50,18 @@ export function listPacks(): PackInfo[] {
   return packs.map((pack) => pack.info);
 }
 
-/** Pack sẽ được dùng cho `Settings.pet`: đúng pack đó nếu còn, không thì pack đầu tiên; không có pack nào thì `null`. */
+/** Pack sẽ được dùng cho `id`: đúng pack đó nếu còn, không thì pack đầu tiên; không có pack nào thì `null`. */
 export function resolvePack(id: string | null | undefined): string | null {
   return (packs.find((pack) => pack.info.id === id) ?? packs[0])?.info.id ?? null;
+}
+
+/**
+ * Các pack sẽ hiện cho `Settings.pets`: bỏ pack không còn trong bản build và pack trùng, tối đa `MAX_PETS`,
+ * giữ thứ tự chọn. Không còn pack nào thì pack đầu tiên; chưa có pack nào thì `[null]` (một pet tạm).
+ */
+export function resolvePacks(ids: readonly string[]): (string | null)[] {
+  const known = [...new Set(ids)].filter((id) => packs.some((pack) => pack.info.id === id));
+  return known.length > 0 ? known.slice(0, MAX_PETS) : [resolvePack(null)];
 }
 
 /** Nạp pack `id` (xem `resolvePack`). Chưa có pack hoặc pack lỗi thì dùng pet tạm. */
@@ -59,7 +69,7 @@ export async function loadSpriteSet(id?: string | null): Promise<SpriteSet> {
   const pack = packs.find((p) => p.info.id === resolvePack(id));
   if (!pack) return createPlaceholderSprite();
   try {
-    return await loadPack(pack.path, pack.manifest);
+    return await loadPack(pack.info.id, pack.path, pack.manifest);
   } catch (error) {
     console.warn(`Sprite pack ${pack.info.id} lỗi, dùng pet tạm:`, error);
     return createPlaceholderSprite();
@@ -69,7 +79,13 @@ export async function loadSpriteSet(id?: string | null): Promise<SpriteSet> {
 /** Frame đầu của `idle` để làm ảnh nhỏ trong Settings, không nạp cả pack. */
 export interface Thumbnail {
   image: HTMLImageElement;
+  /** Frame đầu của `idle`. */
   frame: Rect;
+  /** Mọi frame của `idle` (cùng ảnh `image`) và tốc độ, để vẽ nhân vật động mà chỉ nạp một ảnh. */
+  frames: Rect[];
+  fps: number;
+  /** Điểm chân trong frame. */
+  anchor: { x: number; y: number };
   pixelArt: boolean;
   facing: "left" | "right";
 }
@@ -80,17 +96,19 @@ export async function loadThumbnail(id: string): Promise<Thumbnail> {
   const { manifest } = pack;
   const idle = manifest.animations.idle;
   const image = await decodeImage(dirOf(pack.path), idle.image);
-  const [frame] = frameRects(
-    idle,
-    manifest.frameWidth,
-    manifest.frameHeight,
-    image.naturalWidth,
-    image.naturalHeight,
-  );
-  return { image, frame, pixelArt: manifest.pixelArt, facing: manifest.facing };
+  const frames = frameRects(idle, manifest.frameWidth, manifest.frameHeight, image.naturalWidth, image.naturalHeight);
+  return {
+    image,
+    frame: frames[0],
+    frames,
+    fps: idle.fps,
+    anchor: manifest.anchor,
+    pixelArt: manifest.pixelArt,
+    facing: manifest.facing,
+  };
 }
 
-async function loadPack(manifestPath: string, manifest: SpriteManifest): Promise<SpriteSet> {
+async function loadPack(id: string, manifestPath: string, manifest: SpriteManifest): Promise<SpriteSet> {
   const dir = dirOf(manifestPath);
   const images = new Map<string, Promise<HTMLImageElement>>();
   const loadImage = (file: string) => {
@@ -120,6 +138,7 @@ async function loadPack(manifestPath: string, manifest: SpriteManifest): Promise
   if (!idle) throw new Error("Thiếu animation idle.");
 
   return {
+    id,
     name: manifest.name,
     frameWidth: manifest.frameWidth,
     frameHeight: manifest.frameHeight,

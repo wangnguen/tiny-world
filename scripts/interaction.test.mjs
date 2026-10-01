@@ -38,7 +38,8 @@ function setup(foot) {
       pointer("lostpointercapture", 0, 0, 0, id);
     },
   };
-  const interaction = new PetInteraction(pet, { element, hitTest: () => true, foot }, {
+  const view = { element, foot, raises: 0, raise() { this.raises++; } };
+  const interaction = new PetInteraction(() => ({ pet, view }), {
     onHold: (held) => calls.holds.push(held), onActivity: () => {},
   });
   function drag() {
@@ -46,7 +47,7 @@ function setup(foot) {
     pointer("pointermove", 120, 100, 20);
     assert.equal(pet.state, "dragged");
   }
-  return { target, pet, calls, captured, interaction, pointer, drag };
+  return { target, pet, view, calls, captured, interaction, pointer, drag };
 }
 
 test("losing pointer capture releases a dragged pet and restores click-through", () => {
@@ -114,4 +115,70 @@ test("grabbing a flying pet keeps it where it was drawn, not where the sim alrea
   pointer("pointerdown");
   pointer("pointermove", 120, 100, 20);
   assert.deepEqual([pet.x, pet.y], [100, 80]);
+});
+
+test("pressing a pet raises it above the others", () => {
+  const { view, pointer } = setup();
+  pointer("pointerdown");
+  assert.equal(view.raises, 1);
+});
+
+test("with several pets only the one under the cursor is grabbed, empty spots go through", () => {
+  globalThis.window = new EventTarget();
+  const make = (name) => ({
+    name, x: 0, y: 0, state: "idle", pokes: 0,
+    grab() { this.state = "dragged"; }, dragTo(x, y) { this.x = x; this.y = y; },
+    release() { this.state = "fall"; }, poke() { this.pokes++; },
+  });
+  const element = { setPointerCapture() {}, hasPointerCapture() { return false; }, releasePointerCapture() {} };
+  const a = { pet: make("a"), view: { element, raise() {} } };
+  const b = { pet: make("b"), view: { element, raise() {} } };
+  const interaction = new PetInteraction((p) => (p.x < 100 ? a : p.x < 200 ? b : null), {
+    onHold: () => {}, onActivity: () => {},
+  });
+  const fire = (type, x, time = 0) => {
+    const event = new Event(type);
+    Object.defineProperties(event, {
+      pointerId: { value: 1 }, button: { value: 0 },
+      clientX: { value: x }, clientY: { value: 50 }, timeStamp: { value: time },
+    });
+    window.dispatchEvent(event);
+  };
+  fire("pointerdown", 150);
+  assert.equal(interaction.held, b.pet);
+  fire("pointerup", 150, 10);
+  assert.deepEqual([a.pet.pokes, b.pet.pokes], [0, 1]);
+  fire("pointerdown", 300);
+  assert.equal(interaction.held, null);
+  fire("pointerup", 300, 20);
+  assert.deepEqual([a.pet.pokes, b.pet.pokes], [0, 1]);
+});
+
+test("two quick clicks on the same pet are a double click, a third click starts over", () => {
+  globalThis.window = new EventTarget();
+  const pet = { pokes: 0, poke() { this.pokes++; } };
+  const element = { setPointerCapture() {}, hasPointerCapture() { return false; }, releasePointerCapture() {} };
+  const doubles = [];
+  new PetInteraction(() => ({ pet, view: { element, raise() {} } }), {
+    onHold: () => {}, onActivity: () => {}, onDoubleClick: (p) => doubles.push(p),
+  });
+  const click = (time) => {
+    for (const type of ["pointerdown", "pointerup"]) {
+      const event = new Event(type);
+      Object.defineProperties(event, {
+        pointerId: { value: 1 }, button: { value: 0 },
+        clientX: { value: 10 }, clientY: { value: 10 }, timeStamp: { value: time },
+      });
+      window.dispatchEvent(event);
+    }
+  };
+  click(0);
+  click(250);
+  assert.equal(doubles.length, 1);
+  click(500);
+  assert.equal(doubles.length, 1);
+  // Hai lần cách nhau lâu thì không phải bấm đúp.
+  click(2000);
+  assert.equal(doubles.length, 1);
+  assert.equal(pet.pokes, 4);
 });

@@ -40,6 +40,15 @@ h2 {
   gap: 20px;
   height: 100vh;
   padding: 0 22px 16px;
+  /* Nội dung dài hơn cửa sổ (tên nhân vật dài xuống dòng) thì cuộn, không ép các mục chồng lên nhau. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #2a3a5c transparent;
+}
+
+.page > * {
+  flex-shrink: 0;
 }
 
 /* Đầu trang: tiêu đề bên trái, cảnh đêm và pet bên phải, tràn ra sát mép cửa sổ. */
@@ -57,6 +66,16 @@ h2 {
   font-size: 38px;
   font-weight: 700;
   letter-spacing: 0.3px;
+}
+
+/* Ngay dưới tiêu đề, bên trái cảnh làng (cảnh chỉ vẽ từ khoảng 160 px trở sang phải). */
+.hero__version {
+  position: absolute;
+  left: 24px;
+  top: 82px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .hero__scene {
@@ -328,10 +347,54 @@ h2 {
     0 4px 14px rgba(59, 108, 245, 0.45);
 }
 
+/* Đã đủ số nhân vật tối đa: ô chưa chọn mờ đi, bấm không có tác dụng (PetPicker.tsx). */
+.pet-choice--locked {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pet-choice--locked:hover {
+  border-color: var(--line);
+}
+
 .pet-choice canvas {
   width: 44px;
   height: 44px;
   image-rendering: pixelated;
+}
+
+/* Tiêu đề mục không xuống dòng (hàng tiêu đề còn nút lật trang bên phải). */
+.field__label {
+  white-space: nowrap;
+}
+
+/* Tên các nhân vật đang hiện, dưới tiêu đề mục Nhân vật (PetPicker.tsx). */
+.chosen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chosen__name {
+  padding: 3px 10px;
+  border: 1px solid #3f5f9f;
+  border-radius: 10px;
+  background: #1a2c52;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+/* Số nhân vật đang chọn trên tối đa, ngay sau chữ "Nhân vật". */
+.field__count {
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: #1c2a4a;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 /* Ô "Chạy cùng Windows". */
@@ -419,8 +482,8 @@ h2 {
 
 .page__decor {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: -22px;
+  bottom: -16px;
   width: 150px;
   height: 90px;
   pointer-events: none;
@@ -428,4 +491,623 @@ h2 {
 
 .muted {
   color: var(--muted);
+}
+
+/* Hai tab dưới đầu trang: "Pet" và "Thế giới" (SettingsApp.tsx). */
+.tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+  margin-bottom: -6px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #0f1930;
+}
+
+.tab {
+  flex: 1;
+  height: 34px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab--active,
+.tab--active:hover {
+  background: linear-gradient(180deg, #2c4a8c 0%, #213a70 100%);
+  box-shadow: 0 0 0 1px rgba(126, 168, 255, 0.35);
+  color: #fff;
+}
+
+.tab:focus-visible,
+.button:focus-visible,
+.segment:focus-visible,
+.result:focus-visible,
+.input:focus-visible {
+  outline: 2px solid #9cc0ff;
+  outline-offset: 1px;
+}
+
+.icon--pin {
+  stroke: #ff8a7a;
+}
+
+.icon--spark {
+  stroke: #ffd36b;
+}
+
+.icon--calendar {
+  stroke: #b48cff;
+}
+
+/* Dòng chữ nhỏ giải thích dưới tiêu đề mục. */
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hint--small {
+  margin-top: -4px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.link {
+  color: inherit;
+}
+
+.link:hover {
+  color: var(--text-2);
+}
+
+.link:focus-visible {
+  outline: 2px solid #9cc0ff;
+  outline-offset: 1px;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #0f1930;
+  color: var(--text);
+  font: inherit;
+  user-select: text;
+}
+
+.input::placeholder {
+  color: #5d6f96;
+}
+
+.input--number {
+  width: 58px;
+  padding: 0 8px;
+  text-align: center;
+}
+
+.button {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid #3f5f9f;
+  border-radius: 9px;
+  background: #1a2c52;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  border-color: #7ea8ff;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.button--quiet {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--text-2);
+}
+
+.button--primary {
+  border-color: #7ea8ff;
+  background: linear-gradient(180deg, #6194ff 0%, #3b6cf5 100%);
+  color: #fff;
+}
+
+.button--danger {
+  margin-right: auto;
+  border-color: #6b3040;
+  background: transparent;
+  color: var(--danger);
+}
+
+/* Thành phố đang chọn: tên, giờ ở đó và thời tiết hiện tại, nút bỏ chọn. */
+.city {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(23, 34, 62, 0.92);
+}
+
+.city__text,
+.toggle__text,
+.occasion__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.city__text small,
+.toggle__text small,
+.occasion__text small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.city__text strong,
+.toggle__text strong,
+.occasion__text strong {
+  font-size: 14.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kết quả tìm thành phố. */
+.results {
+  display: flex;
+  flex-direction: column;
+  margin: -6px 0 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #0f1930;
+}
+
+.result {
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.result:hover {
+  background: #1a2c52;
+}
+
+/* Các công tắc hiệu ứng, xếp thành một khối. */
+.toggles {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(23, 34, 62, 0.92);
+}
+
+.toggle {
+  padding: 10px 14px;
+}
+
+.toggle__main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+}
+
+/* Điều khiển thêm của công tắc đang bật (số phút, giờ), thẳng hàng với chữ. */
+.toggle__extra {
+  margin: 8px 0 2px 36px;
+}
+
+/* Công tắc phụ thuộc công tắc khác đang tắt. */
+.toggle--off {
+  opacity: 0.5;
+}
+
+.toggle--off .toggle__main,
+.toggle--off .checkbox {
+  cursor: default;
+}
+
+.toggle + .toggle {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Tắt lịch sự kiện: danh sách mờ đi nhưng vẫn sửa được. */
+.field--off .occasions {
+  opacity: 0.5;
+}
+
+.occasions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.occasion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(23, 34, 62, 0.92);
+}
+
+/* Form sửa một dịp. */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #3f5f9f;
+  border-radius: 12px;
+  background: #142140;
+}
+
+.editor__row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor__row > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.editor__date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.editor__problem {
+  margin: 0;
+}
+
+.editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Nhóm nút chọn một trong vài giá trị (loại lịch, mũ). */
+.segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.segment {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0f1930;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.segment:hover {
+  border-color: #3f5f9f;
+}
+
+.segment--active,
+.segment--active:hover {
+  border-color: #7ea8ff;
+  background: #2c4a8c;
+  color: #fff;
+}
+
+/* Gợi ý đầu tab Thế giới. */
+.tip {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 -6px;
+  padding: 8px 12px;
+  border: 1px dashed #3f5f9f;
+  border-radius: 10px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+/* Dịp đang diễn ra hôm nay. */
+.badge {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: #3b6cf5;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
+.icon--clock {
+  stroke: #43d6aa;
+}
+
+.icon--bell {
+  stroke: #ffb36b;
+}
+
+.input--time {
+  width: 120px;
+}
+
+/* Chỉ cho trình đọc màn hình: bảng số của biểu đồ. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Giờ ngồi máy (HealthSettings.tsx): hôm nay và ngồi liền, cột 7 ngày, app dùng nhiều nhất. */
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(23, 34, 62, 0.92);
+}
+
+.stats__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.stats__tile,
+.stats__part {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.stats__tile {
+  padding: 9px 12px 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: rgba(13, 22, 42, 0.7);
+}
+
+.stats__part {
+  gap: 8px;
+}
+
+.stats__label {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.stats__value {
+  margin: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats__empty {
+  margin: 0;
+  padding: 14px 0;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Nút xoá nhỏ ở góc, không nổi bằng số liệu; bấm lần đầu chỉ hỏi lại. */
+.stats__clear {
+  align-self: flex-end;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.stats__clear:hover,
+.stats__clear--confirm {
+  color: var(--danger);
+}
+
+.stats__clear--confirm {
+  font-weight: 600;
+}
+
+.stats__clear:focus-visible {
+  outline: 2px solid #9cc0ff;
+  outline-offset: 2px;
+}
+
+.days {
+  position: relative;
+  margin: 0;
+}
+
+/* Cao bằng PLOT_HEIGHT trong HealthSettings.tsx; chừa chỗ phía trên cho số trên đỉnh cột. */
+.days__plot {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 96px;
+  margin-top: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.days__grid {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  border-top: 1px solid var(--line-soft);
+  pointer-events: none;
+}
+
+.days__tick {
+  position: absolute;
+  top: -17px;
+  right: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Cả cột là chỗ rê chuột, rộng hơn thanh. */
+.days__slot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: default;
+}
+
+.days__slot:focus-visible {
+  outline: 2px solid #9cc0ff;
+  outline-offset: 1px;
+}
+
+.days__bar {
+  width: 22px;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent);
+}
+
+.days__slot:hover .days__bar,
+.days__slot:focus-visible .days__bar {
+  background: #7ea8ff;
+}
+
+.days__bar--empty,
+.days__slot:hover .days__bar--empty,
+.days__slot:focus-visible .days__bar--empty {
+  border-radius: 1px;
+  background: var(--line);
+}
+
+.days__value {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.days__axis {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Ô số nổi trên cột đang rê chuột: đè lên biểu đồ, không đẩy gì xuống. */
+.days__tip {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 9px;
+  border: 1px solid #3f5f9f;
+  border-radius: 8px;
+  background: #0f1930;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.days__tip-day {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 400;
+}
+
+.days__tip--start {
+  left: 0;
+}
+
+.days__tip--center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.days__tip--end {
+  right: 0;
+}
+
+.icon--chat {
+  stroke: #9cc0ff;
 }

@@ -520,7 +520,7 @@ mod tests {
             ..monitor
         };
         let second = display("2", monitor, work, 1.5);
-        let g = Geometry::new(&second, &[second.clone()]);
+        let g = Geometry::new(&second, std::slice::from_ref(&second));
         assert_eq!(g.window, work);
         assert_eq!(
             g.screen.bounds,

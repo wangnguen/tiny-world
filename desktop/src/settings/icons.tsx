@@ -56,3 +56,62 @@ export function InfoIcon() {
     </svg>
   );
 }
+
+/** Mục Thành phố (tab Thế giới). */
+export function PinIcon() {
+  return (
+    <svg className="icon icon--pin" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z" />
+      <circle cx="12" cy="9.8" r="2.4" />
+    </svg>
+  );
+}
+
+/** Mục Hiệu ứng (thời tiết, câu nói, con ma). */
+export function SparkIcon() {
+  return (
+    <svg className="icon icon--spark" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18" />
+    </svg>
+  );
+}
+
+/** Mục Lịch sự kiện. */
+export function CalendarIcon() {
+  return (
+    <svg className="icon icon--calendar" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+      <path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2" />
+    </svg>
+  );
+}
+
+/** Mục Giờ ngồi máy (tab Sức khoẻ). */
+export function ClockIcon() {
+  return (
+    <svg className="icon icon--clock" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  );
+}
+
+/** Mục Nhắc nhở (tab Sức khoẻ). */
+export function BellIcon() {
+  return (
+    <svg className="icon icon--bell" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z" />
+      <path d="M10 20.5a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
+/** Mục Chat với pet. */
+export function ChatIcon() {
+  return (
+    <svg className="icon icon--chat" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z" />
+      <path d="M8.5 10.5h.1M12 10.5h.1M15.5 10.5h.1" />
+    </svg>
+  );
+}

@@ -6,6 +6,8 @@ import type { PetView } from "./petView";
 const DRAG_THRESHOLD = 4;
 /** Vận tốc ném tính từ chuyển động chuột trong khoảng này trước lúc buông (ms). */
 const THROW_WINDOW = 100;
+/** Hai lần click vào cùng một con cách nhau dưới chừng này (ms) là bấm đúp. */
+const DOUBLE_CLICK_MS = 400;
 
 interface Sample {
   x: number;
@@ -13,8 +15,15 @@ interface Sample {
   t: number;
 }
 
+/** Pet có thể bấm vào: phần mô phỏng và phần vẽ của nó. */
+export interface Target {
+  pet: Pet;
+  view: PetView;
+}
+
 interface Press {
   id: number;
+  target: Target;
   start: Point;
   /** Khoảng cách từ con trỏ tới điểm chân pet, giữ nguyên trong lúc kéo. */
   offset: Point;
@@ -29,15 +38,21 @@ export interface InteractionHooks {
   onActivity(): void;
   /** Đang kéo pet mà con trỏ ra ngoài overlay (CSS pixel của overlay): có thể là sang màn hình khác. */
   onDragOutside?(point: Point): void;
+  /** Bấm đúp vào `pet` (lần click thứ hai vẫn làm pet nhảy như click thường). */
+  onDoubleClick?(pet: Pet): void;
 }
 
-/** Click, kéo thả và ném pet bằng chuột trái. */
+/**
+ * Click, kéo thả và ném pet bằng chuột trái. Một lúc chỉ giữ một con: `pick` trả về con nằm trên cùng ở
+ * chỗ bấm (theo phần có hình của sprite), không có thì chuột không thuộc về pet nào.
+ */
 export class PetInteraction {
   private press: Press | null = null;
+  /** Lần click (không kéo) gần nhất, để nhận ra bấm đúp. */
+  private lastClick: { pet: Pet; time: number } | null = null;
 
   constructor(
-    private readonly pet: Pet,
-    private readonly view: PetView,
+    private readonly pick: (point: Point) => Target | null,
     private readonly hooks: InteractionHooks,
   ) {
     window.addEventListener("pointerdown", this.onDown);
@@ -53,8 +68,13 @@ export class PetInteraction {
     const press = this.press;
     if (!press) return;
     this.finish(press.id);
-    if (press.dragging) this.pet.release(0, 0);
+    if (press.dragging) press.target.pet.release(0, 0);
   };
+
+  /** Pet đang được giữ chuột, `null` nếu không có. */
+  get held(): Pet | null {
+    return this.press?.target.pet ?? null;
+  }
 
   /**
    * Overlay vừa đổi chỗ (kéo pet sang màn hình khác): đổi các điểm đã ghi sang toạ độ mới, để lúc buông
@@ -71,13 +91,18 @@ export class PetInteraction {
   private readonly onDown = (event: PointerEvent) => {
     if (event.button !== 0 || this.press) return;
     const point = { x: event.clientX, y: event.clientY };
-    if (!this.view.hitTest(point)) return;
+    const target = this.pick(point);
+    if (!target) return;
+    const { pet, view } = target;
+    // Con đang bị kéo nằm trên các con khác.
+    view.raise();
     // Vẫn nhận chuột khi con trỏ chạy ra ngoài overlay, ví dụ kéo sang màn hình khác.
-    this.view.element.setPointerCapture(event.pointerId);
+    view.element.setPointerCapture(event.pointerId);
     // Tính theo chỗ pet đang hiện (trễ `pet.x/y` tới một bước lúc bay), để bắt pet giữa không trung nó không nhảy.
-    const foot = this.view.foot ?? this.pet;
+    const foot = view.foot ?? pet;
     this.press = {
       id: event.pointerId,
+      target,
       start: point,
       offset: { x: foot.x - point.x, y: foot.y - point.y },
       dragging: false,
@@ -92,12 +117,13 @@ export class PetInteraction {
     const { clientX: x, clientY: y, timeStamp: t } = event;
     press.samples.push({ x, y, t });
     while (press.samples.length > 2 && t - press.samples[0].t > THROW_WINDOW) press.samples.shift();
+    const { pet } = press.target;
     if (!press.dragging) {
       if (Math.hypot(x - press.start.x, y - press.start.y) < DRAG_THRESHOLD) return;
       press.dragging = true;
-      this.pet.grab();
+      pet.grab();
     }
-    this.pet.dragTo(x + press.offset.x, y + press.offset.y);
+    pet.dragTo(x + press.offset.x, y + press.offset.y);
     this.hooks.onActivity();
     if (x < 0 || y < 0 || x >= window.innerWidth || y >= window.innerHeight) this.hooks.onDragOutside?.({ x, y });
   };
@@ -105,8 +131,18 @@ export class PetInteraction {
   private readonly onUp = (event: PointerEvent) => {
     const press = this.finish(event.pointerId);
     if (!press) return;
-    if (press.dragging) this.pet.release(...throwVelocity(press.samples, event.timeStamp));
-    else this.pet.poke();
+    const { pet } = press.target;
+    if (press.dragging) {
+      this.lastClick = null;
+      pet.release(...throwVelocity(press.samples, event.timeStamp));
+      return;
+    }
+    pet.poke();
+    const last = this.lastClick;
+    const double = last !== null && last.pet === pet && event.timeStamp - last.time < DOUBLE_CLICK_MS;
+    // Bấm đúp xong thì lần click sau tính lại từ đầu, không thành bấm ba.
+    this.lastClick = double ? null : { pet, time: event.timeStamp };
+    if (double) this.hooks.onDoubleClick?.(pet);
   };
 
   private readonly onCancel = (event: PointerEvent) => {
@@ -117,7 +153,8 @@ export class PetInteraction {
     const press = this.press;
     if (!press || pointerId !== press.id) return null;
     this.press = null;
-    if (this.view.element.hasPointerCapture(press.id)) this.view.element.releasePointerCapture(press.id);
+    const { element } = press.target.view;
+    if (element.hasPointerCapture(press.id)) element.releasePointerCapture(press.id);
     this.hooks.onHold(false);
     this.hooks.onActivity();
     return press;

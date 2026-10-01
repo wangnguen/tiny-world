@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type WheelEvent } from "react";
+import { MAX_PETS } from "@tinyworld/core";
 import { loadThumbnail, type PackInfo, type Thumbnail } from "../overlay/sprites";
 import { ChevronIcon, PawIcon } from "./icons";
 
@@ -13,19 +14,21 @@ const WHEEL_GAP_MS = 350;
 
 interface Props {
   packs: PackInfo[];
-  value: string | null;
-  onChange: (id: string) => void;
+  /** Các nhân vật đang hiện, theo thứ tự chọn (luôn có ít nhất một). */
+  value: string[];
+  onChange: (ids: string[]) => void;
 }
 
 /**
- * Mục "Nhân vật": tên nhân vật đang chọn, lưới nhân vật chia trang (mỗi ô là frame đầu của `idle`,
- * tên đầy đủ hiện khi rê chuột). Nhiều hơn một trang thì có nút lật trang cạnh tiêu đề, lăn chuột
- * trên lưới cũng lật được. Mở ra ở đúng trang có nhân vật đang chọn.
+ * Mục "Nhân vật": tên các nhân vật đang chọn, lưới nhân vật chia trang (mỗi ô là frame đầu của `idle`,
+ * tên đầy đủ hiện khi rê chuột). Bấm một ô để thêm hoặc bớt nhân vật đó: tối đa `MAX_PETS` con, luôn
+ * còn ít nhất một con; đủ rồi thì các ô chưa chọn mờ đi. Nhiều hơn một trang thì có nút lật trang cạnh
+ * tiêu đề, lăn chuột trên lưới cũng lật được. Mở ra ở đúng trang có nhân vật chọn đầu tiên.
  */
 export function PetPicker({ packs, value, onChange }: Props) {
   const pages = Math.ceil(packs.length / PAGE_SIZE);
   const [page, setPage] = useState(() =>
-    Math.max(0, Math.floor(packs.findIndex((pack) => pack.id === value) / PAGE_SIZE)),
+    Math.max(0, Math.floor(packs.findIndex((pack) => pack.id === value[0]) / PAGE_SIZE)),
   );
   const lastWheel = useRef(0);
   const go = (next: number) => setPage(Math.min(pages - 1, Math.max(0, next)));
@@ -36,7 +39,15 @@ export function PetPicker({ packs, value, onChange }: Props) {
     lastWheel.current = now;
     go(page + Math.sign(event.deltaY));
   };
-  const name = packs.find((pack) => pack.id === value)?.name;
+  const chosen = value.flatMap((id) => packs.find((pack) => pack.id === id) ?? []);
+  const full = value.length >= MAX_PETS;
+  const toggle = (id: string) => {
+    if (value.includes(id)) {
+      if (value.length > 1) onChange(value.filter((v) => v !== id));
+    } else if (!full) {
+      onChange([...value, id]);
+    }
+  };
 
   return (
     <section className="field">
@@ -44,23 +55,43 @@ export function PetPicker({ packs, value, onChange }: Props) {
         <h2 className="field__label">
           <PawIcon />
           Nhân vật
-          {name && <span className="field__value">{name}</span>}
+          <span className="field__count">
+            {value.length}/{MAX_PETS}
+          </span>
         </h2>
         {pages > 1 && <Pager page={page} pages={pages} onChange={go} />}
       </div>
-      <div className="pets" role="radiogroup" aria-label="Nhân vật" onWheel={onWheel}>
+      {/* Tên đầy đủ của các nhân vật đang hiện, theo thứ tự chọn; dài quá thì xuống dòng, không cắt. */}
+      <ul className="chosen" aria-label="Đang hiện">
+        {chosen.map((pack) => (
+          <li key={pack.id} className="chosen__name">
+            {pack.name}
+          </li>
+        ))}
+      </ul>
+      <div className="pets" role="group" aria-label={`Nhân vật, chọn tối đa ${MAX_PETS}`} onWheel={onWheel}>
         {packs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((pack) => {
-          const active = pack.id === value;
+          const active = value.includes(pack.id);
+          const locked = !active && full;
+          const only = active && value.length === 1;
+          const hint = locked
+            ? `${pack.name}: đã đủ ${MAX_PETS} nhân vật, bỏ chọn bớt một con trước`
+            : only
+              ? `${pack.name}: cần ít nhất một nhân vật`
+              : pack.name;
           return (
             <button
               key={pack.id}
               type="button"
-              role="radio"
+              role="checkbox"
               aria-checked={active}
+              aria-disabled={locked || only}
               aria-label={pack.name}
-              title={pack.name}
-              className={active ? "pet-choice pet-choice--active" : "pet-choice"}
-              onClick={() => onChange(pack.id)}
+              title={hint}
+              className={["pet-choice", active && "pet-choice--active", locked && "pet-choice--locked"]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => toggle(pack.id)}
             >
               <PetThumbnail id={pack.id} />
             </button>

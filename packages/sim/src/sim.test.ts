@@ -57,24 +57,33 @@ describe("StepBlend", () => {
   it("vẽ giữa hai bước theo alpha", () => {
     const blend = new StepBlend();
     const pet = { x: 0, y: 100 };
-    blend.step(pet, () => {
+    const other = { x: 500, y: 100 };
+    blend.step([pet, other], () => {
       pet.x = 50;
       pet.y = 80;
+      other.x = 400;
     });
     expect(blend.at(pet, 0)).toEqual({ x: 0, y: 100 });
     expect(blend.at(pet, 0.5)).toEqual({ x: 25, y: 90 });
     expect(blend.at(pet, 1)).toEqual({ x: 50, y: 80 });
+    expect(blend.at(other, 0.5)).toEqual({ x: 450, y: 100 });
   });
 
-  it("chưa có bước nào, hoặc bị dời ngoài mô phỏng, thì vẽ đúng chỗ", () => {
+  it("chưa có bước nào, bị dời ngoài mô phỏng, hoặc không còn trong bước, thì vẽ đúng chỗ", () => {
     const blend = new StepBlend();
     const pet = { x: 10, y: 20 };
     expect(blend.at(pet, 0.5)).toEqual({ x: 10, y: 20 });
-    blend.step(pet, () => {
+    blend.step([pet], () => {
       pet.x = 50;
     });
     pet.x = 300;
     expect(blend.at(pet, 0.5)).toEqual({ x: 300, y: 20 });
+    const removed = { x: 0, y: 0 };
+    blend.step([removed], () => {
+      removed.x = 10;
+    });
+    blend.step([pet], () => {});
+    expect(blend.at(removed, 0.5)).toEqual({ x: 10, y: 0 });
   });
 });
 

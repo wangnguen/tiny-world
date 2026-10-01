@@ -21,8 +21,9 @@ desktop-pet/
 
 ## Nhân vật
 
-21 nhân vật tự vẽ cho dự án, chọn trong **Cài đặt… → Nhân vật** (16 nhân vật mỗi trang, lật bằng
-mũi tên, chấm trang hoặc lăn chuột): Momo (mặc định), Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn,
+21 nhân vật tự vẽ cho dự án. Chọn trong **Cài đặt… → Nhân vật**, bấm một ô để thêm hoặc bớt nhân vật
+đó: tối đa 3 con cùng sống trên màn hình, luôn còn ít nhất một con (16 nhân vật mỗi trang, lật bằng
+mũi tên, chấm trang hoặc lăn chuột). Gồm Momo (mặc định), Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn,
 Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp, Frobu, Byte và Patch. Nhân vật nào cũng đủ 12
 animation: 9 của Phase 1 cộng leo, ngồi mép, nhảy. Xem chuyển động bằng [sprite studio](assets/sprite-sources/index.html) (mở
 thẳng bằng trình duyệt), thiết kế từng nhân vật ở [assets/sprite-sources/README.md](assets/sprite-sources/README.md).
@@ -51,19 +52,20 @@ tray:
 |---|---|
 | **Tạm dừng** | Pet đứng yên, chuột đi xuyên qua pet; bấm lần nữa để pet sống tiếp |
 | **Ẩn / hiện pet** | Ẩn hẳn pet (app dừng vòng lặp, không tốn CPU) |
-| **Cài đặt…** | Chọn nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chạy cùng Windows. Đổi là áp dụng ngay |
+| **Cài đặt…** | Tab **Pet**: chọn 1–3 nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chat với pet (mặc định tắt), chạy cùng Windows. Tab **Thế giới**: thành phố (thời tiết thật, giờ ở đó), bật tắt thời tiết quanh pet, câu nói cho vui, lịch sự kiện, con ma lúc 2 giờ sáng; sửa lịch sự kiện. Tab **Sức khoẻ** (mặc định tắt hết): giờ ngồi máy hôm nay và 7 ngày, nhắc nghỉ, nhắc uống nước, nhắc đi ngủ, spam Ctrl+S. Đổi là áp dụng ngay. Dưới tiêu đề là version đang chạy |
 | **Thoát** | Lưu trạng thái pet rồi thoát |
 | **Mở DevTools** | Chỉ khi chạy dev (overlay để chuột đi xuyên nên không bấm F12 được) |
 
-Khi chạy dev, `window.__tinyworld` trong DevTools cho xem và chỉnh pet, ví dụ
-`__tinyworld.pet.sinceInteraction = 1e6` để pet đi ngủ ngay. Bật **Chạy cùng Windows** trong lúc chạy dev
+Khi chạy dev, `window.__tinyworld` trong DevTools cho xem và chỉnh pet (`pet` là con đầu tiên,
+`members` là cả nhóm), ví dụ `__tinyworld.world.pets.forEach((p) => (p.sinceInteraction = 1e6))` để
+cả nhóm đi ngủ ngay. Bật **Chạy cùng Windows** trong lúc chạy dev
 sẽ ghi đường dẫn exe bản debug, nhớ tắt lại.
 
 Tương tác với pet:
 
 | Thao tác | Pet |
 |---|---|
-| Để yên | Tự đứng, đi, chạy; chạm mép màn hình thì quay đầu. Mép giáp màn hình khác thì có lúc đi sang bên đó |
+| Để yên | Tự đứng, đi, chạy; chạm mép màn hình thì quay đầu. Chỉ có một con thì mép giáp màn hình khác có lúc đi sang bên đó; từ 2 con trở lên thì cả nhóm ở yên một màn hình. Các con đi xuyên qua nhau |
 | Có cửa sổ gần | Leo cạnh cửa sổ lên mép trên (cửa sổ lơ lửng thì nhảy lên bám cạnh rồi leo, đáy cao hơn chỗ đứng quá khoảng 270 px thì chịu), đi lại trên đó, ngồi ở mép, nhảy sang cửa sổ khác hoặc nhảy, leo xuống |
 | Kéo một cửa sổ khác lại sát pet | Pet chạy trốn về phía ngược lại; đang ở trên cửa sổ mà hết đường thì xuống luôn, dưới đất bị dồn vào mép màn hình thì giật mình nhảy lên. Phóng to hay đổi cỡ cửa sổ không tính |
 | Đóng một cửa sổ ở gần (trong khoảng 400 px) | Pet quay về phía đó nhảy cẫng lên hai cái ăn mừng (không phải lần nào cũng vậy, 15 giây mới ăn mừng một lần) |
@@ -75,7 +77,12 @@ Tương tác với pet:
 | Kéo lên rồi thả | Rơi xuống mép cửa sổ bên dưới hoặc taskbar, nảy nhẹ khi chạm đất; thả từ cao thì choáng: lảo đảo, sao bay quanh đầu |
 | Kéo rồi vung chuột và buông | Bị ném bay theo quán tính, đập tường thì bật lại; ném về phía màn hình khác thì bay sang bên đó |
 | Kéo pet sang màn hình khác | Pet sang màn hình đó theo con trỏ |
-| 3 phút không đụng tới | Xuống taskbar (đang ở trên cửa sổ thì nhảy hoặc leo xuống) rồi ngủ; click bất kỳ đâu trên màn hình hoặc kéo pet là dậy |
+| Có nhiều con, ném hoặc kéo một con sang màn hình khác | Các con còn lại chạy theo, vào từ mép phía màn hình cũ: con ở gần mép vào trước, con ở xa vào sau; con đang ngủ thì nằm luôn ở sát mép đó |
+| Bấm vào chỗ hai con chồng lên nhau | Con nằm trên được bấm; con vừa bị bấm, bị kéo nằm lên trên các con khác |
+| Bấm đúp | Con đó nói giờ, thứ, ngày, ngày âm lịch, và thời tiết ở thành phố đã chọn (mất mạng thì "Không có mạng :))") |
+| Click chuột phải | Mở cửa sổ chat với con đó ngay cạnh nó (bật **Chat với pet** trong Cài đặt trước); con đó đứng yên chờ tới khi đóng khung chat. Hỏi nhanh tỉ giá, tin tức, đổi đơn vị... qua Google Gemini, không cần tài khoản; câu gợi ý đổi theo ngày. Link trong câu trả lời bấm được, có nút Chép. Gửi dồn dập thì app chặn trước (3 giây một câu, 30 câu mỗi giờ); mất mạng thì ghi "Mất mạng" |
+| Hai con gặp nhau | Dừng lại quay mặt vào nhau, có lúc chào một câu hoặc đi cùng nhau một đoạn; đi ngủ thì nằm cạnh nhau |
+| 3 phút không đụng tới con nào | Cả nhóm xuống taskbar (đang ở trên cửa sổ thì nhảy hoặc leo xuống) rồi lần lượt ngủ: click hay kéo con nào cũng tính chung cho cả nhóm. Click bất kỳ đâu trên màn hình hoặc kéo pet là cả nhóm dậy |
 | Giữ **Ctrl** khi click | Click xuyên qua pet xuống app bên dưới |
 
 Đổi độ phân giải, tỉ lệ DPI, chỗ đặt hay cỡ taskbar, cắm hoặc rút màn hình trong lúc app đang chạy thì
@@ -87,6 +94,28 @@ App chỉ hỗ trợ tỉ lệ 100%.
 Click pet không làm mất focus của app đang dùng. Có app fullscreen (video, game, trình chiếu: cửa sổ
 phủ kín cả màn hình, không tính cửa sổ phóng to) thì pet tự ẩn, thoát fullscreen thì hiện lại. Lúc ẩn (kể cả ẩn từ tray) app dừng hẳn vòng lặp, pet đứng nguyên
 chỗ cũ chờ hiện lại.
+
+Những thứ không cần bấm gì (tắt từng thứ trong tab **Thế giới**):
+
+- Ban đêm (theo giờ mặt trời lặn ở thành phố đã chọn, chưa chọn thì 19:00–6:00) pet đi chậm hơn, buồn
+  ngủ sớm hơn
+- Thời tiết chỉ quanh pet: mưa, tuyết, sương mù, sấm (chớp sáng, pet giật mình), mùa xuân trời quang thì
+  hoa rơi. Trời quang hay nhiều mây thì không có gì. Chưa chọn thành phố thì thời tiết giả lập theo mùa;
+  đã chọn mà mất mạng thì một con nói "Không có mạng :))", không có hiệu ứng
+- Câu nói cho vui (chào nhau, kêu trời mưa): cả nhóm 15 phút mới được một câu
+- Lịch sự kiện: đúng dịp (Tết, Trung thu, Giáng sinh... hoặc dịp tự thêm, dương hoặc âm lịch) thì cả nhóm
+  đội mũ, một con nói câu của dịp đó mỗi ngày một lần. Tab Thế giới ghi hôm nay có dịp nào
+- 2:00–2:30 sáng, có con còn thức thì một con ma bay ngang qua, mỗi đêm một lần
+
+Tab **Sức khoẻ** (mặc định tắt hết, số liệu chỉ ở máy này):
+
+- Giờ ngồi máy: tính lúc có chạm chuột hay phím, vắng quá 5 phút là đang nghỉ; xem hôm nay, đang ngồi
+  liền, lượt ngồi liền lâu nhất, đã đứng dậy nghỉ mấy lần, 7 ngày gần nhất. Xoá được
+- Ngồi liền 50 phút (chỉnh được) thì một con nhảy lên nhắc nghỉ mắt; cứ ngồi máy 60 phút (chỉnh được) thì
+  nhắc uống nước; sau giờ đi ngủ (mặc định 23:00) mà còn ngồi máy thì nhắc đi ngủ, 30 phút một lần. Bấm vào
+  pet đang nhắc là tắt
+- Bấm Ctrl+S 5 lần trong 10 giây thì pet kêu "Lưu rồi mà :(((("
+- Đang gõ phím (có input mà chuột đứng yên) thì pet không nói câu cho vui
 
 ## Build bản phát hành
 
@@ -113,6 +142,11 @@ chung một zip, mà Explorer hiện file exe nằm trong zip bằng icon exe ch
 |---|---|
 | `TinyWorld_<version>-<số lần chạy>-<commit>_x64-setup.exe` | Cài vào máy (có shortcut, gỡ được trong Settings) |
 | `TinyWorld_<version>-<số lần chạy>-<commit>_x64-portable.exe` | Chạy thẳng không cần cài (cần WebView2, Windows 10/11 bản mới có sẵn) |
+
+`<version>` là version sắp phát hành: commit đã được phát hành thì đúng version đó, chưa thì tăng số cuối
+của release mới nhất (đã có `v1.3.2` thì là `1.3.3`). Version này cũng được ghi vào app; cửa sổ Cài đặt
+hiện kèm số lần chạy và commit (ví dụ `Phiên bản 1.3.3 · build 57 · 14e831c`) để phân biệt với bản Release
+cùng version. Chạy dev thì hiện `Bản dev`.
 
 Test hỏng thì không build ra file. Push liên tục thì lần build cũ bị huỷ, chỉ giữ lần mới nhất.
 Push chỉ sửa file `.md` hoặc `release.yml` thì không build (sửa sprite, icon trong `assets/` vẫn
@@ -171,28 +205,53 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
   rồi gửi event `screen-changed` kèm cách đổi toạ độ cũ sang mới (`remap`). Cứ mỗi giây Rust đo lại
   màn hình; độ phân giải, DPI, taskbar đổi hay màn hình bị rút thì đặt lại overlay và gửi cùng event đó.
 - **Con trỏ** (`src-tauri/src/cursor.rs`): Rust đọc con trỏ khoảng 60 lần/giây nhưng chỉ gửi
-  `cursor-moved` khi con trỏ ở trong vùng quanh pet mà frontend báo (`set_cursor_interest`: pet thức thì
-  trong tầm nhìn theo 300 px, ngủ thì chỉ quanh thân), lúc vừa ra khỏi vùng, lúc bấm/nhả chuột (click ở
+  `cursor-moved` khi con trỏ ở trong vùng quanh một con mà frontend báo (`set_cursor_interest`, mỗi con
+  một vùng: con thức thì trong tầm nhìn theo 300 px, con ngủ thì chỉ quanh thân), lúc vừa ra khỏi vùng, lúc bấm/nhả chuột (click ở
   đâu pet đang ngủ cũng dậy) và lúc vùng vừa đổi. Nhờ vậy chuột di chuyển ở xa pet không đánh thức
   WebView. Pet chỉ dùng vị trí con trỏ để quay đầu nhìn theo và để bật/tắt click-through.
 - **Taskbar tự ẩn**: lúc trồi lên, taskbar che mép dưới overlay. Luồng theo dõi cửa sổ đọc khung
   taskbar cùng lúc với danh sách cửa sổ và gửi mép trên của nó (`taskbarTop` trong `windows-changed`);
   mép đó cao hơn mép dưới vùng làm việc thì frontend lấy nó làm mặt đất.
 - **Pet**: mỗi pet là một `<canvas>` nhỏ đúng bằng một frame, di chuyển bằng CSS transform, chỉ vẽ
-  lại khi đổi frame. Vòng lặp tối đa 30 fps, hẹn giờ rồi mới xin `requestAnimationFrame` (xin rAF liên
-  tục thì WebView thức dậy theo tần số màn hình, 60–144 lần/giây). Pet đứng yên hay ngồi mép thì chỉ
-  thức dậy lúc đổi frame (khoảng 7 lần/giây), ngủ thì dừng hẳn và Rust bảo WebView2 dùng ít RAM
+  lại khi đổi frame. Cả nhóm (tối đa 3 con) dùng chung một overlay, một vòng lặp; chỉ nạp sprite của
+  các nhân vật đang hiện, bớt nhân vật thì bỏ. Vòng lặp tối đa 30 fps, hẹn giờ rồi mới xin `requestAnimationFrame` (xin rAF liên
+  tục thì WebView thức dậy theo tần số màn hình, 60–144 lần/giây). Cả nhóm đứng yên hay ngồi mép thì chỉ
+  thức dậy lúc có con đổi frame (khoảng 7 lần/giây), cả nhóm ngủ thì dừng hẳn và Rust bảo WebView2 dùng ít RAM
   (`MemoryUsageTargetLevel`), overlay ẩn cũng vậy. Mặt nạ alpha để bắt chuột lưu 1 bit mỗi pixel.
 - **Logic** (`packages/sim`): không phụ thuộc DOM hay Tauri, test bằng vitest. Bước thời gian cố
   định nên hành vi không phụ thuộc fps; RNG có seed để test được hành vi ngẫu nhiên.
+- **Thời tiết** (`src-tauri/src/weather.rs`): chỉ Rust gọi mạng, webview không gọi. Đã chọn thành phố
+  thì hỏi Open-Meteo lúc mở app, lúc đổi thành phố, rồi 30 phút một lần, gửi event `weather-changed`;
+  lỗi thì chờ 1 phút, gấp đôi mỗi lần tới tối đa 30 phút, và chỉ gửi `weather-failed` ở lần lỗi đầu.
+  Tìm thành phố (`search_city`) cũng qua Rust. Overlay (`src/overlay/ambience.ts`) đổi thời tiết thành
+  hiệu ứng, ban đêm, mũ của dịp lễ, con ma, theo giờ ở thành phố đã chọn (`wallClock`, múi giờ IANA);
+  âm lịch tính trên máy (`packages/sim/src/lunar.ts`). Mọi câu pet nói nằm ở `packages/sim/src/lines.ts`.
+- **Sức khoẻ** (`src-tauri/src/activity.rs`): luồng nền đọc mỗi giây thời điểm input cuối
+  (`GetLastInputInfo`) và vị trí con trỏ, không hook bàn phím. `Tracker` (thuần logic, có test) cộng giờ
+  ngồi máy theo khoảng giữa hai lần input, quyết định nhắc nghỉ, uống nước, nhắc khuya, gửi event `reminder`; có input
+  mà chuột đứng yên thì gửi `activity-changed` (đang gõ). Spam Ctrl+S đọc trong vòng con trỏ của
+  `cursor.rs`. Overlay chỉ cho pet nói (`Ambience.remind`).
+- **Chat** (`src-tauri/src/chat.rs`, `src-tauri/src/gemini.rs`, `src/chat/`): cửa sổ React riêng
+  (`chat.html`), chỉ tạo khi click chuột phải vào pet và huỷ khi đóng (Rust gửi `chat-closed` cho overlay
+  để con đang chat đi lại). Khung chat ghép câu gửi đi (tính cách nhân vật, giờ máy, 6 lượt gần nhất,
+  `prompt.ts`), Rust kiểm tra giới hạn gửi (`Limiter`) rồi gọi Gemini như trang gemini.google.com lúc chưa
+  đăng nhập (`gemini.rs`: chọn Flash bằng header như trang, build label và mã model đọc từ trang `/app`,
+  chat tạm). Không chạy server, không mở cổng. Câu trả lời markdown được đọc thành khối (`markdown.ts`)
+  rồi vẽ bằng React, không dùng HTML thô.
 - **Cửa sổ cài đặt** (`src/settings/`, `src-tauri/src/settings.rs`): trang React riêng
   (`settings.html`), chỉ tạo khi bấm **Cài đặt…** và huỷ khi đóng để đỡ tốn RAM. Overlay không kéo
   React theo.
 - **Dữ liệu** trong `%APPDATA%\com.tinyworld.app\`, ghi ra file tạm rồi đổi tên:
-  - `world.json`: vị trí, hướng, đang ngủ hay không của pet. Lưu 30 giây một lần (chỉ khi có thay
+  - `world.json`: vị trí, hướng, đang ngủ hay không của từng con (id là tên thư mục pack). Lưu 30 giây một lần (chỉ khi có thay
     đổi) và khi bấm **Thoát**; tắt máy ngang thì mất tối đa 30 giây.
-  - `settings.json`: nhân vật đang chọn (tên thư mục pack), cỡ nhân vật, tốc độ. Sửa tay sai thì app
-    kẹp về khoảng cho phép; pack không còn thì dùng pack đầu tiên.
+  - `settings.json`: các nhân vật đang hiện (`pets`, tên thư mục pack theo thứ tự chọn), cỡ nhân vật,
+    tốc độ, thành phố (tên, toạ độ, múi giờ), các công tắc của tab Thế giới, lịch sự kiện (`occasions`,
+    tối đa 30 dịp). Sửa tay sai thì app kẹp về khoảng cho phép, bỏ tên trùng, quá 3 con thì bỏ bớt, bỏ dịp
+    có ngày không có thật; pack không còn thì bỏ qua, không còn pack nào thì dùng pack đầu tiên. File của
+    bản cũ (`pet`, một nhân vật; chưa có các mục của tab Thế giới) vẫn đọc được.
+  - `weather.json`: thời tiết lấy được gần nhất, mở app lúc mất mạng vẫn dùng được nếu chưa quá 3 giờ.
+  - `stats.json`: theo ngày, 30 ngày gần nhất: giờ ngồi máy, lượt ngồi liền lâu nhất (ms), số lần nghỉ;
+    chỉ có khi bật đếm giờ. Ghi mỗi phút (khi có thay đổi) và lúc thoát; nút xoá trong tab Sức khoẻ ghi đè thành rỗng.
   - **Chạy cùng Windows** không lưu ở đây mà là giá trị `TinyWorld` trong
     `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (trỏ tới exe đang chạy).
 
@@ -200,9 +259,9 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
 
 ```bash
 pnpm typecheck
-pnpm test                               # sprite pack, kéo thả overlay, pet.json, FSM, World/Pet, địa hình cửa sổ, con trỏ, đổi màn hình, world.json
-cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên cạnh, đổi toạ độ giữa hai màn hình, danh sách cửa sổ, lưu trạng thái, cài đặt, registry
+pnpm test                               # sprite pack, kéo thả/bấm đúp overlay, pet.json, FSM, World/Pet, nhóm pet, địa hình cửa sổ, con trỏ, đổi màn hình, world.json, thời tiết, âm lịch, lịch sự kiện
+cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên cạnh, đổi toạ độ giữa hai màn hình, danh sách cửa sổ, lưu trạng thái, cài đặt, lịch sự kiện, đọc kết quả Open-Meteo, giờ ngồi máy và lời nhắc, spam Ctrl+S, giới hạn gửi chat, vị trí cửa sổ chat, đọc trang và câu trả lời Gemini, câu gợi ý, registry
 ```
 
-`pnpm test` gồm `pnpm test:sprites` (script chuẩn hoá sprite và `prepare-sprites.mjs --check` trên
-cả 21 pack), `pnpm test:overlay` (kéo thả trên overlay) và vitest của `packages/*`.
+`pnpm test` gồm `pnpm test:sprites` (script chuẩn hoá sprite, `prepare-sprites.mjs --check` trên
+cả 21 pack và `prepare-items.mjs --check` cho ảnh mũ), `pnpm test:overlay` (kéo thả, bấm đúp trên overlay, đo đỉnh đầu để đội mũ, markdown và câu gửi của khung chat) và vitest của `packages/*`.
