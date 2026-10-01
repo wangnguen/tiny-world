@@ -73,6 +73,15 @@ export interface WindowList {
   taskbarTop: number | null;
 }
 
+/** Số nhân vật tối đa cùng sống trên màn hình, khớp `MAX_PETS` trong settings.rs. */
+export const MAX_PETS = 3;
+
+/** Giới hạn của lịch sự kiện, khớp `MAX_OCCASIONS`, `OCCASION_*` trong settings.rs. */
+export const MAX_OCCASIONS = 30;
+export const OCCASION_NAME_MAX = 40;
+export const OCCASION_MESSAGE_MAX = 80;
+export const OCCASION_DAYS_MAX = 10;
+
 /** Cài đặt người dùng (command `get_settings` / `set_settings`), khớp `Settings` trong settings.rs. */
 export interface Settings {
   /** Cỡ nhân vật so với cỡ gốc của sprite pack, 0.5–2. */
@@ -80,10 +89,136 @@ export interface Settings {
   /** Hệ số tốc độ đi/chạy, 0.5–2. */
   speed: number;
   /**
-   * Nhân vật đang chọn: tên thư mục sprite pack trong `assets/sprites/`. `null` (hoặc pack không còn)
-   * là pack đầu tiên theo tên thư mục.
+   * Các nhân vật đang hiện (tối đa `MAX_PETS`, không trùng), theo thứ tự chọn: tên thư mục sprite pack
+   * trong `assets/sprites/`. Rỗng (hoặc không pack nào còn) là pack đầu tiên theo tên thư mục.
    */
-  pet: string | null;
+  pets: string[];
+  /** Thành phố để lấy thời tiết thật; `null` là thời tiết giả lập, không gọi mạng. */
+  city: City | null;
+  /** Hiệu ứng thời tiết quanh pet (mưa, tuyết, sương mù, sấm, cánh hoa). */
+  weather: boolean;
+  /** Pet nói câu cho vui (chào nhau, thời tiết). */
+  chatter: boolean;
+  /** Lịch sự kiện: đúng dịp thì cả nhóm đội mũ, một con nói câu của dịp đó. */
+  events: boolean;
+  /** Các dịp trong lịch sự kiện; mặc định là các ngày lễ Việt Nam. */
+  occasions: Occasion[];
+  /** Sự kiện hiếm: ma bay qua lúc 2 giờ sáng. */
+  ghost: boolean;
+  /** Phase 5, mặc định tắt hết. Đếm giờ ngồi máy theo ngày (`stats.json`). */
+  screenTime: boolean;
+  /** Ngồi liền `breakMinutes` phút (`BREAK_MINUTES`) thì pet nhắc nghỉ. */
+  breakReminder: boolean;
+  breakMinutes: number;
+  /** Cứ ngồi máy đủ `waterMinutes` phút (`WATER_MINUTES`) thì pet nhắc uống nước. */
+  waterReminder: boolean;
+  waterMinutes: number;
+  /** Còn ngồi máy sau `bedtime` (phút trong ngày, giờ máy) thì pet nhắc đi ngủ, tối đa 30 phút một lần. */
+  bedtimeReminder: boolean;
+  bedtime: number;
+  /** Bấm Ctrl+S dồn dập (5 lần trong 10 giây) thì pet kêu. */
+  saveSpam: boolean;
+  /** Phase 6, mặc định tắt: click chuột phải vào pet để chat (gửi câu hỏi tới Gemini). */
+  chat: boolean;
+}
+
+/** Đang chat với con nào, khớp `ChatTarget` trong chat.rs. */
+export interface ChatTarget {
+  /** Tên thư mục sprite pack ("placeholder" là pet tạm). */
+  pet: string;
+  /** Tên ngắn để hiện, ví dụ "Momo". */
+  name: string;
+}
+
+/** Khoảng chọn được của `Settings.breakMinutes`, khớp `BREAK_MINUTES` trong settings.rs. */
+export const BREAK_MINUTES = { min: 15, max: 120 } as const;
+/** Khoảng chọn được của `Settings.waterMinutes`, khớp `WATER_MINUTES` trong settings.rs. */
+export const WATER_MINUTES = { min: 20, max: 180 } as const;
+
+/** Event `reminder`, khớp `Reminder` trong activity.rs. */
+export type Reminder =
+  | { kind: "break"; minutes: number }
+  | { kind: "water" }
+  | { kind: "bedtime" }
+  | { kind: "saveSpam" };
+
+/** Giờ ngồi máy một ngày (giờ máy), khớp `Day` trong activity.rs. */
+export interface DayStats {
+  activeMs: number;
+  /** Lượt ngồi liền lâu nhất trong ngày (ms). */
+  longestMs: number;
+  /** Số lần đứng dậy nghỉ (vắng từ 5 phút) sau một lượt ngồi. */
+  breaks: number;
+}
+
+/** Command `get_stats`, khớp `StatsView` trong activity.rs. */
+export interface ScreenStats {
+  /** Hôm nay theo giờ máy, "2026-10-01". */
+  today: string;
+  /** Đang ngồi liền bao lâu (ms). */
+  sessionMs: number;
+  /** Tối đa 30 ngày gần nhất, theo ngày "2026-10-01". */
+  days: Record<string, DayStats>;
+}
+
+/** Mũ cả nhóm đội trong một dịp, khớp `HATS` trong settings.rs. */
+export type Hat = "none" | "party" | "tet" | "noel";
+
+/**
+ * Một dịp trong lịch sự kiện, khớp `Occasion` trong settings.rs: lặp lại mỗi năm vào ngày `day/month`
+ * (dương lịch, hoặc âm lịch Việt Nam nếu `lunar`) trong `days` ngày.
+ */
+export interface Occasion {
+  name: string;
+  day: number;
+  month: number;
+  lunar: boolean;
+  /** Kéo dài 1–10 ngày kể từ ngày đó. */
+  days: number;
+  hat: Hat;
+  /** Câu một con nói (mỗi ngày một lần) trong dịp đó; rỗng là không nói. */
+  message: string;
+  enabled: boolean;
+}
+
+/** Thành phố đã chọn trong Cài đặt, khớp `City` trong settings.rs. */
+export interface City {
+  /** Tên để hiện, ví dụ "Hà Nội, Việt Nam". */
+  name: string;
+  latitude: number;
+  longitude: number;
+  /** Múi giờ IANA, ví dụ "Asia/Bangkok": giờ của pet theo múi giờ này; `null` là giờ máy. */
+  timezone: string | null;
+}
+
+/** Một kết quả tìm thành phố (command `search_city`), khớp `CityResult` trong weather.rs. */
+export interface CityResult {
+  label: string;
+  latitude: number;
+  longitude: number;
+  timezone: string | null;
+}
+
+/** Thời tiết hiện tại ở thành phố đã chọn (Open-Meteo), khớp `Report` trong weather.rs. */
+export interface WeatherReport {
+  latitude: number;
+  longitude: number;
+  /** Mã thời tiết WMO. */
+  code: number;
+  /** Mặt trời đang mọc ở chỗ đó. */
+  isDay: boolean;
+  /** °C. */
+  temperature: number;
+  /** km/h. */
+  windSpeed: number;
+  /** Lúc lấy về, số giây từ 1970 (UTC). */
+  fetchedAt: number;
+}
+
+/** Event `weather-failed`: không lấy được thời tiết, khớp `Failure` trong weather.rs. */
+export interface WeatherFailure {
+  /** Mất mạng hoặc máy chủ không trả lời; `false` là máy chủ trả lỗi. */
+  offline: boolean;
 }
 
 export interface AppError {
@@ -91,7 +226,9 @@ export interface AppError {
   message: string;
 }
 
-export type ErrorCode = "BAD_REQUEST" | "NO_WINDOW" | "INTERNAL";
+/** `OFFLINE`: mất mạng hoặc máy chủ không trả lời (thời tiết, chat). */
+/** `BUSY`: app tự chặn để không gửi dồn dập; `UNAVAILABLE`: dịch vụ bên ngoài lỗi hay đang chặn. */
+export type ErrorCode = "BAD_REQUEST" | "NO_WINDOW" | "INTERNAL" | "OFFLINE" | "BUSY" | "UNAVAILABLE";
 
 export function isAppError(value: unknown): value is AppError {
   return (

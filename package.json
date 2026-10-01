@@ -8,8 +8,8 @@
     "icons:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-icons.ps1",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm test:sprites && pnpm test:overlay && pnpm -r test",
-    "test:sprites": "node --test scripts/prepare-sprites.test.mjs && node scripts/prepare-sprites.mjs --check",
-    "test:overlay": "node --test scripts/interaction.test.mjs"
+    "test:sprites": "node --test scripts/prepare-sprites.test.mjs && node scripts/prepare-sprites.mjs --check && node scripts/prepare-items.mjs --check",
+    "test:overlay": "node --test scripts/interaction.test.mjs scripts/crown.test.mjs scripts/chat.test.mjs"
   },
   "devDependencies": {
     "sharp": "0.35.5",

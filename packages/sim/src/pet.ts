@@ -1,5 +1,6 @@
 import type { AnimationName, Point, Rect, Remap } from "@tinyworld/core";
 import { StateMachine, type StateTable } from "./fsm";
+import { GREETINGS } from "./lines";
 import { clamp } from "./math";
 import {
   buried,
@@ -38,7 +39,31 @@ export interface PetEnv {
   readonly cursor: Point | null;
   /** Mép `side` của màn hình có giáp màn hình khác ở độ cao `y` không: pet đi hoặc bay sang được. */
   exit(side: Facing, y: number): boolean;
+  /**
+   * Pet được tự đi sang màn hình khác không. Cả nhóm dùng chung một overlay, nên có từ 2 con trở lên thì
+   * chỉ sang khi bị kéo hoặc ném, các con còn lại chạy theo (`Pet.joinFrom`).
+   */
+  readonly wander: boolean;
+  /** Mọi pet đang sống trên màn hình, kể cả con này. */
+  readonly pets: readonly Pet[];
+  /** Đang là ban đêm: đi lại chậm hơn, buồn ngủ sớm hơn. */
+  readonly night: boolean;
+  /**
+   * `pet` nói một câu cho vui (chào nhau, thời tiết). Cả nhóm có giới hạn tần suất, người dùng đang gõ
+   * phím thì thôi; trả về `true` nếu đã nói.
+   */
+  chat(pet: Pet, text: string): boolean;
 }
+
+/** Câu pet đang nói, hiện thành speech bubble trên đầu. */
+export interface Speech {
+  text: string;
+  /** Số giây còn hiện. */
+  left: number;
+}
+
+/** State đang đi lại: con khác đang ở các state này thì con này hay đứng yên hơn (`TUNING.groupCalm`). */
+const MOVING: ReadonlySet<PetState> = new Set(["walk", "run", "climb", "jump"]);
 
 /**
  * Pet đang đứng trên (hoặc leo) cửa sổ `id`: điểm chân cách góc trên trái cửa sổ (dx, dy). Cửa sổ di
@@ -59,7 +84,11 @@ export type Goal =
   /** Buồn ngủ: đi tới đầu mép rồi xuống taskbar. */
   | { kind: "down" }
   /** Chạy trốn cửa sổ đang bị kéo tới: hết đường trên mép cửa sổ thì xuống luôn. */
-  | { kind: "flee" };
+  | { kind: "flee" }
+  /** Đi cùng con khác một đoạn sau khi chào nhau (không gặp lại, không sang màn hình khác giữa chừng). */
+  | { kind: "stroll" }
+  /** Buồn ngủ: đi tới chỗ `x` dưới đất, nằm cạnh con đang ngủ. */
+  | { kind: "nap"; x: number };
 
 /** State pet đang tỉnh, đứng trên mặt đất hoặc mép cửa sổ và không bận việc gì: phản ứng được với cửa sổ. */
 const CALM: ReadonlySet<PetState> = new Set(["idle", "walk", "run", "perch", "land"]);
@@ -106,6 +135,10 @@ const STATES: StateTable<PetState, Pet> = {
   idle: {
     enter: (pet) => plan(pet, TUNING.idleTime),
     update: (pet, time) => (time >= pet.planned ? nextActivity(pet) : undefined),
+    exit: (pet) => {
+      // Chưa kịp rủ đi cùng thì thôi (bị click, bị kéo, cửa sổ kéo tới...).
+      pet.buddy = null;
+    },
   },
   walk: {
     enter: (pet) => startMoving(pet, TUNING.walkTime),
@@ -199,6 +232,17 @@ export class Pet {
   /** Số giây kể từ lần quay đầu theo con trỏ. */
   private sinceTurn = Number.POSITIVE_INFINITY;
   crossing: Crossing | null = null;
+  /** Câu đang nói (speech bubble), `null` là không nói gì. */
+  speech: Speech | null = null;
+  /** Số giây kể từ lần dừng lại chào con khác. */
+  sinceMeet = Number.POSITIVE_INFINITY;
+  /** Vừa chào con này: đứng chào xong thì rủ nó đi cùng một đoạn. */
+  buddy: Pet | null = null;
+  /**
+   * Đang chat (khung chat mở cạnh con này, ở phía này): đứng yên quay về phía khung chat, không ngủ, không
+   * đi theo con khác. `null` là không chat.
+   */
+  listening: Facing | null = null;
   private readonly brain = new StateMachine<PetState, Pet>(STATES, "idle");
 
   constructor(
@@ -233,6 +277,31 @@ export class Pet {
     return this.stateTime - jumping.landedAt < TUNING.jumpTouchdown / 2 ? 2 : 3;
   }
 
+  /** Hệ số tốc độ đi, chạy, leo: Settings, ban đêm chậm hơn. */
+  get pace(): number {
+    return this.env.speed * (this.env.night ? TUNING.nightPace : 1);
+  }
+
+  /** Nói `text` trong `seconds` giây (speech bubble). Không qua giới hạn tần suất: gọi `env.chat` cho câu nói cho vui. */
+  say(text: string, seconds: number = TUNING.speechTime): void {
+    this.speech = { text, left: seconds };
+  }
+
+  /** Dừng lại đứng yên `seconds` giây, quay về phía `facing` (gặp con khác). */
+  pause(facing: Facing, seconds: number): void {
+    this.goal = null;
+    this.facing = facing;
+    this.brain.go(this, "idle");
+    this.planned = seconds;
+  }
+
+  /** Đi về phía `dir` trong `seconds` giây, cùng một con khác (`Goal` stroll). */
+  stroll(dir: Facing, seconds: number): void {
+    this.facing = dir;
+    this.setOff("walk", { kind: "stroll" });
+    this.planned = seconds;
+  }
+
   /** Đang đứng trên mặt đất hoặc mép cửa sổ: không bị kéo, không đang rơi, leo hay bay. */
   get grounded(): boolean {
     const { state } = this;
@@ -257,6 +326,8 @@ export class Pet {
    * click dồn dập thì chỉ nhảy một lần: cú nhảy không bị bắt đầu lại, phải ngừng click một lúc mới nhảy tiếp.
    */
   poke(): void {
+    // Bấm vào con đang nói thì tắt bubble (cả lời nhắc nghỉ, nhắc khuya).
+    this.speech = null;
     if (this.state === "climb") {
       this.sincePoke = 0;
       this.sinceInteraction = 0;
@@ -295,6 +366,32 @@ export class Pet {
     if (Math.abs(center - this.x) > 1) this.facing = center > this.x ? 1 : -1;
     this.hops = TUNING.cheerHops - 1;
     this.brain.go(this, "react");
+  }
+
+  /**
+   * Giật mình (sấm, sự kiện hiếm): đang rảnh đứng trên mặt đất hoặc mép cửa sổ thì nhảy dựng lên một cái.
+   * Không tính là người dùng đụng vào, nên không làm cả nhóm tỉnh ngủ lâu hơn.
+   */
+  startle(): void {
+    if (!CALM.has(this.state) || !this.grounded || this.crossing) return;
+    this.hops = 0;
+    this.brain.go(this, "react");
+  }
+
+  /**
+   * Người dùng mở khung chat với con này, khung chat ở phía `side`: đang đi thì dừng lại, đang ngủ thì dậy,
+   * rồi đứng yên quay về phía đó tới khi `stopListening`. Đang leo, nhảy, rơi thì xong rồi mới đứng yên.
+   */
+  listen(side: Facing): void {
+    this.listening = side;
+    this.sinceInteraction = 0;
+    this.wake();
+    if (this.state === "walk" || this.state === "run" || this.state === "idle") this.pause(side, TUNING.idleTime[0]);
+  }
+
+  /** Khung chat đã đóng hoặc đổi sang con khác: lại đi lại như thường. */
+  stopListening(): void {
+    this.listening = null;
   }
 
   /** Người dùng click ở chỗ khác trên màn hình: đang ngủ thì giật mình thức dậy như bị click. */
@@ -337,6 +434,8 @@ export class Pet {
     this.sincePoke += dt;
     this.sinceCheer += dt;
     this.sinceTurn += dt;
+    this.sinceMeet += dt;
+    if (this.speech && (this.speech.left -= dt) <= 0) this.speech = null;
     if (this.crossing) {
       // Chỉ tính giờ chờ overlay sang từ lúc giữa thân qua mép: đi bộ từ đầu mặt đất ra tới đó mất hơn một giây.
       if (this.leaving) this.crossing.elapsed += dt;
@@ -354,6 +453,32 @@ export class Pet {
     }
     this.watchCursor();
     this.brain.update(this, dt);
+  }
+
+  /**
+   * Overlay vừa sang màn hình khác theo một con khác (bị kéo hoặc ném sang) mà con này còn ở màn hình cũ:
+   * xuống đất ngay ngoài mép `side` của màn hình mới (-1: mép trái), cách mép thêm `behind` px, rồi chạy
+   * vào. Đang ngủ thì nằm luôn ở sát mép đó.
+   */
+  joinFrom(side: Facing, behind: number): void {
+    const { left, right, floor } = this.env.bounds;
+    const half = this.width / 2;
+    this.mount = null;
+    this.goal = null;
+    this.skipLedge = null;
+    this.vx = 0;
+    this.vy = 0;
+    this.y = floor;
+    this.facing = side < 0 ? 1 : -1;
+    if (this.state === "sleep") {
+      this.crossing = null;
+      this.x = side < 0 ? left + half : right - half;
+      return;
+    }
+    this.x = side < 0 ? left - half - behind : right + half + behind;
+    this.brain.go(this, "run", () => {
+      this.crossing = { dir: this.facing, phase: "in", elapsed: 0 };
+    });
   }
 
   /** Thôi sang màn hình bên cạnh, về hẳn trong màn hình này. */
@@ -405,7 +530,7 @@ export class Pet {
     if (state === "react") return;
     // Đang ngủ thì nằm yên trên mặt đất mới, không bị đánh thức.
     if (this.y < floor - 1 && state !== "sleep") {
-      this.vx = this.crossing ? this.facing * TUNING.walkSpeed * this.env.speed : 0;
+      this.vx = this.crossing ? this.facing * TUNING.walkSpeed * this.pace : 0;
       this.vy = 0;
       this.brain.go(this, "fall");
       return;
@@ -546,26 +671,49 @@ function plan(pet: Pet, [min, max]: readonly [number, number]): void {
   pet.planned = pet.env.rng.range(min, max);
 }
 
-function nextActivity(pet: Pet): PetState {
+/** Việc tiếp theo sau lượt đứng yên; `undefined` là đã tự chuyển state (rủ con khác đi cùng). */
+function nextActivity(pet: Pet): PetState | undefined {
+  if (pet.listening !== null) {
+    // Đang chat: đứng yên nhìn về phía khung chat, không tính là bỏ mặc nên không buồn ngủ.
+    pet.facing = pet.listening;
+    pet.sinceInteraction = 0;
+    return "idle";
+  }
   const ground = groundOf(pet);
-  // Chỉ ngủ trên taskbar: đang ở trên cửa sổ thì xuống trước.
-  if (pet.sinceInteraction >= TUNING.sleepAfter) return ground.ledge ? goDown(pet, ground) : "sleep";
+  // Chỉ ngủ trên taskbar: đang ở trên cửa sổ thì xuống trước. Có con đang ngủ gần đó thì ra nằm cạnh.
+  const sleepAfter = pet.env.night ? TUNING.sleepAfterNight : TUNING.sleepAfter;
+  if (pet.sinceInteraction >= sleepAfter) return ground.ledge ? goDown(pet, ground) : nap(pet);
   // Bị che hết thì `Pet.step` đã cho rơi: ở đây còn chỗ để ra.
   if (hidden(pet)) {
     const x = nearestOpenX(pet, ground);
     if (x !== null) return walkTo(pet, x);
   }
   const { rng } = pet.env;
+  // Vừa chào con khác xong, nó vẫn đứng cạnh: rủ đi cùng một đoạn.
+  const buddy = pet.buddy;
+  pet.buddy = null;
+  if (buddy && buddy.state === "idle" && neighbors(pet, buddy, TUNING.meetReach * 1.5)) {
+    const dir: Facing = rng.chance(0.5) ? 1 : -1;
+    const time = rng.range(...TUNING.strollTime);
+    buddy.stroll(dir, time);
+    pet.stroll(dir, time);
+    return undefined;
+  }
+  // Con khác đang đi lại thì con này hay đứng yên hơn: cả nhóm ít khi cùng chạy nhảy một lúc, đỡ rối mắt
+  // và vòng lặp vẽ được nghỉ nhiều hơn. Chỉ đổi xác suất, không bốc thêm số ngẫu nhiên, nên một con thì
+  // sống y như trước.
+  const movers = pet.env.pets.filter((other) => other !== pet && MOVING.has(other.state)).length;
+  const keep = Math.max(0, 1 - TUNING.groupCalm * movers);
   // Chỉ bốc số ngẫu nhiên khi có chỗ để nhảy / leo, để không có cửa sổ thì pet sống y như Phase 1.
   const jumps = jumpTargets(pet);
-  if (jumps.length > 0 && rng.chance(TUNING.jumpChance)) return startJump(pet, rng.pick(jumps));
+  if (jumps.length > 0 && rng.chance(TUNING.jumpChance * keep)) return startJump(pet, rng.pick(jumps));
   const walls = climbTargets(pet, ground);
-  if (walls.length > 0 && rng.chance(TUNING.climbChance)) return approach(pet, rng.pick(walls));
+  if (walls.length > 0 && rng.chance(TUNING.climbChance * keep)) return approach(pet, rng.pick(walls));
   // Mép hẹp hơn chỗ đứng thì không đi được.
   if (ground.to - ground.from < 1) return "idle";
   const roll = rng.next();
-  if (roll < 0.45) return "walk";
-  if (roll < 0.6) return "run";
+  if (roll < 0.45 * keep) return "walk";
+  if (roll < 0.6 * keep) return "run";
   return "idle";
 }
 
@@ -586,10 +734,18 @@ function startMoving(pet: Pet, time: readonly [number, number]): void {
 function move(pet: Pet, speed: number, time: number, dt: number): PetState | undefined {
   const ground = groundOf(pet);
   if (ground.to - ground.from < 1) return "idle";
-  pet.x += pet.facing * speed * pet.env.speed * dt;
+  pet.x += pet.facing * speed * pet.pace * dt;
   if (pet.crossing) return cross(pet, pet.crossing, time);
   const goal = pet.goal;
-  if (goal && (goal.kind === "climb" || goal.kind === "peek")) {
+  // Đi tới sát con khác đang đứng hoặc đi trên cùng mặt đất: dừng lại chào nhau.
+  if (!goal && pet.sinceMeet >= TUNING.meetCooldown) {
+    const friend = pet.env.pets.find((other) => other !== pet && meetable(pet, other));
+    if (friend) {
+      meet(pet, friend);
+      return undefined;
+    }
+  }
+  if (goal && (goal.kind === "climb" || goal.kind === "peek" || goal.kind === "nap")) {
     const target = goalX(pet, goal, ground);
     if (target === null) {
       pet.goal = null;
@@ -625,6 +781,7 @@ function goalX(pet: Pet, goal: Goal, ground: Ground): number | null {
     const rect = pet.mount && pet.env.terrain.window(pet.mount.id);
     return rect ? clamp(rect.x + goal.dx, ground.from, ground.to) : null;
   }
+  if (goal.kind === "nap") return ground.ledge ? null : clamp(goal.x, ground.from, ground.to);
   return null;
 }
 
@@ -633,7 +790,59 @@ function arrive(pet: Pet, goal: Goal): PetState {
     const wall = pet.env.terrain.wall(goal.id, goal.side);
     if (wall) return climbOrGrab(pet, wall);
   }
+  if (goal.kind === "nap") return "sleep";
   return "idle";
+}
+
+/** Hai con đứng trên cùng mặt đất (taskbar hoặc cùng mép cửa sổ), cách nhau dưới `reach` lần nửa bề ngang cộng lại. */
+function neighbors(pet: Pet, other: Pet, reach: number): boolean {
+  if (!pet.grounded || !other.grounded || (pet.mount?.id ?? null) !== (other.mount?.id ?? null)) return false;
+  if (Math.abs(pet.y - other.y) > 2) return false;
+  return Math.abs(other.x - pet.x) < ((pet.width + other.width) / 2) * reach;
+}
+
+/** `pet` đang đi vừa tới sát `other` ở phía trước, cả hai đều rảnh: dừng lại chào được. */
+function meetable(pet: Pet, other: Pet): boolean {
+  if (other.sinceMeet < TUNING.meetCooldown || other.crossing || other.goal || other.listening !== null) return false;
+  if (other.state !== "idle" && other.state !== "walk" && other.state !== "run") return false;
+  return (other.x - pet.x) * pet.facing > 0 && neighbors(pet, other, TUNING.meetReach);
+}
+
+/** Hai con gặp nhau: đứng lại quay mặt vào nhau, có khi chào một câu, có khi rủ nhau đi cùng một đoạn. */
+function meet(pet: Pet, other: Pet): void {
+  const { rng } = pet.env;
+  const time = rng.range(...TUNING.meetTime);
+  const facing: Facing = other.x > pet.x ? 1 : -1;
+  pet.sinceMeet = 0;
+  other.sinceMeet = 0;
+  pet.pause(facing, time);
+  // Con kia đứng lâu hơn một chút để còn kịp được rủ đi cùng (`nextActivity` của con này).
+  other.pause(facing === 1 ? -1 : 1, time + 1);
+  if (rng.chance(TUNING.meetChatChance)) pet.env.chat(pet, rng.pick(GREETINGS));
+  if (rng.chance(TUNING.strollChance)) pet.buddy = other;
+}
+
+/**
+ * Buồn ngủ dưới đất: có con đang ngủ dưới đất trong `napRange` thì đi tới nằm cạnh nó (bên gần hơn, còn
+ * chỗ trong màn hình, không đè lên con ngủ khác), không thì ngủ luôn tại chỗ.
+ */
+function nap(pet: Pet): PetState {
+  const { left, right } = pet.env.bounds;
+  const half = pet.width / 2;
+  const sleepers = pet.env.pets.filter((other) => other !== pet && other.state === "sleep" && !other.mount);
+  let best: number | null = null;
+  for (const other of sleepers) {
+    const gap = ((pet.width + other.width) / 2) * TUNING.napGap;
+    for (const x of [other.x - gap, other.x + gap]) {
+      if (x < left + half || x > right - half || Math.abs(x - pet.x) > TUNING.napRange) continue;
+      if (sleepers.some((s) => Math.abs(s.x - x) < gap * 0.9)) continue;
+      if (best === null || Math.abs(x - pet.x) < Math.abs(best - pet.x)) best = x;
+    }
+  }
+  if (best === null || Math.abs(best - pet.x) < 2) return "sleep";
+  pet.facing = best > pet.x ? 1 : -1;
+  pet.goal = { kind: "nap", x: best };
+  return "walk";
 }
 
 /**
@@ -684,8 +893,14 @@ function atEnd(pet: Pet, ground: Ground, dir: Facing): PetState | undefined {
   if (ledge && (goal === "down" || goal === "flee")) return stepOff(pet, ledge, dir);
   // Chạy trốn mà bị dồn vào mép màn hình: đứng lại, không quay đầu chạy về phía cửa sổ.
   if (goal === "flee") return "idle";
-  // Mép màn hình giáp màn hình khác: có khi đi sang bên đó.
-  if (!ledge && !pet.goal && pet.env.exit(dir, pet.y - 1) && pet.env.rng.chance(TUNING.crossChance)) {
+  // Mép màn hình giáp màn hình khác: có khi đi sang bên đó (chỉ khi có một con, xem `PetEnv.wander`).
+  if (
+    !ledge &&
+    !pet.goal &&
+    pet.env.wander &&
+    pet.env.exit(dir, pet.y - 1) &&
+    pet.env.rng.chance(TUNING.crossChance)
+  ) {
     pet.crossing = { dir, phase: "out", elapsed: 0 };
     return undefined;
   }
@@ -802,7 +1017,7 @@ function climb(pet: Pet, dt: number): PetState | undefined {
   const { terrain, bounds } = pet.env;
   const rect = mount && terrain.window(mount.id);
   if (!climbing || !mount || !rect) return "fall";
-  pet.y += climbing.dir * TUNING.climbSpeed * pet.env.speed * dt;
+  pet.y += climbing.dir * TUNING.climbSpeed * pet.pace * dt;
   if (climbing.dir < 0) {
     if (pet.y > rect.y) {
       mount.dy = pet.y - rect.y;

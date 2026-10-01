@@ -30,6 +30,40 @@ export const TUNING = {
   dizzyTime: 2.5,
   /** Không ai click hoặc kéo trong khoảng này thì buồn ngủ: xuống taskbar rồi ngủ. */
   sleepAfter: 180,
+  /**
+   * Nhiều pet: mỗi con khác đang đi lại (đi, chạy, leo, nhảy) làm xác suất con này đi lại giảm chừng này
+   * phần; 2 con kia đang đi thì con này chỉ còn 30% khả năng đi như bình thường.
+   */
+  groupCalm: 0.35,
+
+  // Ngày/đêm.
+  /** Ban đêm đi lại chậm hơn: tốc độ nhân với chừng này. */
+  nightPace: 0.75,
+  /** Ban đêm buồn ngủ sớm hơn `sleepAfter`. */
+  sleepAfterNight: 90,
+
+  // Nói (speech bubble).
+  /** Một câu hiện trong chừng này giây. */
+  speechTime: 4,
+  /** Câu nói cho vui (chào nhau, thời tiết): cả nhóm chừng này giây mới nói một câu, tối đa 4 câu mỗi giờ. */
+  chatGap: 900,
+
+  // Chơi với nhau.
+  /** Đi tới sát con khác (khoảng giữa hai con dưới chừng này lần nửa bề ngang cộng lại) thì dừng lại chào. */
+  meetReach: 0.9,
+  /** Chào nhau xong thì đứng quay mặt vào nhau chừng này giây. */
+  meetTime: [2, 4],
+  /** Một con chừng này giây mới dừng lại chào một lần. */
+  meetCooldown: 45,
+  /** Chào nhau thì nói một câu với xác suất này (vẫn theo `chatGap`). */
+  meetChatChance: 0.5,
+  /** Chào nhau xong thì đi cùng nhau một đoạn với xác suất này, trong chừng này giây. */
+  strollChance: 0.4,
+  strollTime: [3, 7],
+  /** Buồn ngủ mà có con đang ngủ dưới đất trong khoảng này thì đi tới nằm cạnh. */
+  napRange: 360,
+  /** Nằm cạnh nhau: hai điểm chân cách nhau chừng này lần nửa bề ngang cộng lại (hơi chồng lên nhau). */
+  napGap: 0.8,
 
   // Cửa sổ.
   /** Mép cửa sổ phải cách trần ít nhất chừng này lần chiều cao pet thì mới đứng được. */

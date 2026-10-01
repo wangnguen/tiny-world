@@ -8,4 +8,8 @@ export * from "./moves";
 export * from "./pet";
 export * from "./snapshot";
 export * from "./world";
+export * from "./weather";
+export * from "./lunar";
+export * from "./calendar";
+export * from "./lines";
 export { TUNING } from "./tuning";

@@ -8,13 +8,28 @@ import {
   type Settings,
   type WindowList,
 } from "@tinyworld/core";
-import { FixedStep, StepBlend, TUNING, World, clamp, parseWorldSnapshot, type Bounds } from "@tinyworld/sim";
+import {
+  CHAT_OFF_LINE,
+  FixedStep,
+  StepBlend,
+  TUNING,
+  World,
+  clamp,
+  parseWorldSnapshot,
+  type Bounds,
+  type Facing,
+  type PetSnapshot,
+} from "@tinyworld/sim";
 import { api } from "./api";
+import { Ambience, type Resident } from "./overlay/ambience";
 import { AutoSave } from "./overlay/autosave";
 import { ClickThrough } from "./overlay/clickThrough";
+import { loadHats } from "./overlay/hats";
 import { PetInteraction } from "./overlay/interaction";
 import { PetView } from "./overlay/petView";
-import { loadSpriteSet, resolvePack } from "./overlay/sprites";
+import { listPacks, loadSpriteSet, resolvePacks } from "./overlay/sprites";
+import type { SpriteSet } from "./overlay/spriteSet";
+import { WeatherEffect } from "./overlay/weather";
 
 /**
  * Tần số mô phỏng, cũng là tần số vẽ lúc pet đi đứng bình thường: sprite thường chỉ 8–12 fps nên 30 là đủ
@@ -22,8 +37,8 @@ import { loadSpriteSet, resolvePack } from "./overlay/sprites";
  */
 const FPS = 30;
 /**
- * Pet đang bay (bị ném, rơi, nhảy) hoặc đang bị kéo: vẽ lại mỗi lần làm tươi màn hình, ở vị trí nội suy giữa
- * hai bước mô phỏng (`StepBlend`). Vẽ 30 fps thì pet bị ném nhanh nhảy cóc từng đoạn dài, nhìn giật.
+ * Có con đang bay (bị ném, rơi, nhảy) hoặc đang bị kéo: vẽ lại mỗi lần làm tươi màn hình, ở vị trí nội suy
+ * giữa hai bước mô phỏng (`StepBlend`). Vẽ 30 fps thì pet bị ném nhanh nhảy cóc từng đoạn dài, nhìn giật.
  * Chỉ kéo dài vài giây nên không tốn thêm CPU đáng kể.
  */
 const FAST_STATES: ReadonlySet<string> = new Set(["fall", "jump", "dragged"]);
@@ -35,26 +50,35 @@ const FAST_STATES: ReadonlySet<string> = new Set(["fall", "jump", "dragged"]);
 const VSYNC_SLACK_MS = 8;
 const FRAME_MS = 1000 / FPS - VSYNC_SLACK_MS;
 /**
- * Pet đứng yên (đứng, ngồi mép) thì chỉ cần thức dậy lúc đổi frame (animation đứng yên chỉ 3–6 fps),
- * nhưng tối đa chừng này ms một lần để mô phỏng không dồn quá `MAX_STEPS` bước một lượt.
+ * Cả nhóm đứng yên (đứng, ngồi mép, ngủ trong lúc con khác còn thức) thì chỉ cần thức dậy lúc có con đổi
+ * frame (animation đứng yên chỉ 3–6 fps), nhưng tối đa chừng này ms một lần để mô phỏng không dồn quá
+ * `MAX_STEPS` bước một lượt.
  */
 const CALM_MAX_MS = 250;
 /** Số bước mô phỏng tối đa mỗi lượt vẽ: 10 bước là 333 ms, dư cho lần chờ lâu nhất lúc pet đứng yên. */
 const MAX_STEPS = 10;
-const CALM_STATES: ReadonlySet<string> = new Set(["idle", "perch"]);
+const CALM_STATES: ReadonlySet<string> = new Set(["idle", "perch", "sleep"]);
 /**
- * Rust chỉ gửi vị trí con trỏ khi nó ở gần pet: pet thức thì trong tầm nhìn theo con trỏ, ngủ thì chỉ quanh
- * thân để bắt click. Báo rộng thêm `INTEREST_SLACK` để pet đi một đoạn mới phải báo lại.
+ * Rust chỉ gửi vị trí con trỏ khi nó ở gần một con: con thức thì trong tầm nhìn theo con trỏ, con ngủ thì
+ * chỉ quanh thân để bắt click. Báo rộng thêm `INTEREST_SLACK` để pet đi một đoạn mới phải báo lại.
  */
 const INTEREST_AWAKE = TUNING.lookRange;
 const INTEREST_ASLEEP = 16;
 const INTEREST_SLACK = 64;
-/** Khoảng cách từ mép phải vùng làm việc tới pet lúc xuất hiện lần đầu (CSS pixel). */
+/** Khoảng cách từ mép phải vùng làm việc tới con đầu tiên lúc xuất hiện lần đầu (CSS pixel). */
 const SPAWN_MARGIN = 48;
+/** Các con xuất hiện lần đầu đứng cách nhau chừng này lần bề ngang pet. */
+const SPAWN_GAP = 1.4;
 /** Chu kỳ lưu world.json (chỉ ghi khi có thay đổi). */
 const SAVE_INTERVAL_MS = 30_000;
 /** Hai lần xin Rust cho overlay sang màn hình khác cách nhau ít nhất chừng này (ms). */
 const MOVE_INTERVAL_MS = 200;
+/** Id của pet tạm vẽ bằng code, khi bản build chưa có sprite pack nào. */
+const PLACEHOLDER_ID = "placeholder";
+/** Tên nhân vật theo pack (`name` trong pet.json, ví dụ "Momo — Axolotl"), cho tiêu đề cửa sổ chat. */
+const PACK_NAMES = new Map(listPacks().map((pack) => [pack.id, pack.name]));
+/** Bản cũ chỉ có một pet, lưu trong world.json với id này: lấy làm chỗ của con đầu tiên. */
+const LEGACY_ID = "pet-1";
 
 /**
  * Pet sống trong vùng làm việc; mặt đất là mép dưới, tức là mép trên taskbar. Taskbar tự ẩn đang trồi
@@ -89,6 +113,17 @@ async function loadSaved(): Promise<unknown> {
   }
 }
 
+/** Một con trên màn hình: sprite pack (`null`: pet tạm), phần mô phỏng, phần vẽ và thời tiết quanh nó. */
+interface Member extends Resident {
+  pack: string | null;
+}
+
+/** Chỗ của một con vừa bị bỏ (đổi nhân vật trong Settings): con mới đứng đúng chỗ đó. */
+interface Spot {
+  x: number;
+  facing: Facing;
+}
+
 async function start(): Promise<void> {
   const container = document.getElementById("world");
   if (!container) throw new Error("Thiếu phần tử #world.");
@@ -96,28 +131,18 @@ async function start(): Promise<void> {
     api.screenInfo(),
     api.getSettings(),
     loadSaved(),
+    loadHats(),
   ]);
-  /** Pack đang hiện (nhân vật chọn trong Settings, pack đó không còn thì pack đầu tiên). */
-  let petId = resolvePack(settings.pet);
-  const sprite = await loadSpriteSet(petId);
 
   const world = new World(boundsOf(screen), Date.now());
   world.setScreen(boundsOf(screen), screen.neighbors);
   world.speed = settings.speed;
-  const view = new PetView(sprite, container, settings.size);
-  const pet = world.spawn({
-    id: "pet-1",
-    x: world.bounds.right - SPAWN_MARGIN - view.width / 2,
-    width: view.width,
-    height: view.height,
-    reach: view.reach,
-  });
-  const previous = parseWorldSnapshot(saved)?.pets.find((p) => p.id === pet.id);
-  if (previous) pet.restore(previous);
-
-  const autosave = new AutoSave(world, api.saveState);
-  autosave.markSaved();
-  autosave.start(SAVE_INTERVAL_MS);
+  /** Cỡ nhân vật trong Settings. */
+  let size = settings.size;
+  /** Các con đang hiện, theo thứ tự xuất hiện. */
+  const members: Member[] = [];
+  /** Trạng thái đã lưu, chỉ dùng cho các con hiện ra lúc mở app (`syncPets` lần đầu). */
+  const restoring = new Map((parseWorldSnapshot(saved)?.pets ?? []).map((p) => [p.id, p]));
 
   let paused = false;
   /** Màn hình overlay đang phủ, và mép trên taskbar tự ẩn đang trồi lên (`WindowList.taskbarTop`). */
@@ -129,45 +154,89 @@ async function start(): Promise<void> {
   let last = 0;
   let running = false;
   let hidden = false;
+
+  /** Con nằm trên cùng có phần hình dưới điểm `point` (CSS pixel của overlay). */
+  const pick = (point: Point): Member | null => {
+    let top: Member | null = null;
+    for (const member of members) {
+      if ((!top || member.view.depth > top.view.depth) && member.view.hitTest(point)) top = member;
+    }
+    return top;
+  };
+
   // Overlay để chuột đi xuyên nên không tự nhận được sự kiện chuột: Rust gửi vị trí con trỏ sang,
-  // con trỏ nằm trên phần có hình của pet (và không giữ Ctrl) thì overlay nhận chuột.
+  // con trỏ nằm trên phần có hình của một con (và không giữ Ctrl) thì overlay nhận chuột.
   const clickThrough = new ClickThrough(api.setClickThrough);
   let cursor: CursorInfo | null = null;
   const refreshClickThrough = () =>
-    clickThrough.update(!paused && cursor !== null && !cursor.passThrough && view.hitTest(cursor));
+    clickThrough.update(!paused && cursor !== null && !cursor.passThrough && pick(cursor) !== null);
   await api.onCursorMoved((info) => {
-    // Vừa bấm chuột ở bất kỳ đâu (kể cả ngoài pet): pet đang ngủ thì thức dậy.
-    if (info.pressed && !cursor?.pressed && !paused && pet.state === "sleep") {
-      pet.wake();
+    // Vừa bấm chuột ở bất kỳ đâu (kể cả ngoài pet): các con đang ngủ đều thức dậy.
+    if (info.pressed && !cursor?.pressed && !paused && world.pets.some((pet) => pet.state === "sleep")) {
+      world.wakeAll();
       wake();
     }
     cursor = info;
-    // Pet đứng yên thì quay đầu nhìn theo con trỏ. Pet đang ngủ không để ý con trỏ.
+    // Con đứng yên thì quay đầu nhìn theo con trỏ. Con đang ngủ không để ý con trỏ.
     if (running) world.moveCursor(info.x, info.y);
     refreshClickThrough();
   });
-  window.addEventListener("contextmenu", (event) => event.preventDefault());
-
-  /** Vùng đã báo Rust (`api.setCursorInterest`), lúc báo pet có đang ngủ không. */
-  let interest: Rect | null = null;
-  let interestAsleep = false;
-  const refreshInterest = () => {
-    const box = view.bounds;
-    if (!box) return;
-    const asleep = pet.state === "sleep";
-    const needed = inflate(box, asleep ? INTEREST_ASLEEP : INTEREST_AWAKE);
-    if (interest && asleep === interestAsleep && containsRect(interest, needed)) return;
-    interest = inflate(needed, INTEREST_SLACK);
-    interestAsleep = asleep;
+  /** Chat với pet đang bật trong Cài đặt (Phase 6). */
+  let chatOn = settings.chat;
+  /** Con đang chat: đứng yên cạnh khung chat tới khi đóng khung chat. */
+  let listening: Member | null = null;
+  const stopListening = () => {
+    listening?.pet.stopListening();
+    listening = null;
+  };
+  // Click chuột phải vào pet: mở cửa sổ chat cạnh con đó; chưa bật chat thì con đó nhắc bật trong Cài đặt.
+  window.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    const member = pick({ x: event.clientX, y: event.clientY });
+    const box = member?.view.bounds;
+    if (!member || !box || paused) return;
+    if (!chatOn) {
+      member.pet.say(CHAT_OFF_LINE);
+      wake();
+      return;
+    }
+    const name = (PACK_NAMES.get(member.pack ?? "") ?? "Pet").split(" — ")[0];
     api
-      .setCursorInterest(interest)
+      .openChat(member.pet.id, name, box)
+      .then((side) => {
+        if (listening !== member) stopListening();
+        listening = member;
+        member.pet.listen(side === 1 ? 1 : -1);
+        wake();
+      })
+      .catch((error: unknown) => console.warn("Không mở được cửa sổ chat:", errorMessage(error)));
+  });
+
+  /** Vùng đã báo Rust cho từng con (`api.setCursorInterest`), lúc báo con đó có đang ngủ không. */
+  let interest = new Map<Member, { rect: Rect; asleep: boolean }>();
+  const refreshInterest = () => {
+    const needed: { member: Member; rect: Rect; asleep: boolean }[] = [];
+    let stale = false;
+    for (const member of members) {
+      const box = member.view.bounds;
+      if (!box) continue;
+      const asleep = member.pet.state === "sleep";
+      const rect = inflate(box, asleep ? INTEREST_ASLEEP : INTEREST_AWAKE);
+      needed.push({ member, rect, asleep });
+      const known = interest.get(member);
+      if (!known || known.asleep !== asleep || !containsRect(known.rect, rect)) stale = true;
+    }
+    if (!stale && needed.length === interest.size) return;
+    interest = new Map(needed.map(({ member, rect, asleep }) => [member, { rect: inflate(rect, INTEREST_SLACK), asleep }]));
+    api
+      .setCursorInterest([...interest.values()].map(({ rect }) => rect))
       .catch((error: unknown) => console.warn("Không báo được vùng quanh pet:", errorMessage(error)));
   };
 
-  /** Hẹn giờ đang chờ để vẽ lần sau (0: không có), và lần đó có phải là chờ lâu lúc pet đứng yên không. */
+  /** Hẹn giờ đang chờ để vẽ lần sau (0: không có), và lần đó có phải là chờ lâu lúc cả nhóm đứng yên không. */
   let timer = 0;
   let calmWait = false;
-  /** Đã báo Rust pet đang ngủ (`api.setResting`). */
+  /** Đã báo Rust cả nhóm đang ngủ (`api.setResting`). */
   let resting = false;
   const setResting = (value: boolean) => {
     if (value === resting) return;
@@ -181,9 +250,15 @@ async function start(): Promise<void> {
       requestAnimationFrame(frame);
     }, delay);
   };
+  /** Cả nhóm đứng yên thì chờ tới lúc có con đổi frame; có con đi lại thì vẽ 30 lần/giây. */
   const nextDelay = () => {
-    if (!CALM_STATES.has(pet.state)) return FRAME_MS;
-    return clamp(view.nextFrameIn(pet) * 1000 - VSYNC_SLACK_MS, FRAME_MS, CALM_MAX_MS);
+    // Đang mưa, tuyết quanh pet hay con ma đang bay thì vẽ đủ nhịp của hiệu ứng.
+    let wait = ambience.frameMs / 1000;
+    for (const { pet, view } of members) {
+      if (!CALM_STATES.has(pet.state)) return FRAME_MS;
+      wait = Math.min(wait, view.nextFrameIn(pet));
+    }
+    return clamp(wait * 1000 - VSYNC_SLACK_MS, FRAME_MS, CALM_MAX_MS);
   };
   const frame = (now: number) => {
     if (hidden || paused) {
@@ -192,27 +267,30 @@ async function start(): Promise<void> {
     }
     const elapsed = (now - last) / 1000;
     last = now;
-    for (let n = step.advance(elapsed); n > 0; n--) blend.step(pet, () => world.step(step.dt));
-    // Pet đang đi hoặc bay ra khỏi mép giáp màn hình khác: overlay sang bên đó.
-    const leaving = pet.leaving;
+    const { pets } = world;
+    for (let n = step.advance(elapsed); n > 0; n--) blend.step(pets, () => world.step(step.dt));
+    ambience.act(now);
+    // Có con đang đi hoặc bay ra khỏi mép giáp màn hình khác: overlay sang bên đó, cả nhóm theo sang.
+    const leaving = pets.find((pet) => pet.leaving)?.leaving;
     if (leaving) moveOverlay(leaving);
     redraw();
-    // Pet ngủ thì dừng hẳn vòng lặp; click hoặc kéo sẽ chạy lại.
-    if (world.resting) {
+    // Cả nhóm ngủ thì dừng hẳn vòng lặp (trừ lúc con ma còn đang bay); click hoặc kéo sẽ chạy lại.
+    if (world.resting && !ambience.flying) {
       running = false;
       setResting(true);
       return;
     }
-    if (FAST_STATES.has(pet.state)) requestAnimationFrame(frame);
+    if (pets.some((pet) => FAST_STATES.has(pet.state))) requestAnimationFrame(frame);
     else schedule(nextDelay());
   };
-  /** Vẽ lại pet; pet đổi frame, bị cửa sổ che, hoặc đi dưới con trỏ đang đứng yên thì cũng tính lại click-through. */
+  /** Vẽ lại cả nhóm; con đổi frame, bị cửa sổ che, hoặc đi dưới con trỏ đứng yên thì cũng tính lại click-through. */
   const redraw = () => {
-    view.update(pet, world.occluders(pet), blend.at(pet, step.alpha));
+    for (const { pet, view } of members) view.update(pet, world.occluders(pet), blend.at(pet, step.alpha));
+    ambience.place(performance.now());
     refreshClickThrough();
     refreshInterest();
   };
-  /** Chạy lại vòng lặp; đang chờ lâu lúc pet đứng yên mà có chuyện (click, cửa sổ đổi) thì vẽ ngay lần sau. */
+  /** Chạy lại vòng lặp; đang chờ lâu lúc cả nhóm đứng yên mà có chuyện (click, cửa sổ đổi) thì vẽ ngay lần sau. */
   const wake = () => {
     if (hidden || paused) return;
     if (running) {
@@ -244,12 +322,96 @@ async function start(): Promise<void> {
       });
   };
 
-  const interaction = new PetInteraction(pet, view, {
+  const interaction = new PetInteraction(pick, {
     onHold: (held) => clickThrough.hold(held),
     onActivity: wake,
-    // Kéo pet sang màn hình khác.
+    // Kéo một con sang màn hình khác.
     onDragOutside: moveOverlay,
+    // Bấm đúp: nói giờ, ngày, âm lịch, thời tiết.
+    onDoubleClick: (pet) => {
+      ambience.tellTime(pet);
+      wake();
+    },
   });
+
+  const ambience = new Ambience(
+    { world, residents: () => members, live: () => !hidden && !paused, wake },
+    container,
+    settings,
+  );
+
+  /** Chỗ đứng cho con mới: từ góc phải dọc theo mặt đất, chỗ đầu tiên không đứng sát con nào. */
+  const spawnX = (width: number): number => {
+    const { left, right } = world.bounds;
+    for (let x = right - SPAWN_MARGIN - width / 2; x >= left + width / 2; x -= width * SPAWN_GAP) {
+      if (members.every(({ pet }) => Math.abs(pet.x - x) >= width)) return x;
+    }
+    return right - SPAWN_MARGIN - width / 2;
+  };
+
+  const addMember = (pack: string | null, sprite: SpriteSet, spot?: Spot) => {
+    const view = new PetView(sprite, container, size);
+    const effect = new WeatherEffect();
+    view.attach(effect.element);
+    const pet = world.spawn({
+      id: pack ?? PLACEHOLDER_ID,
+      x: spot?.x ?? spawnX(view.width),
+      width: view.width,
+      height: view.height,
+      reach: view.reach,
+    });
+    if (spot) pet.facing = spot.facing;
+    // Mở app: con nào đã lưu thì về chỗ cũ (đang ngủ thì ngủ tiếp). Bản cũ chỉ có một pet: chỗ của nó là
+    // chỗ của con đầu tiên.
+    const previous: PetSnapshot | undefined =
+      restoring.get(pet.id) ?? (members.length === 0 ? restoring.get(LEGACY_ID) : undefined);
+    if (previous) pet.restore(previous);
+    const member = { pack, pet, view, effect };
+    members.push(member);
+    ambience.adopt(member);
+  };
+
+  const removeMember = (member: Member): Spot => {
+    if (interaction.held === member.pet) interaction.cancel();
+    member.view.destroy();
+    world.remove(member.pet.id);
+    members.splice(members.indexOf(member), 1);
+    return { x: member.pet.x, facing: member.pet.facing };
+  };
+
+  /** Sprite đã nạp của các pack đang dùng; bớt nhân vật thì bỏ để đỡ tốn RAM. */
+  const sprites = new Map<string | null, Promise<SpriteSet>>();
+  const spriteOf = (pack: string | null) => {
+    let sprite = sprites.get(pack);
+    if (!sprite) {
+      sprite = loadSpriteSet(pack);
+      sprites.set(pack, sprite);
+    }
+    return sprite;
+  };
+  /** Danh sách pack của lần đổi gần nhất; lần đổi cũ nạp xong sau lần mới thì bỏ. */
+  let wanted: readonly (string | null)[] = [];
+  /**
+   * Hiện đúng các con trong `packs` (`resolvePacks`). Nạp xong pack mới rồi mới bỏ con cũ, để lúc đổi
+   * nhân vật không có lúc trống; con mới đứng đúng chỗ con vừa bị bỏ.
+   */
+  const syncPets = async (packs: readonly (string | null)[]) => {
+    wanted = packs;
+    const missing = packs.filter((pack) => !members.some((m) => m.pack === pack));
+    const loaded = await Promise.all(missing.map(spriteOf));
+    if (wanted !== packs) return;
+    const spots = members.filter((m) => !packs.includes(m.pack)).map(removeMember);
+    missing.forEach((pack, i) => addMember(pack, loaded[i], spots.shift()));
+    for (const pack of sprites.keys()) if (!packs.includes(pack)) sprites.delete(pack);
+    redraw();
+    wake();
+  };
+  await syncPets(resolvePacks(settings.pets));
+  restoring.clear();
+
+  const autosave = new AutoSave(world, api.saveState);
+  autosave.markSaved();
+  autosave.start(SAVE_INTERVAL_MS);
 
   // Overlay ẩn (tray, app fullscreen) thì dừng hẳn, pet đứng nguyên chỗ cũ; hiện lại thì chạy tiếp.
   await api.onVisibilityChanged((visible) => {
@@ -265,7 +427,7 @@ async function start(): Promise<void> {
     taskbarTop = null;
     world.setScreen(boundsOf(screen), screen.neighbors, remap);
     interaction.remap(remap);
-    view.resize();
+    for (const { view } of members) view.resize();
     redraw();
     if (!paused) wake();
   });
@@ -288,7 +450,7 @@ async function start(): Promise<void> {
       taskbarTop = top;
       world.setScreen(boundsOf(current, taskbarTop), current.neighbors);
     }
-    // Pet ngủ trên taskbar không bị cửa sổ ảnh hưởng: không chạy lại vòng lặp, mặt đất đổi thì chỉ vẽ lại.
+    // Cả nhóm ngủ trên taskbar không bị cửa sổ ảnh hưởng: không chạy lại vòng lặp, mặt đất đổi thì chỉ vẽ lại.
     if (world.resting) {
       if (floorMoved) redraw();
       return;
@@ -307,24 +469,45 @@ async function start(): Promise<void> {
   });
   if (windows && !windowsSeen) applyWindows(windows);
 
-  let latest = settings;
   const applySettings = async (next: Settings) => {
-    latest = next;
-    const id = resolvePack(next.pet);
-    if (id !== petId) {
-      petId = id;
-      const sprite = await loadSpriteSet(id);
-      // Trong lúc nạp đã chọn nhân vật khác: lần gọi sau sẽ áp dụng.
-      if (petId !== id) return;
-      view.setSprite(sprite);
+    world.speed = next.speed;
+    chatOn = next.chat;
+    ambience.setSettings(next);
+    if (next.size !== size) {
+      size = next.size;
+      for (const { pet, view } of members) {
+        view.setSize(size);
+        pet.resize(view.width, view.height, view.reach);
+      }
     }
-    // Có thể đã đổi cỡ, tốc độ trong lúc nạp pack, nên dùng giá trị mới nhất.
-    world.speed = latest.speed;
-    view.setSize(latest.size);
-    pet.resize(view.width, view.height, view.reach);
     redraw();
+    await syncPets(resolvePacks(next.pets));
   };
   await api.onSettingsChanged(applySettings);
+  // Thời tiết của thành phố đã chọn: đăng ký trước rồi mới lấy kết quả đã có, như danh sách cửa sổ.
+  let weatherSeen = false;
+  await api.onWeatherChanged((report) => {
+    weatherSeen = true;
+    ambience.setReport(report);
+  });
+  await api.onWeatherFailed((failure) => ambience.fail(failure));
+  const report = await api.getWeather().catch((error: unknown) => {
+    console.warn("Không lấy được thời tiết đã lưu:", errorMessage(error));
+    return null;
+  });
+  if (!weatherSeen) ambience.setReport(report);
+  // Phase 5: đang gõ phím thì không nói câu cho vui; nhắc nghỉ, nhắc khuya, spam Ctrl+S.
+  await api.onActivityChanged((busy) => {
+    world.busy = busy;
+  });
+  await api.onReminder((reminder) => {
+    if (!hidden && !paused) ambience.remind(reminder);
+  });
+  // Phase 6: đóng khung chat (hay tắt chat trong Cài đặt) thì con đang chat lại đi lại.
+  await api.onChatClosed(() => {
+    stopListening();
+    wake();
+  });
   await api.onQuitRequested(async () => {
     await autosave.flush();
     await api.quit();
@@ -333,16 +516,30 @@ async function start(): Promise<void> {
   redraw();
   wake();
 
-  // WebView đổi DPI (chuyển màn hình/Windows scaling) thì vẽ lại cả pet đang ngủ.
+  // WebView đổi DPI (chuyển màn hình/Windows scaling) thì vẽ lại cả con đang ngủ.
   window.addEventListener("resize", () => {
-    view.resize();
+    for (const { view } of members) view.resize();
     redraw();
   });
 
   // Chỉ khi chạy dev: xem và chỉnh pet từ DevTools (tray → Mở DevTools), ví dụ
-  // `__tinyworld.pet.sinceInteraction = 1e6` để pet đi ngủ ngay. Bản build không có dòng này.
+  // `__tinyworld.pet.sinceInteraction = 1e6` để con đầu tiên đi ngủ ngay. Bản build không có dòng này.
   if (import.meta.env.DEV) {
-    Object.assign(window, { __tinyworld: { world, pet, view, wake, autosave } });
+    Object.assign(window, {
+      __tinyworld: {
+        world,
+        members,
+        ambience,
+        wake,
+        autosave,
+        get pet() {
+          return members[0]?.pet;
+        },
+        get view() {
+          return members[0]?.view;
+        },
+      },
+    });
   }
 }
 
