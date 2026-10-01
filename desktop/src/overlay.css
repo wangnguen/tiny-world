@@ -15,6 +15,13 @@ body {
   inset: 0;
 }
 
+/* Mỗi pet một lớp (canvas, sao choáng), gốc trùng gốc overlay; lớp sau nằm trên. */
+.pet-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
 .pet {
   position: absolute;
   left: 0;
@@ -24,6 +31,64 @@ body {
 
 .pet--pixel {
   image-rendering: pixelated;
+}
+
+/* Con ma lúc 2 giờ sáng (ghost.ts): hơi trong, chuột đi xuyên. */
+.ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0.85;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* Thời tiết quanh pet (weather.ts): chuột đi xuyên. */
+.weather {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+/* Speech bubble trên đầu pet (PetView.placeBubble): chuột đi xuyên, đuôi chỉ vào đầu (--tail). */
+.bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: max-content;
+  max-width: 200px;
+  padding: 5px 10px;
+  border: 2px solid #2a2340;
+  border-radius: 10px;
+  background: #fffaf0;
+  color: #2a2340;
+  font: 600 13px/1.35 "Segoe UI", system-ui, sans-serif;
+  /* Câu nhiều dòng (bấm đúp: giờ, ngày, thời tiết) xuống dòng đúng chỗ. */
+  white-space: pre-line;
+  pointer-events: none;
+  box-shadow: 0 2px 0 rgba(42, 35, 64, 0.35);
+  animation: bubble-in 0.15s ease-out;
+}
+
+.bubble::after {
+  content: "";
+  position: absolute;
+  left: var(--tail, 50%);
+  bottom: -7px;
+  width: 10px;
+  height: 10px;
+  margin-left: -6px;
+  border-right: 2px solid #2a2340;
+  border-bottom: 2px solid #2a2340;
+  background: #fffaf0;
+  transform: rotate(45deg);
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+  }
 }
 
 /* Sao bay quanh đầu lúc choáng (dizzy.ts): vẽ theo pixel của frame, phóng to kiểu pixel art. */

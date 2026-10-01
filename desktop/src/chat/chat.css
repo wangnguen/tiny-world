@@ -1,0 +1,361 @@
+/* Cửa sổ chat: cùng kiểu cảnh đêm với cửa sổ Cài đặt (settings.css). */
+:root {
+  --bg: #0d1628;
+  --panel: rgba(23, 34, 62, 0.92);
+  --line: #26344f;
+  --line-soft: #1c2840;
+  --text: #eef2fd;
+  --text-2: #dbe3f6;
+  --muted: #a3b6e2;
+  --accent: #4f86ff;
+  --danger: #ff8a8a;
+  color-scheme: dark;
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(90% 40% at 85% 0%, #24427e 0%, transparent 70%),
+    radial-gradient(120% 50% at 50% 115%, #1b2f5c 0%, transparent 70%),
+    linear-gradient(180deg, #13234a 0%, #0c1529 100%);
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Đầu khung chat: trời đêm, đồi cỏ, pet đứng trên đồi (ChatScene.tsx), tên pet bên trái. */
+.chat__head {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 112px;
+  padding: 0 18px 8px;
+  overflow: hidden;
+  border-bottom: 1px solid #2f4470;
+  background: linear-gradient(180deg, #10204a 0%, #142a57 100%);
+  box-shadow: 0 6px 18px rgba(4, 8, 20, 0.35);
+}
+
+.chat__scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.chat__title {
+  position: relative;
+  max-width: 55%;
+  overflow: hidden;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 10px rgba(5, 10, 25, 0.6);
+  white-space: nowrap;
+}
+
+.chat__avatar {
+  position: absolute;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 10px rgba(255, 200, 120, 0.3));
+}
+
+/* Vài ngôi sao mờ sau đoạn chat. */
+.chat__list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 14px;
+  overflow-y: auto;
+  background:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgba(238, 242, 255, 0.7), transparent),
+    radial-gradient(1.2px 1.2px at 78% 30%, rgba(238, 242, 255, 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 30% 72%, rgba(238, 242, 255, 0.5), transparent),
+    radial-gradient(1.2px 1.2px at 88% 82%, rgba(238, 242, 255, 0.55), transparent),
+    radial-gradient(1.2px 1.2px at 56% 52%, rgba(255, 214, 120, 0.6), transparent);
+  scrollbar-width: thin;
+  scrollbar-color: #2a3a5c transparent;
+}
+
+.chat__empty {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: auto 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Lời chào lúc chưa hỏi gì. */
+.chat__hello {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.chat__hello strong {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.chat__hello span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.chat__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.chip {
+  padding: 7px 13px;
+  border: 1px solid #36507f;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #1b2d55 0%, #15244a 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: #7ea8ff;
+  background: #1a2c52;
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.msg {
+  max-width: 88%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.msg--user {
+  align-self: flex-end;
+  border: 1px solid #7ea8ff;
+  border-bottom-right-radius: 4px;
+  background: linear-gradient(180deg, #4f7fe8 0%, #3561d6 100%);
+  color: #fff;
+  white-space: pre-wrap;
+}
+
+.msg--pet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  border: 1px solid #304670;
+  border-bottom-left-radius: 4px;
+  background: linear-gradient(180deg, #1c2d55 0%, #172648 100%);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.msg__name {
+  margin-bottom: 2px;
+  color: #ffcf73;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.msg--pet p,
+.msg--pet ul,
+.msg--pet ol,
+.msg--pet pre {
+  margin: 0 0 6px;
+}
+
+.msg--pet ul,
+.msg--pet ol {
+  padding-left: 20px;
+}
+
+.msg--pet a {
+  color: #9cc0ff;
+}
+
+.msg--pet code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #0f1930;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+}
+
+.md-heading {
+  font-weight: 600;
+}
+
+.md-code {
+  padding: 8px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #0f1930;
+  font-family: Consolas, monospace;
+  font-size: 12.5px;
+}
+
+.msg__copy {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.msg__copy:hover {
+  color: var(--text);
+}
+
+/* Mất mạng, gửi nhanh quá, Google đang bận: ghi chú giữa khung, không phải câu của pet. */
+.note {
+  align-self: center;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 138, 138, 0.1);
+  color: var(--danger);
+  font-size: 13px;
+  text-align: center;
+}
+
+.typing {
+  align-self: flex-start;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.typing__name {
+  color: #ffcf73;
+  font-weight: 600;
+}
+
+.typing__dots::after {
+  content: "";
+  animation: dots 1.2s steps(4) infinite;
+}
+
+@keyframes dots {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+}
+
+.composer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid #2a3d66;
+  background: rgba(10, 18, 38, 0.75);
+}
+
+.composer__input {
+  flex: 1;
+  min-height: 38px;
+  max-height: 120px;
+  padding: 8px 12px;
+  resize: none;
+  border: 1px solid #33496f;
+  border-radius: 19px;
+  background: #101b36;
+  color: var(--text);
+  font: inherit;
+  field-sizing: content;
+}
+
+.composer__input::placeholder {
+  color: #7184ad;
+}
+
+.composer__input:hover {
+  border-color: #3f5f9f;
+}
+
+.composer__send {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid #7ea8ff;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #6194ff 0%, #3b6cf5 100%);
+  box-shadow: 0 4px 12px rgba(59, 108, 245, 0.35);
+  color: #fff;
+  cursor: pointer;
+}
+
+.composer__send svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.composer__send:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+  cursor: default;
+}
+
+.composer__input:focus-visible,
+.composer__send:focus-visible,
+.chip:focus-visible,
+.msg__copy:focus-visible,
+.msg--pet a:focus-visible {
+  outline: 2px solid #9cc0ff;
+  outline-offset: 1px;
+}

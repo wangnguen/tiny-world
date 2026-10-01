@@ -1,6 +1,9 @@
+use crate::activity::{self, Activity};
+use crate::chat::Chat;
 use crate::cursor::CursorInterest;
 use crate::settings::SettingsStore;
 use crate::storage::Storage;
+use crate::weather::{self, Weather};
 use crate::window_list::{self, Windows};
 use crate::{commands, cursor, events, fullscreen, overlay, tray};
 use std::time::Duration;
@@ -18,16 +21,22 @@ pub fn run() {
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
-            app.manage(SettingsStore::load(&data_dir));
+            let settings = SettingsStore::load(&data_dir);
+            app.manage(Activity::load(&data_dir, &settings.get()));
+            app.manage(settings);
+            app.manage(Weather::load(&data_dir));
             app.manage(Storage::new(data_dir));
             app.manage(Windows::default());
             app.manage(CursorInterest::default());
+            app.manage(Chat::default());
             overlay::setup(app.handle())?;
             overlay::watch(app.handle().clone());
             tray::setup(app.handle())?;
             cursor::spawn(app.handle().clone());
             fullscreen::spawn(app.handle().clone());
             window_list::spawn(app.handle().clone());
+            weather::spawn(app.handle().clone());
+            activity::spawn(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -41,6 +50,15 @@ pub fn run() {
             commands::save_state,
             commands::get_settings,
             commands::set_settings,
+            commands::get_weather,
+            commands::search_city,
+            commands::get_stats,
+            commands::clear_stats,
+            commands::open_chat,
+            commands::chat_suggestions,
+            commands::chat_target,
+            commands::send_chat,
+            commands::open_link,
             commands::get_autostart,
             commands::set_autostart,
             commands::quit,
@@ -52,6 +70,7 @@ pub fn run() {
 /// Tray bấm Thoát: nhờ overlay lưu trạng thái, overlay lưu xong thì gọi command `quit`. Overlay không
 /// trả lời (trang lỗi...) thì vẫn thoát sau `QUIT_TIMEOUT`.
 pub fn request_quit(app: &AppHandle) {
+    app.state::<Activity>().flush();
     if app.emit_to(overlay::LABEL, events::QUIT_REQUESTED, ()).is_err() {
         app.exit(0);
         return;

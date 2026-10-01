@@ -9,6 +9,8 @@ ra; thay file gốc ở đây rồi chạy lại lệnh tạo.
 | `branding/logo-prompt.txt` | Prompt gốc để tạo logo bằng imagegen |
 | `sprites/<pack>/` | Sprite pack chạy trong app: `pet.json` + ảnh WebP, do `scripts/prepare-sprites.mjs` tạo ra |
 | `sprite-sources/` | Atlas, prompt gốc của 21 nhân vật và trang xem animation ([README](sprite-sources/README.md)) |
+| `sprite-sources/items/` | Ảnh gốc của mũ trong lịch sự kiện (`party`, `noel`, `tet`), tạo bằng imagegen: nền trong suốt, cùng nét vẽ với nhân vật, nhìn nghiêng quay sang phải |
+| `items/` | Mũ chạy trong app: WebP lossless alpha 0/255 và `items.json` (cỡ, điểm đặt giữa vành mũ), do `scripts/prepare-items.mjs` tạo ra. Thêm mũ: đặt ảnh gốc vào `sprite-sources/items/`, khai báo bề ngang trong `ITEMS` của script, thêm tên vào `Hat` (packages/core) và `HATS` (settings.rs) |
 
 ## Sprite pack
 

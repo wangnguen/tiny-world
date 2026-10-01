@@ -12,6 +12,11 @@ tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Thời tiết thật (weather.rs) và chat với pet (gemini.rs): HTTPS bằng TLS của Windows (SChannel), không
+# kéo OpenSSL.
+reqwest = { version = "0.12", default-features = false, features = ["native-tls"] }
+# Đã có sẵn qua Tauri; bật thêm hẹn giờ và `select!` cho vòng hỏi thời tiết, Mutex async cho gemini.rs.
+tokio = { version = "1", features = ["time", "sync", "macros"] }
 
 [target.'cfg(windows)'.dependencies]
 # Cùng phiên bản Tauri đang dùng: hạ mức dùng RAM của WebView2 lúc pet ngủ hoặc overlay ẩn (overlay.rs).
@@ -23,9 +28,11 @@ windows-sys = { version = "0.61", features = [
     "Win32_Graphics_Gdi",
     "Win32_System_LibraryLoader",
     "Win32_System_Registry",
+    "Win32_System_SystemInformation",
     "Win32_System_Threading",
     "Win32_UI_Accessibility",
     "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",
 ] }
 

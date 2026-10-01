@@ -47,6 +47,37 @@ jobs:
       - run: pnpm --filter desktop build
       - run: cargo test --locked
         working-directory: desktop/src-tauri
+      # Ghi version của bản sắp phát hành vào tauri.conf.json, chỉ trên máy build (không sửa file trong
+      # repo), để tên file tải về và dòng version trong Cài đặt khớp với bản Release: commit này đã được
+      # phát hành thì lấy đúng version đó, chưa thì tăng số cuối của release mới nhất (v1.3.2 → 1.3.3).
+      - name: Ghi version
+        shell: bash
+        run: |
+          conf=desktop/src-tauri/tauri.conf.json
+          # Checkout chỉ lấy một commit, không kèm tag: hỏi thẳng GitHub. Tag có chú thích có thêm dòng
+          # `<tag>^{}` trỏ vào commit, bỏ hậu tố đó đi.
+          refs=$(git ls-remote --tags origin | sed 's/\^{}$//')
+          # Version release mới nhất (tag v<x.y.z>, bỏ tag nháp kiểu untagged-...). `$1` khác rỗng: chỉ xét
+          # tag trỏ vào commit đó.
+          latest() {
+            printf '%s\n' "$refs" |
+              awk -v sha="$1" 'sha == "" || $1 == sha { sub("refs/tags/v", "", $2); print $2 }' |
+              { grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' || true; } |
+              sort -uV | tail -n 1
+          }
+          current=$(latest "$GITHUB_SHA")
+          previous=$(latest "")
+          if [ -n "$current" ]; then
+            version=$current
+          elif [ -n "$previous" ]; then
+            version=$(echo "$previous" | awk -F. '{ print $1 "." $2 "." $3 + 1 }')
+          else
+            version=$(jq -r .version "$conf")
+          fi
+          echo "Version: $version"
+          jq --arg v "$version" '.version = $v' "$conf" > "$conf.tmp" && mv "$conf.tmp" "$conf"
+          # Cài đặt hiện thêm số lần chạy và commit, để phân biệt với bản Release cùng version.
+          echo "VITE_BUILD=${{ github.run_number }} · ${GITHUB_SHA::7}" >> "$GITHUB_ENV"
       - name: Build .exe
         run: pnpm build:desktop
 

@@ -5,40 +5,46 @@
 //! Chỉ gửi vị trí khi con trỏ ở trong vùng quanh pet mà frontend báo (`CursorInterest`): ngoài vùng đó
 //! thì chỉ gửi lúc bấm/nhả chuột và một lần lúc vừa ra khỏi vùng, để WebView không phải thức dậy mỗi lần
 //! chuột di chuyển.
+//!
+//! Bật "Spam Ctrl+S" (Phase 5) thì đọc thêm phím S, chỉ lúc đang giữ Ctrl, để biết Ctrl+S bị bấm dồn dập.
 
+use crate::activity::{Activity, Reminder};
 use crate::events;
 use crate::overlay::{self, Overlay, Rect};
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(16);
 /// Overlay đang ẩn (app fullscreen, tray): không gửi gì, chỉ đọc thưa để kịp biết lúc hiện lại.
 const HIDDEN_POLL_INTERVAL: Duration = Duration::from_millis(250);
 
-/// Vùng quanh pet (CSS pixel của overlay) mà frontend cần biết vị trí con trỏ. `None`: mọi chỗ.
+/// Vùng quanh từng pet (CSS pixel của overlay) mà frontend cần biết vị trí con trỏ. `None`: mọi chỗ.
+/// Mỗi pet một vùng: gộp thành một hình chữ nhật thì hai pet ở hai đầu màn hình phủ gần hết màn hình.
 #[derive(Default)]
 pub struct CursorInterest {
-    rect: Mutex<Option<Rect>>,
+    rects: Mutex<Option<Vec<Rect>>>,
     /// Vùng vừa đổi: gửi lại vị trí con trỏ dù nó đứng yên, vì pet có thể vừa đi tới dưới con trỏ.
     changed: AtomicBool,
 }
 
 impl CursorInterest {
-    pub fn set(&self, rect: Option<Rect>) {
-        if let Ok(mut current) = self.rect.lock() {
-            *current = rect;
+    pub fn set(&self, rects: Option<Vec<Rect>>) {
+        if let Ok(mut current) = self.rects.lock() {
+            *current = rects;
         }
         self.changed.store(true, Ordering::Relaxed);
     }
 
     fn contains(&self, x: f64, y: f64) -> bool {
-        self.rect
-            .lock()
-            .map_or(true, |rect| rect.is_none_or(|r| r.contains(x, y)))
+        self.rects.lock().map_or(true, |rects| {
+            rects
+                .as_ref()
+                .is_none_or(|rects| rects.iter().any(|r| r.contains(x, y)))
+        })
     }
 
     fn take_changed(&self) -> bool {
@@ -65,6 +71,9 @@ pub fn spawn(app: AppHandle) {
         let mut was_inside = true;
         // Lần đọc trước overlay có đang hiện không.
         let mut shown = false;
+        // Lần đọc trước có đang giữ Ctrl+S không.
+        let mut saving = false;
+        let start = Instant::now();
         loop {
             let overlay = app.state::<Overlay>();
             let interest = app.state::<CursorInterest>();
@@ -79,6 +88,17 @@ pub fn spawn(app: AppHandle) {
             };
             let pass_through = ctrl_pressed();
             let pressed = mouse_pressed();
+            let activity = app.state::<Activity>();
+            if activity.save_spam_enabled() {
+                let down = pass_through && s_pressed();
+                let now = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
+                if down && !saving && activity.save_pressed(now) {
+                    if let Err(e) = app.emit_to(overlay::LABEL, events::REMINDER, Reminder::SaveSpam) {
+                        eprintln!("Không báo được spam Ctrl+S: {e}");
+                    }
+                }
+                saving = down;
+            }
             // Vùng quanh pet vừa đổi, hoặc overlay vừa hiện lại: gửi vị trí dù con trỏ đứng yên. Không gửi thì
             // vị trí cũ frontend đang giữ có thể lọt vào vùng mới, tưởng con trỏ nằm trên pet mà tắt
             // click-through.
@@ -127,7 +147,7 @@ fn cursor_position(app: &AppHandle) -> Option<(f64, f64)> {
     app.cursor_position().ok().map(|p| (p.x, p.y))
 }
 
-/// Chỉ đọc trạng thái phím Ctrl, không theo dõi phím bàn phím nào khác.
+/// Đọc trạng thái phím Ctrl. Ngoài Ctrl chỉ đọc phím S (`s_pressed`) khi bật "Spam Ctrl+S".
 #[cfg(windows)]
 fn ctrl_pressed() -> bool {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL};
@@ -140,6 +160,21 @@ fn ctrl_pressed() -> bool {
 
 #[cfg(not(windows))]
 fn ctrl_pressed() -> bool {
+    false
+}
+
+/// Phím S đang được giữ. Chỉ gọi lúc đang giữ Ctrl và đã bật "Spam Ctrl+S".
+#[cfg(windows)]
+fn s_pressed() -> bool {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
+
+    // SAFETY: GetAsyncKeyState chỉ đọc trạng thái phím. Mã phím của chữ cái là mã ASCII chữ hoa.
+    let state = unsafe { GetAsyncKeyState(i32::from(b'S')) };
+    state < 0
+}
+
+#[cfg(not(windows))]
+fn s_pressed() -> bool {
     false
 }
 
@@ -171,17 +206,30 @@ mod tests {
     fn chua_bao_vung_thi_gui_moi_cho_bao_roi_thi_chi_trong_vung() {
         let interest = CursorInterest::default();
         assert!(interest.contains(-5000.0, 3000.0));
-        interest.set(Some(Rect {
-            x: 100.0,
-            y: 200.0,
-            width: 50.0,
-            height: 40.0,
-        }));
+        interest.set(Some(vec![
+            Rect {
+                x: 100.0,
+                y: 200.0,
+                width: 50.0,
+                height: 40.0,
+            },
+            Rect {
+                x: 900.0,
+                y: 200.0,
+                width: 50.0,
+                height: 40.0,
+            },
+        ]));
         assert!(interest.take_changed());
         assert!(!interest.take_changed());
         assert!(interest.contains(100.0, 200.0));
+        assert!(interest.contains(920.0, 220.0));
         assert!(!interest.contains(150.0, 220.0));
+        // Giữa hai pet không tính.
+        assert!(!interest.contains(500.0, 220.0));
         assert!(!interest.contains(-5000.0, 3000.0));
+        interest.set(Some(Vec::new()));
+        assert!(!interest.contains(100.0, 200.0));
         interest.set(None);
         assert!(interest.contains(-5000.0, 3000.0));
     }

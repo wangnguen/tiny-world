@@ -5,7 +5,7 @@
 export const HILL_SPOT = { x: 384, y: 112 };
 
 /** Ngôi sao 5 cánh tâm (cx, cy), bán kính r. */
-function starPath(cx: number, cy: number, r: number): string {
+export function starPath(cx: number, cy: number, r: number): string {
   const points = Array.from({ length: 10 }, (_, i) => {
     const angle = (Math.PI / 5) * i - Math.PI / 2;
     const radius = i % 2 === 0 ? r : r * 0.45;

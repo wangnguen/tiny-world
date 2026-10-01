@@ -29,6 +29,21 @@ impl AppError {
     pub fn internal(message: impl fmt::Display) -> Self {
         Self::new("INTERNAL", message.to_string())
     }
+
+    /// Mất mạng hoặc máy chủ không trả lời (thời tiết, chat).
+    pub fn offline(message: impl Into<String>) -> Self {
+        Self::new("OFFLINE", message)
+    }
+
+    /// App tự chặn để không gửi dồn dập (chat): câu báo ghi lúc gửi lại được.
+    pub fn busy(message: impl Into<String>) -> Self {
+        Self::new("BUSY", message)
+    }
+
+    /// Dịch vụ bên ngoài lỗi hay đang chặn (chat): câu báo ghi lúc gửi lại được.
+    pub fn unavailable(message: impl Into<String>) -> Self {
+        Self::new("UNAVAILABLE", message)
+    }
 }
 
 impl fmt::Display for AppError {

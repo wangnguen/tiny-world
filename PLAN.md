@@ -1,14 +1,13 @@
 # TinyWorld — Plan
 
-Một thế giới nhỏ sống trên desktop: các pet có tính cách, quan hệ, tự sống cạnh cửa sổ, taskbar và
-con trỏ chuột trong lúc người dùng làm việc. Không phải game phải mở lên chơi. Ưu tiên số 1: **nhẹ**.
+Vài pet nhỏ sống trên desktop, tự đi lại cạnh cửa sổ, taskbar và con trỏ chuột trong lúc người dùng làm
+việc cho đỡ nhàm; nhắc nghỉ, nhắc khuya, chat để tra cứu nhanh. Không phải game phải mở lên chơi. Ưu tiên
+số 1: **nhẹ**.
 
 ## Hướng đã chốt
 
 | Chủ đề | Quyết định |
 |---|---|
-| Quy trình | Làm theo plan này, **không** dùng AI-DLC |
-| Base | Theo cấu trúc và quy ước của `C:\Users\quang.nguyen13\Desktop\authenticator-app` |
 | Tên | TinyWorld, identifier `com.tinyworld.app` (dữ liệu ở `%APPDATA%\com.tinyworld.app\`) |
 | Nền tảng | Chỉ Windows 10/11. Desktop awareness dùng Win32, CI chỉ build NSIS |
 | Stack | Tauri v2 + Vite + TypeScript, backend Rust. Không Electron, không game engine, không server |
@@ -16,30 +15,19 @@ con trỏ chuột trong lúc người dùng làm việc. Không phải game ph�
 | Logic pet | `packages/sim`: TS thuần (FSM, vật lý, RNG có seed), test bằng vitest |
 | Click-through | Overlay mặc định để chuột đi xuyên. Rust đọc con trỏ khoảng 60 lần/giây gửi sang, overlay kiểm tra theo alpha của sprite, con trỏ nằm trên pet thì tắt click-through |
 | Asset | Nhân vật tự vẽ bằng imagegen: atlas gốc ở `assets/sprite-sources/`, `scripts/prepare-sprites.mjs` chuẩn hoá thành pack `assets/sprites/<pack>/` có `pet.json`. Không dùng asset của bên thứ ba. Chưa có pack thì dùng pet tạm vẽ bằng code |
-| Thứ tự | Phase 2 (desktop awareness) làm trước Phase 3 (bộ lạc) |
-| Riêng tư | Mọi dữ liệu xử lý trên máy, không đọc tiêu đề cửa sổ, tính năng nhạy cảm (bàn phím, thói quen) mặc định tắt. Chỉ gọi mạng cho thời tiết thật (toạ độ thành phố người dùng tự nhập) và AI dialogue (Phase 7, tuỳ chọn) |
-| Thời tiết | Thời tiết thật từ Open-Meteo (Phase 4): miễn phí, không cần key hay tài khoản. Người dùng tự nhập thành phố, không đoán vị trí qua IP/GPS. Chưa nhập thành phố, mất mạng hoặc API lỗi thì dùng thời tiết giả lập |
-| AI | Không cho AI điều khiển di chuyển, chỉ dùng cho hội thoại (Phase 7, tuỳ chọn) |
-| Ngôn ngữ | UI, comment, README tiếng Việt như authenticator-app |
-| Build / phát hành | Mỗi lần push lên `main`, CI tự test rồi build `.exe` (bản cài + bản chạy thẳng), tải ở mục Artifacts của Actions; push nhiều lần thì chỉ build bản mới nhất, push chỉ sửa tài liệu (`.md`) thì không build. Phát hành chính thức vẫn dùng workflow Release chạy tay (nhập version) như authenticator-app |
+| Riêng tư | Mọi dữ liệu xử lý trên máy, không đọc tiêu đề cửa sổ, tính năng nhạy cảm (bàn phím, thói quen) mặc định tắt. Chỉ gọi mạng cho thời tiết thật (toạ độ thành phố người dùng tự nhập) và chat với pet (Phase 6, tuỳ chọn) |
+| Thời tiết | Thời tiết thật từ Open-Meteo (Phase 4): miễn phí, không cần key hay tài khoản. Người dùng tự chọn thành phố, không đoán vị trí qua IP/GPS; giờ, ngày và lịch sự kiện theo múi giờ của thành phố đó. Chưa chọn thành phố thì thời tiết giả lập theo mùa. Đã chọn mà mất mạng hay API lỗi thì pet nói "Không có mạng :))" / "Không có thời tiết :))", không giả lập |
+| AI | Chỉ để chat với pet và tra cứu nhanh (Phase 6, tuỳ chọn), không điều khiển di chuyển. Rust gọi Gemini như trang gemini.google.com lúc chưa đăng nhập (`gemini.rs`): không cần key hay tài khoản, tự theo bản Flash mới nhất Google cho người chưa đăng nhập |
+| Ngôn ngữ | UI, comment, README tiếng Việt |
+| Build / phát hành | Mỗi lần push lên `main`, CI tự test rồi build `.exe` (bản cài + bản chạy thẳng), tải ở mục Artifacts của Actions; push nhiều lần thì chỉ build bản mới nhất, push chỉ sửa tài liệu (`.md`) thì không build. Phát hành chính thức dùng workflow Release chạy tay (nhập version) |
+| Version | Bản Release mang version nhập lúc chạy workflow. Bản build khi push mang version sắp phát hành: commit đã phát hành thì đúng version đó, chưa thì tăng số cuối của release mới nhất (`v1.3.2` → `1.3.3`). Cả hai ghi vào `tauri.conf.json` trên máy build, không sửa file trong repo. Cửa sổ Cài đặt hiện version dưới tiêu đề, bản build kèm số lần chạy và commit |
 
-### Kế thừa từ authenticator-app
+### Quy ước code
 
-Giữ nguyên:
-
-- pnpm monorepo (`packages/*` + `desktop`), `tsconfig.base.json` strict, package nội bộ export thẳng source TS
-- Tauri v2 + Vite (port 1420), release profile `lto`, `opt-level = "s"`, `strip`, `codegen-units = 1`
+- pnpm monorepo: `packages/core`, `packages/sim`, `desktop`; package nội bộ export thẳng source TS, `tsconfig.base.json` strict
 - Rust: `main.rs → app.rs → commands.rs → module nghiệp vụ`; lỗi `AppError { code, message }` trả thẳng về frontend
 - Frontend gọi Rust qua `desktop/src/api.ts`; types dùng chung ở `packages/core` khớp struct Rust (serde camelCase)
-- single-instance, dữ liệu JSON trong `%APPDATA%`, `assets/` giữ file gốc kèm README
-- Workflow release chạy tay (nhập version → test → release nháp → build NSIS)
-
-Khác đi:
-
-- `packages/ui` thay bằng `packages/sim`
-- Overlay trong suốt, luôn nằm trên, không có nút taskbar; điều khiển qua icon ở system tray
-- Không có `extension/`, không có Google OAuth
-- Thêm workflow Build: push lên `main` là tự build `.exe` ra Artifacts, không cần chạy release
+- Dữ liệu JSON trong `%APPDATA%\com.tinyworld.app\`, ghi ra file tạm rồi đổi tên; `assets/` giữ file gốc kèm README
 
 ## Lộ trình
 
@@ -48,11 +36,13 @@ Khác đi:
 | 0 | Base | Monorepo, overlay trong suốt click-through, pet tạm, tray, CI | Xong: test pass, đã chạy thử trên máy thật (overlay trong suốt, click-through theo alpha, click → phản ứng) |
 | 1 | MVP | 1 pet: tự đi, quay đầu ở mép, click phản ứng, kéo thả + rơi, bỏ mặc thì ngủ | Xong, đã thử trên máy thật: hành vi, vật lý, kéo thả/ném, Ctrl xuyên pet, không cướp focus, tự ẩn khi fullscreen, lưu trạng thái, tray Tạm dừng, Settings (nhân vật, cỡ, tốc độ, chạy cùng Windows). Đo 10 phút: heap JS ~2 MB không tăng; còn chạy thử 8 tiếng |
 | 2 | Desktop awareness | Đứng/leo/nhảy trên cửa sổ thật, ngủ trên taskbar, nhìn theo con trỏ, đa màn hình | Xong: 2a–2e đã thử trên máy thật (2 màn hình 1920×1080). Chỉ hỗ trợ scale 100% |
-| 3 | Bộ lạc | Nhiều pet, tính cách, quan hệ, nhật ký sự kiện, speech bubble, skin | |
-| 4 | Thế giới sống | Căn cứ + xây nhà, nhu cầu, thời tiết thật quanh pet (theo thành phố tự nhập), ngày/đêm, sự kiện hiếm | |
-| 5 | Thói quen user | Thống kê app theo giờ, nhắc khuya, phản ứng gõ phím (chỉ trên máy, tự bật) | |
-| 6 | Tiến hoá & colony | Tiến hoá theo cách đối xử, trứng nở, Keep/Send away, file `.pet` | |
-| 7 | AI dialogue | Chuột phải → Talk, LLM chỉ cho thoại (tuỳ chọn) | |
+| 3 | Nhiều pet | Tối đa 3 nhân vật cùng sống trên màn hình, tốn ít RAM và CPU | Xong phần code, test pass; đã chạy thử bản dev 1 màn hình (3 con, đọc file cài đặt cũ). Chưa thử ném sang màn hình kia |
+| 4 | Vui nhẹ | Pet chơi với nhau, ngày/đêm, thời tiết thật quanh pet (theo thành phố tự chọn), lịch sự kiện, bấm đúp xem giờ/ngày/thời tiết; không làm phiền lúc làm việc | Xong phần code, test pass; đang chạy thử bản dev |
+| 5 | Sức khoẻ & công việc | Giờ ngồi máy, nhắc nghỉ, nhắc uống nước, nhắc khuya, spam Ctrl+S (chỉ trên máy, tự bật) | Xong phần code, test pass (`cargo test`, sim); đã thử lời nhắc trên bản dev bằng event giả. Chưa đối chiếu giờ ngồi máy cả ngày |
+| 6 | Chat với pet | Click pet để chat, hỏi đáp và tra cứu nhanh qua Gemini, đỡ phải mở trình duyệt (tuỳ chọn) | Xong phần code, test pass; đã gửi thật: chưa đăng nhập Google trả lời bằng 3.6 Flash trong khoảng 3 giây |
+
+TinyWorld không phải game: không làm chỉ số tính cách, quan hệ giữa các pet, nhu cầu, xây nhà, tài
+nguyên, tiến hoá, trứng nở hay trao đổi pet.
 
 ### Phase 0 — Base
 
@@ -164,56 +154,170 @@ Chia 5 bước, xong bước nào thử trên máy thật bước đó:
 
 **Xong khi:** pet đứng đúng mép cửa sổ ở scale 100% (chỉ hỗ trợ 100%), CPU vẫn trong ngân sách.
 
-### Phase 3 — Bộ lạc
+### Phase 3 — Nhiều pet
 
-- Nhiều pet, chỉ số energy, curiosity, bravery, friendliness, mischief, affection → trọng số chọn hành vi trên FSM
-- Quan hệ từng cặp (bạn/ghét/thích) đổi theo tương tác: ngồi cạnh, chọc, đuổi, trốn, lẽo đẽo theo
-- Mood, nhật ký sự kiện ngắn cho mỗi pet, speech bubble theo ngữ cảnh có giới hạn tần suất, skin
+- Cài đặt chọn 1 đến 3 nhân vật khác nhau, thêm/bớt là áp dụng ngay. `settings.json` đổi `pet` thành
+  danh sách `pets`; file cũ chỉ có `pet` thì đọc thành danh sách một con
+- Mỗi con một id, `world.json` lưu theo id. Con mới xuất hiện rải dọc taskbar, không chồng lên nhau
+- Từng con kéo thả, ném, click, leo cửa sổ như Phase 1–2. Các con đi xuyên qua nhau, không va chạm
+- Tốn ít RAM và CPU:
+  - Một overlay, một WebView, một vòng lặp vẽ cho cả nhóm; không mỗi con một cửa sổ
+  - Mỗi con một canvas nhỏ, chỉ vẽ lại con vừa đổi frame. Chỉ nạp pack đang dùng, bớt con thì bỏ pack đó
+  - Vòng lặp hẹn giờ theo con cần thức dậy sớm nhất: cả nhóm đứng yên thì vẫn chỉ thức lúc đổi frame
+  - Ngủ chung: đồng hồ "không đụng tới" tính chung cả nhóm, nên cả nhóm cùng đi ngủ. Cả nhóm ngủ thì
+    dừng hẳn vòng lặp và WebView2 dùng ít RAM như hiện nay; click bất kỳ đâu thì cả nhóm dậy
+  - `set_cursor_interest` nhận danh sách vùng quanh từng con. Gộp thành một hình chữ nhật thì hai con ở
+    hai đầu màn hình phủ gần hết màn hình, chuột di chuyển ở đâu WebView cũng thức dậy
+- Hai màn hình, vẫn một overlay cho cả nhóm: từ 2 con trở lên thì pet không tự đi sang màn hình khác
+  (mép giáp màn hình khác như mép thường). Kéo hoặc ném một con sang thì overlay sang, các con còn lại
+  đi vào từ mép đó. Chỉ có một con thì như Phase 2
+- Cả nhóm ít khi cùng chạy nhảy một lúc: mỗi con khác đang đi lại làm con này bớt 35% khả năng đi lại
+  (`groupCalm`), đỡ rối mắt và vòng lặp được nghỉ nhiều hơn
 
-**Xong khi:** kịch bản kiểu Mochi–Pip (ngủ → bị chọc → đuổi → trốn sau cửa sổ → ngồi chờ) tự xảy ra, không viết cứng.
+| Bước | Nội dung | Trạng thái |
+|---|---|---|
+| 3a | Cài đặt chọn nhiều nhân vật; overlay hiện đủ các con, click/kéo thả từng con; `world.json` theo id; vùng con trỏ theo danh sách | Xong, đã chạy thử bản dev: thêm con từ Cài đặt thì hiện ngay dọc taskbar, mở lại app thì về đúng chỗ, `settings.json` cũ (`pet`) đọc thành `pets`, vẫn ghi `pet` (con đầu tiên) để bản cũ đọc được |
+| 3b | Ngủ chung, cả nhóm ngủ thì dừng vòng lặp; đo CPU, RAM với 1 con và 3 con | Xong (test sim). Đo bản debug, máy 4 nhân, cửa sổ Cài đặt đóng: 1 con thức 0,49% tổng CPU, working set 316 MB; 3 con thức 1,07%, 361 MB (đo trước khi có `groupCalm`). Mở cửa sổ Cài đặt thì thêm một renderer, đo lẫn vào sẽ sai |
+| 3c | Hai màn hình: cả nhóm sang theo con bị kéo hoặc ném | Xong phần code (test sim): con gần mép vào trước, con xa vào sau, xuất hiện cách mép tối đa 320 px; con đứng trên cửa sổ ở màn hình cũ thì xuống đất chạy theo; con đang ngủ nằm ở sát mép. Chưa thử trên máy thật |
 
-### Phase 4 — Thế giới sống
+**Xong khi:** 3 con chạy cùng lúc trên máy thật; cả nhóm ngủ thì CPU, RAM như lúc 1 con ngủ; 3 con thức
+thì đo và ghi lại CPU so với 1 con, cao quá thì giới hạn số con đi lại cùng lúc.
 
-- Căn cứ góc màn hình: thùng carton → nhà nhỏ → cây, giường, bếp, máy arcade; tài nguyên (gỗ, xu, vải, đồ ăn) tăng theo thời gian chạy app, pet có nghề tự xây
-- Nhu cầu ngủ/ăn/chơi → pet tự đi tới đồ vật
-- Thời tiết chỉ quanh pet (mưa, tuyết, sương mù, sấm, cánh hoa), ngày/đêm theo giờ thật, pet phản ứng
+### Phase 4 — Vui nhẹ
+
+Không làm phiền lúc làm việc:
+
+- Không âm thanh, không popup, không tự chạy về phía con trỏ
+- Speech bubble ngắn. Câu nói cho vui (chào nhau, kêu trời mưa) cả nhóm 15 phút mới được một câu
+  (`chatGap`), tối đa 4 câu mỗi giờ; đang gõ phím (Phase 5) thì không nói
+- Mỗi thứ có công tắc tắt trong tab **Thế giới** của Cài đặt
+- Chỉ dùng animation có sẵn hoặc vẽ bằng code (mũ, bubble, hạt mưa, con ma). Không sinh animation mới
+
+Nội dung:
+
+- Pet chơi với nhau: gặp nhau thì dừng lại quay mặt vào nhau, có lúc chào một câu, có lúc đi cùng một đoạn,
+  đi ngủ thì nằm cạnh nhau. Không có chỉ số hay quan hệ
+- Ngày/đêm: đêm đi chậm hơn (`nightPace`), buồn ngủ sớm hơn (`sleepAfterNight`). Có thời tiết thật thì
+  theo `is_day` (giờ mặt trời mọc/lặn thật), không thì 19:00–6:00 theo giờ ở thành phố đã chọn
+- Thời tiết chỉ quanh pet (mưa, tuyết, sương mù, sấm, cánh hoa): canvas nhỏ đi theo từng con, vẽ 12 fps,
+  hạt mờ dần ra xa. Trời quang, nhiều mây hay pet đang ngủ thì không vẽ gì. Có sấm thì chớp sáng và cả nhóm
+  giật mình. Trời đổi kiểu thì một con nói một câu (theo giới hạn câu nói cho vui)
+- Bấm đúp vào một con: con đó nói giờ, thứ, ngày dương lịch, ngày âm lịch, và thời tiết ở thành phố đã
+  chọn (`nowText`), ví dụ `15:04 · Thứ Năm 01/10`, `Âm lịch 21/8`, `Hà Nội: mưa, 27°C`. Âm lịch tính
+  trên máy (thuật toán Hồ Ngọc Đức, múi giờ +7), không gọi mạng
+- Thành phố và giờ theo thành phố:
+  - Tab **Thế giới** có ô **Thành phố**: gõ tên rồi chọn trong danh sách, tìm bằng API geocoding
+    (`geocoding-api.open-meteo.com/v1/search`). Chỉ lưu tên, toạ độ và múi giờ IANA trong
+    `settings.json`. Chưa chọn là thời tiết giả lập, giờ theo máy
+  - Giờ khi bấm đúp, ngày/đêm, ngày của lịch sự kiện và giờ con ma đều theo múi giờ của thành phố đó
+    (`wallClock`)
 - Thời tiết thật từ [Open-Meteo](https://open-meteo.com):
-  - Cài đặt có ô **Thành phố**: gõ tên rồi chọn trong danh sách, tìm bằng API geocoding
-    (`geocoding-api.open-meteo.com/v1/search`). Chỉ lưu tên và toạ độ trong `settings.json`. Ô trống là
-    thời tiết giả lập
   - Rust hỏi thời tiết hiện tại (`api.open-meteo.com/v1/forecast`, `current=weather_code,is_day,temperature_2m,wind_speed_10m`)
-    lúc mở app, lúc đổi thành phố, rồi 30 phút một lần, gửi cho overlay qua event. Webview không gọi mạng.
-    Kết quả gần nhất được lưu lại, mở app lúc chưa có mạng vẫn có thời tiết
+    lúc mở app, lúc đổi thành phố, rồi 30 phút một lần, gửi qua event `weather-changed`. Webview không gọi
+    mạng. Kết quả gần nhất lưu ở `weather.json`, mở app lúc chưa có mạng vẫn dùng được nếu chưa quá 3 giờ
   - Mã WMO thành hiệu ứng: 0–3 quang/nhiều mây, 45/48 sương mù, 51–67 và 80–82 mưa, 71–77 và 85–86
-    tuyết, 95–99 sấm. Cánh hoa không có trong dữ liệu: rơi vào mùa xuân những ngày quang. Ngày/đêm theo
-    `is_day` (giờ mặt trời mọc/lặn thật); chưa có thành phố thì theo giờ máy
-  - Mất mạng, API lỗi hay quá hạn mức thì dùng kết quả gần nhất nếu chưa quá vài giờ, không thì dùng thời
-    tiết giả lập (đổi ngẫu nhiên theo mùa). Lỗi thì chờ lâu dần mới hỏi lại, không hỏi liên tục
-  - Hạn mức miễn phí (dùng phi thương mại): dưới 10.000 lần/ngày, 5.000 lần/giờ,
-    600 lần/phút. App chỉ gọi khoảng 50 lần/ngày
-  - Dữ liệu theo giấy phép CC BY 4.0: ghi "Dữ liệu thời tiết: Open-Meteo.com" cạnh ô Thành phố
-- Sự kiện hiếm không báo trước: UFO, mèo khổng lồ, ma lúc 2 giờ sáng, mũ sinh nhật
+    tuyết, 95–99 sấm. Cánh hoa không có trong dữ liệu: rơi vào tháng 2–4 những ngày quang
+  - Lỗi thì chờ lâu dần mới hỏi lại (1 phút, gấp đôi mỗi lần, tối đa 30 phút). Lần lỗi đầu của mỗi đợt
+    Rust gửi `weather-failed`: một con nói "Không có mạng :))" (mất mạng, hết giờ chờ) hoặc "Không có
+    thời tiết :))" (API trả lỗi); bấm đúp lúc đó cũng nói câu này thay cho thời tiết. Không có kết quả còn
+    dùng được thì không có hiệu ứng thời tiết, không giả lập
+  - Hạn mức miễn phí (dùng phi thương mại): dưới 10.000 lần/ngày, 5.000 lần/giờ, 600 lần/phút. App chỉ gọi
+    khoảng 50 lần/ngày
+  - Dữ liệu theo giấy phép CC BY 4.0 (ghi nguồn kèm link cạnh chỗ hiện dữ liệu): một dòng nhỏ "Thời tiết từ
+    Open-Meteo.com" dưới ô Thành phố, chỉ khi đã chọn thành phố hoặc đang tìm; trên pet không ghi
+- Chưa chọn thành phố: thời tiết giả lập theo mùa, đổi mỗi 3 tiếng; cùng ngày, cùng khung giờ thì luôn ra
+  cùng một kiểu nên mở lại app không bị đổi
+- Lịch sự kiện (chỉnh trong tab **Thế giới**): mỗi dịp có tên, ngày/tháng dương hoặc âm lịch, kéo dài
+  1–10 ngày, mũ (không, sinh nhật, Noel, Tết) và một câu nói. Mặc định có Tết Nguyên Đán, Tết Dương lịch,
+  Giỗ Tổ Hùng Vương, 30/4, 1/5, 2/9, Trung thu, Giáng sinh; bật tắt, sửa, xoá từng dịp, thêm dịp riêng
+  (sinh nhật, ngày kỷ niệm), tối đa 30 dịp. Đúng dịp thì cả nhóm đội mũ (ảnh tạo bằng imagegen trong
+  `assets/items/`, đặt lên đỉnh đầu đo ở từng frame: bỏ qua tai, râu, ăng-ten, lá mảnh; nhân vật có tai
+  hay lá to thì chỉnh riêng trong `hats.ts`; bị nhấc lên hay đang rơi thì tạm cất mũ), một con nói câu
+  của dịp đó mỗi ngày một lần
+- Sự kiện hiếm: 2:00–2:30 sáng, có con còn thức thì một con ma bay ngang qua, mỗi đêm một lần; con nào
+  nó bay qua thì giật mình, con đầu tiên kêu "Ma... ma kìa :((("
 
-**Xong khi:** đổi thành phố thì thời tiết quanh pet đổi theo trong vài giây; rút mạng hay chưa nhập thành
-phố thì vẫn có thời tiết giả lập, không có lỗi nào hiện ra.
+| Bước | Nội dung | Trạng thái |
+|---|---|---|
+| 4a | Pet chơi với nhau, ngày/đêm, giới hạn câu nói cho vui | Xong (test sim) |
+| 4b | Thời tiết thật/giả lập quanh pet, chọn thành phố, giờ theo thành phố, báo mất mạng, bấm đúp xem giờ/ngày/âm lịch/thời tiết | Xong phần code (test sim, `cargo test`); đang chạy thử bản dev |
+| 4c | Lịch sự kiện chỉnh được trong Cài đặt (mũ, câu chúc), con ma lúc 2 giờ sáng | Xong phần code (test sim, `cargo test`); đang chạy thử bản dev |
 
-### Phase 5 — Thói quen user (chỉ trên máy, mặc định tắt)
+**Xong khi:** đổi thành phố thì thời tiết quanh pet đổi theo trong vài giây; rút mạng thì pet báo một lần
+"Không có mạng :))", không có lỗi nào khác hiện ra; chưa chọn thành phố thì vẫn có thời tiết giả lập; để
+pet chạy cả ngày làm việc thì bubble và sự kiện không vượt giới hạn tần suất.
 
-- Thống kê app dùng theo giờ (chỉ tên process), xem/xoá được
-- AFK qua thời điểm input cuối; nhận biết đang gõ phím không cần hook (có input nhưng chuột đứng yên)
-- Nhắc khuya ("Still coding?", "bro go sleep"), VSCode mở 2 tiếng → pet mang gối tới
-- Spam Ctrl+S → "bro it's saved 😭": cần hook bàn phím nên là tuỳ chọn riêng, chỉ đếm tổ hợp phím
+### Phase 5 — Sức khoẻ & công việc (chỉ trên máy, mặc định tắt)
 
-### Phase 6 — Tiến hoá & colony
+Tất cả nằm ở tab **Sức khoẻ** trong Cài đặt, mặc định tắt. Rust (`activity.rs`) đọc mỗi giây một lần,
+không hook bàn phím hay chuột:
 
-- Tiến hoá theo cách đối xử: friendly / independent / chaotic
-- Trứng xuất hiện → nở → thêm pet; giới hạn số lượng; Keep / Send away
-- Xuất/nhập `.pet` (có version, kiểm tra dữ liệu khi nhập) để trade
+- Giờ ngồi máy: theo thời điểm input cuối (`GetLastInputInfo`, chỉ biết lúc nào có phím hay chuột, không
+  biết phím gì). Ngồi máy là khoảng giữa hai lần input cách nhau dưới 5 phút; xa hơn là vắng, không tính.
+  Lưu theo ngày (giờ máy) trong `stats.json`, giữ 30 ngày: giờ ngồi máy, lượt ngồi liền lâu nhất, số lần
+  đứng dậy nghỉ (vắng từ 5 phút sau một lượt ngồi). Tab Sức khoẻ hiện bốn ô (hôm nay, đang ngồi liền, lâu
+  nhất, đã nghỉ mấy lần), cột 7 ngày gần nhất (rê chuột vào cột thì ô số nổi trên cột), nút xoá hết.
+  Lượt ngồi liền hiện ra chỉ tính từ lúc bật đếm giờ; nhắc nghỉ thì tính cả lúc chưa bật
+- Không đếm theo từng app (đã bỏ: ít hữu ích, lại phải đọc tên process)
+- Nhận biết đang gõ phím mà không cần hook: có input nhưng chuột đứng yên (luôn bật, không lưu gì). Đang
+  gõ thì pet không nói câu cho vui
+- Nhắc nghỉ: ngồi liền 50 phút (chọn 30/45/50/60/90) thì một con nhảy lên nhắc "Ngồi liền 50 phút rồi,
+  đứng dậy nghỉ mắt chút đi :)))", cả nhóm đang ngủ thì một con dậy nhắc; vắng 5 phút là tính lại. Bấm vào
+  pet là tắt lời nhắc đó (bấm vào con nào đang nói cũng tắt bubble)
+- Nhắc uống nước: cứ ngồi máy đủ 60 phút (chọn 30/45/60/90/120, cộng dồn qua các lần nghỉ) thì pet nhắc
+  "Uống ngụm nước đi nè :)))"; trùng lúc nhắc nghỉ thì nhắc nghỉ trước
+- Nhắc khuya: sau giờ đặt (mặc định 23:00) tới 5:00 sáng mà vẫn ngồi máy (có input trong 1 phút) thì pet
+  nhắc "23:40 rồi, đi ngủ thôi :(((", tối đa 30 phút một lần
+- Spam Ctrl+S (5 lần trong 10 giây) → "Lưu rồi mà :((((". `cursor.rs` đã đọc phím Ctrl khoảng 60
+  lần/giây bằng `GetAsyncKeyState`; bật tuỳ chọn này thì đọc thêm phím S, chỉ lúc đang giữ Ctrl. Không ghi
+  lại phím nào
+- Lời nhắc không qua giới hạn câu nói cho vui; overlay đang ẩn hay tạm dừng thì bỏ qua lời nhắc
 
-### Phase 7 — AI dialogue (tuỳ chọn)
+**Xong khi:** giờ trong tab Thống kê khớp với thời gian ngồi máy thật (lệch dưới vài phút mỗi ngày); tắt
+tính năng thì không đọc gì nữa; bấm xoá thì mất hết số liệu đã lưu.
 
-- Chuột phải → Talk; context gồm tên, tính cách, quan hệ, sự kiện gần đây từ nhật ký Phase 3
-- Tự bật; API key khoá bằng DPAPI như authenticator-app lưu token Google; không có mạng thì dùng câu mẫu
+### Phase 6 — Chat với pet (tuỳ chọn, mặc định tắt)
+
+Mục tiêu: hỏi nhanh, tra cứu vài thông tin hữu ích ngay trên desktop, đỡ phải mở trình duyệt hay Google.
+
+- Bật trong Cài đặt → Pet → **Chat với pet** (mặc định tắt; chưa bật mà click chuột phải vào pet thì pet
+  nhắc bật). Click chuột phải vào pet: cửa sổ chat nhỏ cạnh pet (bên trái nếu đủ chỗ), chỉ tạo khi mở và
+  huỷ khi đóng như cửa sổ Cài đặt (overlay không kéo theo khung chat); đang mở mà click con khác thì đổi
+  sang con đó, bắt đầu đoạn chat mới. Pet trả lời theo giọng nhân vật nhưng ưu tiên đúng và gọn; markdown
+  (đậm, gạch đầu dòng, code, link) vẽ thành chữ, không chèn HTML; link bấm được (Rust mở trình duyệt, chỉ
+  http/https), nút Chép câu trả lời. Lịch sử chỉ giữ trong lúc cửa sổ còn mở. Tắt chat thì cửa sổ chat
+  đóng luôn
+- Rust gọi Gemini như trang gemini.google.com lúc chưa đăng nhập (`gemini.rs`, tự viết, chỉ dùng `reqwest`
+  có sẵn): không cần key, cookie hay tài khoản, không chạy server, không mở cổng localhost. Webview không gọi
+  mạng. Gửi dạng chat tạm (không vào lịch sử Gemini)
+- Model: chọn bằng header `x-goog-ext-525001261-jspb` (mã model + loại Flash) như trang Gemini. Build label
+  và mã Flash đọc từ chính trang `/app` (6 tiếng một lần, chỉ khi có người chat; đọc lỗi thì dùng giá trị
+  dự phòng), nên Google lên bản Flash mới thì app tự theo, không cần cập nhật app
+  - Đã thử (10/2026): chưa đăng nhập thì Google trả lời bằng **3.6 Flash** (phản hồi có ghi tên model). Gửi
+    kiểu cũ của gemini-web2api (không có header) thì mọi model đều ra 3.5 Flash-Lite. Pro và 3.8 Flash (gói
+    AI Pro/Ultra) thì Google tự đổi về bản nhẹ hơn
+  - Không hiện tên model ở đâu cả: người dùng chỉ cần biết đang chat với pet nào
+- Cửa sổ chat đặt sát cạnh pet (bên trái nếu đủ chỗ), ngang tầm giữa pet, tính cả viền và thanh tiêu đề
+  để luôn nằm trọn trên taskbar. Con đang chat đứng yên quay mặt về phía khung chat (không ngủ, không bị con
+  khác rủ đi) tới khi đóng khung chat
+- Đầu khung chat là cảnh đêm cùng kiểu Cài đặt, pet đứng trên đồi (chỉ nạp một ảnh `idle`)
+- Câu gợi ý lúc chưa hỏi gì: Gemini viết 8 câu hợp với ngày hôm nay, mỗi ngày hỏi một lần (giữ trong bộ
+  nhớ, lỗi thì 1 tiếng sau mới hỏi lại, Google đang bận thì không hỏi), khung chat bốc ngẫu nhiên 4 câu;
+  trong lúc chờ hay mất mạng thì bốc từ 12 câu có sẵn
+- Tránh bị chặn IP (`chat.rs`, `Limiter` có test):
+  - Chỉ gọi khi người dùng bấm gửi (hoặc bấm một gợi ý), không tự gọi nền; mỗi lúc chỉ một câu
+  - Hai lần gửi cách nhau ít nhất 3 giây, tối đa 30 câu mỗi giờ; app tự chặn trước, câu chưa gửi trả lại ô
+    nhập
+  - Chỉ gửi kèm 6 lượt chat gần nhất, cả câu tối đa 6000 ký tự
+  - Google trả lỗi, chặn (429) hay trả rỗng thì chờ 30 giây, gấp đôi mỗi lần, tối đa 30 phút; khung chat ghi
+    "Google đang bận, gửi lại được sau 30 giây", không hiện lỗi kỹ thuật. Mất mạng, hết giờ chờ (60 giây)
+    không tính là bị chặn
+- Gửi kèm: tên và tính cách ngắn của nhân vật (`desktop/src/chat/prompt.ts`), ngày giờ máy. Không gửi gì
+  khác (không thành phố, không cửa sổ đang mở)
+- Mất mạng thì khung chat ghi "Mất mạng", không dùng câu mẫu
+
+**Xong khi:** chat được từ pet, câu trả lời về trong vài giây; hỏi thông tin mới (tỉ giá, tin tức) thì trả
+lời được; gửi dồn dập thì app chặn trước, không để Google chặn; rút mạng thì khung chat ghi "Mất mạng".
 
 ## Rủi ro kỹ thuật
 
@@ -224,7 +328,9 @@ phố thì vẫn có thời tiết giả lập, không có lỗi nào hiện ra.
 | Overlay trong suốt phủ màn hình tốn GPU khi vẽ liên tục | Giới hạn fps, chỉ vẽ lại canvas của pet khi đổi frame, dừng vòng lặp khi không có gì chuyển động |
 | Overlay đè lên video/game fullscreen | Tự ẩn khi app đang dùng chiếm trọn màn hình (Phase 1); cửa sổ phóng to còn thanh tiêu đề không tính (Phase 2) |
 | Overlay luôn trên mà che kín màn hình bị Windows coi là app fullscreen: tắt thông báo (Focus Assist), pet tự ẩn/hiện mỗi giây | Overlay chỉ phủ vùng làm việc; taskbar tự ẩn (vùng làm việc trùng màn hình) thì thấp đi 1 pixel. Phase 2 giữ quy tắc này: pet đứng trên mép taskbar, không vẽ lên taskbar; taskbar tự ẩn trồi lên thì pet đứng lên trên nó |
-| Hook bàn phím dễ bị antivirus nghi ngờ | Tuỳ chọn riêng, mặc định tắt, có thể bỏ |
+| Theo dõi bàn phím dễ bị antivirus nghi ngờ | Không hook bàn phím: chỉ đọc trạng thái Ctrl và S bằng `GetAsyncKeyState` trong luồng đọc con trỏ có sẵn; tuỳ chọn riêng, mặc định tắt |
+| 3 pet cùng thức tốn CPU gấp mấy lần 1 con | Một vòng lặp chung, ngủ chung, đo ở bước 3b; cao quá thì giới hạn số con đi lại cùng lúc |
 | Mỗi lượt sinh lại sprite bằng AI có thể làm mất hoặc đổi màu tay chân mà `--check` không bắt được | Soát từng frame so với atlas gốc trước khi nhận sheet mới; lỗi nhỏ sửa bằng tuỳ chọn trong `PETS` của script thay vì sinh lại |
 | Open-Meteo lỗi, đổi API hoặc chặn vì quá hạn mức | Không có thời tiết thật thì dùng thời tiết giả lập; 30 phút mới hỏi một lần, lỗi thì chờ lâu dần |
-| App chưa ký số → SmartScreen cảnh báo | Như authenticator-app: hướng dẫn "More info → Run anyway" |
+| Chat đi qua trang web Gemini (không phải API chính thức): Google đổi trang thì hỏng, gọi nhiều thì bị chặn IP | Build label và mã model đọc từ chính trang nên đổi bản thường không hỏng; giới hạn tần suất ngay trong app, lỗi thì chờ lâu dần, khung chat ghi ngắn gọn lý do. Đổi cách gửi thì sửa `gemini.rs`. Chat là tuỳ chọn: hỏng thì phần còn lại của app vẫn chạy |
+| App chưa ký số → SmartScreen cảnh báo | Hướng dẫn "More info → Run anyway" trong README và trang Release |

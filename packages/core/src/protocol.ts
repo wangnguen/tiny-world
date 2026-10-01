@@ -14,4 +14,16 @@ export const EVENTS = {
   settingsChanged: "settings-changed",
   /** Không có payload: tray bấm Thoát, overlay lưu trạng thái rồi gọi command `quit`. */
   quitRequested: "quit-requested",
+  /** `WeatherReport | null`: vừa lấy được thời tiết mới, hoặc `null` khi đổi/bỏ thành phố. */
+  weatherChanged: "weather-changed",
+  /** `WeatherFailure`: không lấy được thời tiết, chỉ gửi ở lần lỗi đầu của mỗi đợt lỗi. */
+  weatherFailed: "weather-failed",
+  /** `boolean`: người dùng vừa bắt đầu (`true`) hoặc thôi gõ phím. */
+  activityChanged: "activity-changed",
+  /** `Reminder`: pet nhắc nghỉ, nhắc khuya, kêu vì spam Ctrl+S. */
+  reminder: "reminder",
+  /** `ChatTarget`, chỉ gửi cho cửa sổ chat: đang mở mà click chuột phải vào con khác. */
+  chatTarget: "chat-target",
+  /** Không có payload, chỉ gửi cho overlay: cửa sổ chat vừa đóng. */
+  chatClosed: "chat-closed",
 } as const;
