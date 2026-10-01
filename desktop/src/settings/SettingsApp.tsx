@@ -25,11 +25,20 @@ const SPEEDS: Option[] = [
 
 const PACKS = listPacks();
 
+/** Dòng dưới tiêu đề: bản Release chỉ có số version, bản build khi push lên `main` kèm số lần chạy và commit. */
+function versionLabel(version: string): string {
+  // Chạy dev thì version trong tauri.conf.json không phải version thật (CI ghi vào lúc build).
+  if (import.meta.env.DEV) return "Bản dev";
+  const build = import.meta.env.VITE_BUILD;
+  return build ? `Phiên bản ${version} · build ${build}` : `Phiên bản ${version}`;
+}
+
 /** Cửa sổ cài đặt (tray → Cài đặt…). Đổi gì áp dụng ngay cho pet, không cần bấm lưu. */
 export function SettingsApp() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [autostart, setAutostart] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [version, setVersion] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([api.getSettings(), api.getAutostart()])
@@ -38,6 +47,11 @@ export function SettingsApp() {
         setAutostart(enabled);
       })
       .catch((e) => setError(errorMessage(e)));
+    // Không đọc được version thì chỉ thiếu một dòng chữ, không báo lỗi.
+    api
+      .version()
+      .then(setVersion)
+      .catch((e: unknown) => console.warn("Không đọc được version:", errorMessage(e)));
   }, []);
 
   const update = async (patch: Partial<Settings>) => {
@@ -74,6 +88,7 @@ export function SettingsApp() {
         <NightScene />
         {settings && <PetPreview pet={pet} footX={HILL_SPOT.x} footY={HILL_SPOT.y} height={96} />}
         <h1>Cài đặt</h1>
+        {version && <p className="hero__version">{versionLabel(version)}</p>}
       </header>
 
       {!settings || autostart === null ? (

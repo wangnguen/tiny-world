@@ -59,6 +59,16 @@ h2 {
   letter-spacing: 0.3px;
 }
 
+/* Ngay dưới tiêu đề, bên trái cảnh làng (cảnh chỉ vẽ từ khoảng 160 px trở sang phải). */
+.hero__version {
+  position: absolute;
+  left: 24px;
+  top: 82px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .hero__scene {
   position: absolute;
   inset: 0;

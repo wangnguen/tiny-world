@@ -51,7 +51,7 @@ tray:
 |---|---|
 | **Tạm dừng** | Pet đứng yên, chuột đi xuyên qua pet; bấm lần nữa để pet sống tiếp |
 | **Ẩn / hiện pet** | Ẩn hẳn pet (app dừng vòng lặp, không tốn CPU) |
-| **Cài đặt…** | Chọn nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chạy cùng Windows. Đổi là áp dụng ngay |
+| **Cài đặt…** | Chọn nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chạy cùng Windows. Đổi là áp dụng ngay. Dưới tiêu đề là version đang chạy |
 | **Thoát** | Lưu trạng thái pet rồi thoát |
 | **Mở DevTools** | Chỉ khi chạy dev (overlay để chuột đi xuyên nên không bấm F12 được) |
 
@@ -113,6 +113,11 @@ chung một zip, mà Explorer hiện file exe nằm trong zip bằng icon exe ch
 |---|---|
 | `TinyWorld_<version>-<số lần chạy>-<commit>_x64-setup.exe` | Cài vào máy (có shortcut, gỡ được trong Settings) |
 | `TinyWorld_<version>-<số lần chạy>-<commit>_x64-portable.exe` | Chạy thẳng không cần cài (cần WebView2, Windows 10/11 bản mới có sẵn) |
+
+`<version>` là version sắp phát hành: commit đã được phát hành thì đúng version đó, chưa thì tăng số cuối
+của release mới nhất (đã có `v1.3.2` thì là `1.3.3`). Version này cũng được ghi vào app; cửa sổ Cài đặt
+hiện kèm số lần chạy và commit (ví dụ `Phiên bản 1.3.3 · build 57 · 14e831c`) để phân biệt với bản Release
+cùng version. Chạy dev thì hiện `Bản dev`.
 
 Test hỏng thì không build ra file. Push liên tục thì lần build cũ bị huỷ, chỉ giữ lần mới nhất.
 Push chỉ sửa file `.md` hoặc `release.yml` thì không build (sửa sprite, icon trong `assets/` vẫn

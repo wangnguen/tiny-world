@@ -1,3 +1,4 @@
+import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
@@ -39,6 +40,8 @@ export const api = {
   getAutostart: () => invoke<boolean>("get_autostart"),
   setAutostart: (enabled: boolean) => invoke<void>("set_autostart", { enabled }),
   quit: () => invoke<void>("quit"),
+  /** Version ghi trong `tauri.conf.json` lúc build (workflow Build và Release ghi vào trước khi build). */
+  version: () => getVersion(),
 
   /** Vị trí con trỏ và phím Ctrl, Rust chỉ gửi khi có thay đổi (xem `setCursorInterest`). */
   onCursorMoved: (callback: (cursor: CursorInfo) => void) =>
