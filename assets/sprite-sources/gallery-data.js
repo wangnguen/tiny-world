@@ -2186,6 +2186,121 @@ window.SPRITE_PETS = [
     ]
   },
   {
+    "name": "Long — Eastern Dragon",
+    "folder": "c-long",
+    "source": "long",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-long/jump.webp"
+      }
+    ]
+  },
+  {
     "name": "Byte — Coder Penguin",
     "folder": "c-byte",
     "source": "byte",

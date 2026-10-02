@@ -84,9 +84,14 @@ const PETS = [
       { rows: ["react"], frames: [2], box: [111, 75, 123, 81], colors: { "#010202": "#98b890", "#0c0f0f": "#98b890", "#202e3f": "#98b890", "#464c3b": "#98b890", "#5a635e": "#98b890", "#8ca57d": "#98b890" } },
     ],
   },
+  { source: "long", folder: "c-long", name: "Long — Eastern Dragon", grid: true },
   { source: "byte", folder: "c-byte", name: "Byte — Coder Penguin", singleSheet: true, poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "sleep", "fall"] }, reuse: { fall: [2, 1, 2, 3] } },
   { source: "patch", folder: "c-patch", name: "Patch — Coder Red Panda", singleSheet: true, dizzy: 1, poses: [{ image: "fix-v1.png", rows: ["ref", "idle"] }, { image: "fix-v2.png", rows: ["ref", "run"] }], reuse: { dragged: [0, 2, 0, 2] } },
-].map((pet) => ({ ...pet, locomotion: "locomotion-v2.png" }));
+].map((pet) => ({
+  ...pet,
+  // New packs can use their complete atlas alone; corrected locomotion is optional.
+  locomotion: existsSync(join(SOURCES, pet.source, "locomotion-v2.png")) ? "locomotion-v2.png" : undefined,
+}));
 
 // RGBA PNG decoding, including all five PNG scanline filters. Generated input
 // is 8-bit, non-interlaced RGBA; reject other encodings instead of guessing.
@@ -219,13 +224,13 @@ function columnBoundaries(atlas, top, bottom, columnCount = COLUMNS) {
       start = -1;
     }
   }
-  assert.equal(bands.length, columnCount, `atlas: expected ${columnCount} poses in row, found ${bands.length}`);
+  assert.equal(bands.length, columnCount, `atlas band starting at y=${top}: expected ${columnCount} poses, found ${bands.length}`);
   return [0, ...bands.slice(1).map((band, i) => Math.floor((bands[i].right + band.left + 1) / 2)), atlas.width];
 }
 
 // Ignore near-transparent fringes and tiny detached noise, while preserving
 // meaningful disconnected parts (ears, hands, antennae) as well as the body.
-function extractCell(atlas, column, row, boundaries = rowBoundaries(atlas), columns = columnBoundaries(atlas, boundaries[row], boundaries[row + 1])) {
+function extractCell(atlas, column, row, boundaries = rowBoundaries(atlas), columns = columnBoundaries(atlas, boundaries[row], boundaries[row + 1]), allowBoundary = false) {
   const width = columns[column + 1] - columns[column];
   const height = boundaries[row + 1] - boundaries[row];
   const pixels = Buffer.alloc(width * height * 4);
@@ -269,7 +274,7 @@ function extractCell(atlas, column, row, boundaries = rowBoundaries(atlas), colu
   }
   const image = { width, height, pixels: clean };
   const bounds = boundsOf(image);
-  assert.ok(bounds.left > 0 && bounds.right < width - 1 && bounds.top > 0 && bounds.bottom < height - 1,
+  assert.ok(allowBoundary || (bounds.left > 0 && bounds.right < width - 1 && bounds.top > 0 && bounds.bottom < height - 1),
     `row ${row}, column ${column}: source pose touches crop boundary`);
   return { ...image, bounds };
 }
@@ -425,17 +430,23 @@ function rowHeight(sheet, rows, row, columnCount = COLUMNS) {
 function prepareFrames(pet) {
   const atlas = decodePng(join(SOURCES, pet.source, pet.atlas ?? "atlas.png"));
   assert.equal(atlas.width % COLUMNS, 0, "atlas columns");
-  const boundaries = rowBoundaries(atlas);
+  const boundaries = pet.grid
+    ? Array.from({ length: ROWS.length + 1 }, (_, row) => row * atlas.height / ROWS.length)
+    : rowBoundaries(atlas);
   const cells = ROWS.flatMap((_, row) => {
-    const columns = columnBoundaries(atlas, boundaries[row], boundaries[row + 1]);
-    return Array.from({ length: COLUMNS }, (_, col) => extractCell(atlas, col, row, boundaries, columns));
+    const columns = pet.grid
+      ? Array.from({ length: COLUMNS + 1 }, (_, column) => column * atlas.width / COLUMNS)
+      : columnBoundaries(atlas, boundaries[row], boundaries[row + 1]);
+    return Array.from({ length: COLUMNS }, (_, col) => extractCell(atlas, col, row, boundaries, columns, pet.grid));
   });
   // One scale for the whole pack, taken from the original atlas. It is 1 (an
   // exact copy) whenever the largest pose fits the frame.
   const scale = Math.min(1, MAX_WIDTH / Math.max(...cells.map((c) => c.bounds.width)),
     MAX_HEIGHT / Math.max(...cells.map((c) => c.bounds.height)));
   const factors = cells.map(() => scale);
-  const atlasIdle = rowHeight(atlas, boundaries, 0);
+  const atlasIdle = pet.grid
+    ? cells.slice(0, COLUMNS).map((cell) => cell.bounds.height).sort((a, b) => a - b)[Math.floor(COLUMNS / 2)]
+    : rowHeight(atlas, boundaries, 0);
   const keep = new Set((pet.keep ?? []).map((name) => rowIndex(name)));
   // Imagegen edits are larger sheets. Cut them at their own resolution, then
   // resample once: sheet cell to atlas cell, and, when the sheet has an idle
