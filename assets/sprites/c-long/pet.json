@@ -1,0 +1,86 @@
+{
+  "name": "Long — Eastern Dragon",
+  "frameWidth": 192,
+  "frameHeight": 192,
+  "scale": 0.5,
+  "pixelArt": true,
+  "facing": "right",
+  "anchor": {
+    "x": 96,
+    "y": 180
+  },
+  "animations": {
+    "idle": {
+      "image": "idle.webp",
+      "frames": 4,
+      "fps": 5,
+      "loop": true
+    },
+    "walk": {
+      "image": "walk.webp",
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    "run": {
+      "image": "run.webp",
+      "frames": 4,
+      "fps": 12,
+      "loop": true
+    },
+    "sleep": {
+      "image": "sleep.webp",
+      "frames": 4,
+      "fps": 3,
+      "loop": true
+    },
+    "react": {
+      "image": "react.webp",
+      "frames": 4,
+      "fps": 8,
+      "loop": false
+    },
+    "fall": {
+      "image": "fall.webp",
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    "dragged": {
+      "image": "dragged.webp",
+      "frames": 4,
+      "fps": 6,
+      "loop": true
+    },
+    "land": {
+      "image": "land.webp",
+      "frames": 4,
+      "fps": 16,
+      "loop": false
+    },
+    "dizzy": {
+      "image": "dizzy.webp",
+      "frames": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "climb": {
+      "image": "climb.webp",
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    "perch": {
+      "image": "perch.webp",
+      "frames": 4,
+      "fps": 4,
+      "loop": true
+    },
+    "jump": {
+      "image": "jump.webp",
+      "frames": 4,
+      "fps": 10,
+      "loop": false
+    }
+  }
+}
