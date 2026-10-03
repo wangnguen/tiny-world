@@ -90,6 +90,15 @@ export class PetView {
     this.layer.remove();
   }
 
+  /** Ẩn riêng sprite khi một cinematic thay nó; các lớp effect vẫn tiếp tục vẽ. */
+  setSpriteHidden(hidden: boolean): void {
+    this.element.hidden = hidden;
+  }
+
+  get spriteHidden(): boolean {
+    return this.element.hidden;
+  }
+
   /** Thêm một lớp vẽ đi cùng pet (hiệu ứng thời tiết/aura), chung lớp với pet. */
   attach(element: HTMLElement, behind = false): void {
     if (behind) this.layer.insertBefore(element, this.element);

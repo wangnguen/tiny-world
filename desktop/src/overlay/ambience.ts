@@ -174,7 +174,7 @@ export class Ambience {
   /** Mỗi lần vẽ: đặt hiệu ứng thời tiết theo pet, con ma bay tiếp. */
   place(now: number): void {
     for (const { pet, view, effect, aura } of this.host.residents()) {
-      const visible = pet.state !== "sleep";
+      const visible = pet.state !== "sleep" && !view.spriteHidden;
       aura.update(view.foot ?? pet, view.width, view.height, now, visible);
       // Aura của Long thay thế thời tiết quanh chính Long; pet khác vẫn theo thời tiết chung.
       effect.update(view.foot ?? pet, view.width, view.height, now, visible && !aura.animating);

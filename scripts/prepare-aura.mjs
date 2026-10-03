@@ -5,6 +5,10 @@ import sharp from "sharp";
 const SOURCE = "assets/sprite-sources/long/aura.png";
 const OUTPUT = "assets/effects/long-aura";
 const FRAMES = 4;
+const ACTIONS = [
+  ["assets/sprite-sources/long/transform.png", "assets/effects/long-actions/transform"],
+  ["assets/sprite-sources/long/tail-swipe.png", "assets/effects/long-actions/tail-swipe"],
+];
 
 /**
  * Tách sprite sheet aura của Long thành từng frame WebP để overlay chỉ cần nạp
@@ -31,7 +35,14 @@ export async function prepareAura(source = SOURCE, output = OUTPUT) {
   );
 }
 
+/** Tách hai sheet cinematic (biến hình và quật đuôi) của Long. */
+export async function prepareLongActions() {
+  for (const [source, output] of ACTIONS) await prepareAura(source, output);
+}
+
 if (import.meta.main) {
   await stat(SOURCE);
   await prepareAura();
+  await Promise.all(ACTIONS.map(([source]) => stat(source)));
+  await prepareLongActions();
 }

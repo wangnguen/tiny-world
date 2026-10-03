@@ -59,6 +59,20 @@ body {
   pointer-events: none;
 }
 
+.long-action {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.teleport-streak {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
 /* Speech bubble trên đầu pet (PetView.placeBubble): chuột đi xuyên, đuôi chỉ vào đầu (--tail). */
 .bubble {
   position: absolute;
