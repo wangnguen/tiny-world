@@ -297,7 +297,7 @@ async function start(): Promise<void> {
   const redraw = () => {
     for (const { pet, view, action, teleport } of members) {
       view.update(pet, world.occluders(pet), blend.at(pet, step.alpha));
-      action.update(view.foot ?? pet, view.width, view.height, performance.now());
+      action.update(view.foot ?? pet, view.width, view.height, performance.now(), pet.facing);
       teleport.update(performance.now());
     }
     ambience.place(performance.now());

@@ -3,8 +3,8 @@ import type { Point } from "@tinyworld/core";
 /** Aura chạy chậm hơn sprite một chút để vẫn sáng rõ nhưng không tốn CPU. */
 export const AURA_FPS = 10;
 const AURA_FRAME_MS = 1000 / AURA_FPS;
-const AURA_MIN_MS = 4_000;
-const AURA_MAX_MS = 6_000;
+const AURA_MIN_MS = 5_000;
+const AURA_MAX_MS = 7_000;
 const FRAME_ASPECT = 543 / 724;
 
 const urls = import.meta.glob<string>("../../../assets/effects/long-aura/frame-*.webp", {
@@ -47,7 +47,7 @@ export class AuraEffect {
     return performance.now() < this.until;
   }
 
-  /** Bật aura trong một khoảng ngẫu nhiên 4–6 giây; kích lại thì bắt đầu một lượt mới. */
+  /** Bật aura trong một khoảng ngẫu nhiên 5–7 giây; kích lại thì bắt đầu một lượt mới. */
   activate(now: number): void {
     this.until = now + AURA_MIN_MS + Math.random() * (AURA_MAX_MS - AURA_MIN_MS);
     this.lastFrame = -1;

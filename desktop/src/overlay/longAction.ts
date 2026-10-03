@@ -22,6 +22,7 @@ export class LongActionEffect {
   private width = 0;
   private height = 0;
   private last = -1;
+  private lastFacing = 1;
 
   constructor() {
     this.element.className = "long-action";
@@ -35,7 +36,7 @@ export class LongActionEffect {
   stop(): void { this.action = null; this.element.hidden = true; }
   get playing(): boolean { return this.action !== null; }
 
-  update(foot: Point, petWidth: number, petHeight: number, now: number): void {
+  update(foot: Point, petWidth: number, petHeight: number, now: number, facing: number): void {
     const action = this.action;
     if (!action) return;
     const height = Math.round(Math.max(petHeight * 2, petWidth * 1.7));
@@ -44,7 +45,11 @@ export class LongActionEffect {
     this.element.style.transform = `translate(${Math.round(foot.x - width / 2)}px, ${Math.round(foot.y - height * 0.86)}px)`;
     const images = ACTION_FRAMES[action];
     const frame = Math.min(images.length - 1, Math.floor((now - this.started) / ACTION_MS));
-    if (frame !== this.last) { this.last = frame; this.draw(images[frame]); }
+    if (frame !== this.last || facing !== this.lastFacing) {
+      this.last = frame;
+      this.lastFacing = facing;
+      this.draw(images[frame], facing);
+    }
   }
 
   private resize(width: number, height: number): void {
@@ -53,10 +58,15 @@ export class LongActionEffect {
     this.element.width = Math.round(width * dpr); this.element.height = Math.round(height * dpr);
     this.element.style.width = `${width}px`; this.element.style.height = `${height}px`; this.last = -1;
   }
-  private draw(image: HTMLImageElement | undefined): void {
+  private draw(image: HTMLImageElement | undefined, facing: number): void {
     const dpr = window.devicePixelRatio || 1;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); this.ctx.clearRect(0, 0, this.width, this.height);
-    if (image?.complete) this.ctx.drawImage(image, 0, 0, this.width, this.height);
+    if (!image?.complete) return;
+    if (facing < 0) {
+      this.ctx.translate(this.width, 0);
+      this.ctx.scale(-1, 1);
+    }
+    this.ctx.drawImage(image, 0, 0, this.width, this.height);
   }
 }
 
