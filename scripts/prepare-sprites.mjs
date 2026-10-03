@@ -34,7 +34,8 @@ const ROWS = [
 // only) / `overrides` imagegen sheets that redraw rows; `keep` rows that stay from the atlas even
 // when a sheet redraws them; `dizzy` the source column of the one dizzy pose
 // the app shows; `reuse` a row's column order, replaying good poses in place of
-// broken ones; `recolor` palette swaps within some rows, optionally only some
+  // broken ones; `poseScale` shrinks all correction-sheet poses when their
+  // aspect ratio would otherwise exceed the runtime frame; `recolor` palette swaps within some rows, optionally only some
 // `frames` and a `box` [left, top, right, bottom] in frame pixels; `fill` paints
 // the region enclosed by outline around `at` in one frame with one colour.
 // Recolor/fill colours resolve to the nearest pack colour, so a rule survives the
@@ -84,7 +85,11 @@ const PETS = [
       { rows: ["react"], frames: [2], box: [111, 75, 123, 81], colors: { "#010202": "#98b890", "#0c0f0f": "#98b890", "#202e3f": "#98b890", "#464c3b": "#98b890", "#5a635e": "#98b890", "#8ca57d": "#98b890" } },
     ],
   },
-  { source: "long", folder: "c-long", name: "Long — Eastern Dragon", grid: true },
+  {
+    source: "long", folder: "c-long", name: "Long — Eastern Dragon", grid: true,
+    // The atlas poses overlap their fixed cells; redraw the affected actions separately.
+    poses: { image: "fix-v1.png", rows: ["ref", "dizzy", "climb"] }, poseScale: 0.95,
+  },
   { source: "byte", folder: "c-byte", name: "Byte — Coder Penguin", singleSheet: true, poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "sleep", "fall"] }, reuse: { fall: [2, 1, 2, 3] } },
   { source: "patch", folder: "c-patch", name: "Patch — Coder Red Panda", singleSheet: true, dizzy: 1, poses: [{ image: "fix-v1.png", rows: ["ref", "idle"] }, { image: "fix-v2.png", rows: ["ref", "run"] }], reuse: { dragged: [0, 2, 0, 2] } },
 ].map((pet) => ({
@@ -466,7 +471,7 @@ function prepareFrames(pet) {
         const target = targets[row * sheetColumns + col];
         if (target < 0 || keep.has(Math.floor(target / COLUMNS))) continue;
         cells[target] = extractCell(sheet, col, row, rows, columns);
-        factors[target] = scale * cellRatio * match;
+        factors[target] = scale * cellRatio * match * (pet.poseScale ?? 1);
       }
     }
   };
