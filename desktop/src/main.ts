@@ -327,7 +327,6 @@ async function start(): Promise<void> {
     phase: ComboPhase;
     target: Member | null;
     until: number;
-    last: number;
     position: Point | null;
   }
   let longCombo: LongCombo | null = null;
@@ -340,7 +339,7 @@ async function start(): Promise<void> {
     if (queue.length === 0) return;
     long.view.setSpriteHidden(true);
     long.action.play("transform", now);
-    longCombo = { long, queue, phase: "transform", target: null, until: now + 1_100, last: now, position: null };
+    longCombo = { long, queue, phase: "transform", target: null, until: now + 1_100, position: null };
     wake();
   };
 
@@ -364,7 +363,6 @@ async function start(): Promise<void> {
       long.action.stop();
       long.view.setSpriteHidden(false);
       combo.phase = "move";
-      combo.last = now;
     }
     if (combo.phase === "move") {
       const target = combo.target ?? combo.queue[0];
@@ -374,28 +372,11 @@ async function start(): Promise<void> {
       const direction: Facing = target.pet.x >= long.pet.x ? 1 : -1;
       const targetFacing: Facing = direction === 1 ? -1 : 1;
       target.pet.pause(targetFacing, 1);
-      long.pet.pause(direction, 1);
-      const dt = Math.min(0.1, (now - combo.last) / 1000);
-      combo.last = now;
-      const distance = Math.abs(target.pet.x - long.pet.x);
-      const reach = (long.view.width + target.view.width) * 0.42;
-      if (Math.abs(target.pet.y - long.pet.y) > Math.max(long.view.height, target.view.height) * 0.35) {
-        long.view.setSpriteHidden(true);
-        long.teleport.play({ x: long.pet.x, y: long.pet.y }, long.view.width, long.view.height, direction, false, now);
-        combo.phase = "teleport-out";
-        combo.until = now + 180;
-        combo.last = now;
-        return;
-      }
-      if (distance > reach) {
-        long.pet.x += direction * Math.min(distance - reach, 250 * dt);
-        return;
-      }
-      long.pet.facing = direction;
+      // Luôn tốc biến, kể cả cùng độ cao: không để state đi bộ làm hai pet bị khóa tại chỗ.
       long.view.setSpriteHidden(true);
-      long.action.play("tail-swipe", now);
-      combo.phase = "attack";
-      combo.until = now + 650;
+      long.teleport.play({ x: long.pet.x, y: long.pet.y }, long.view.width, long.view.height, direction, false, now);
+      combo.phase = "teleport-out";
+      combo.until = now + 180;
       return;
     }
     if (combo.phase === "teleport-out") {
@@ -447,7 +428,6 @@ async function start(): Promise<void> {
     combo.target = null;
     combo.position = null;
     combo.phase = "move";
-    combo.last = now;
   };
 
   let moving = false;
