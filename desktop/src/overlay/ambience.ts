@@ -26,6 +26,7 @@ import {
 import { Ghost } from "./ghost";
 import type { PetView } from "./petView";
 import { EFFECT_FPS, type WeatherEffect } from "./weather";
+import type { AuraEffect } from "./aura";
 
 /** Chưa có thời tiết thật thì ban đêm theo giờ ở thành phố đã chọn: từ 19 giờ tới trước 6 giờ sáng. */
 const NIGHT_FROM = 19;
@@ -53,6 +54,7 @@ export interface Resident {
   pet: Pet;
   view: PetView;
   effect: WeatherEffect;
+  aura: AuraEffect;
 }
 
 export interface AmbienceHost {
@@ -119,7 +121,7 @@ export class Ambience {
   /** Vòng lặp phải vẽ lại trong vòng chừng này ms (hiệu ứng thời tiết, con ma); `Infinity` nếu không cần. */
   get frameMs(): number {
     if (this.ghost.flying) return 0;
-    return this.host.residents().some((r) => r.effect.animating) ? 1000 / EFFECT_FPS : Number.POSITIVE_INFINITY;
+    return this.host.residents().some((r) => r.effect.animating || r.aura.animating) ? 1000 / EFFECT_FPS : Number.POSITIVE_INFINITY;
   }
 
   setSettings(next: Settings): void {
@@ -171,8 +173,11 @@ export class Ambience {
 
   /** Mỗi lần vẽ: đặt hiệu ứng thời tiết theo pet, con ma bay tiếp. */
   place(now: number): void {
-    for (const { pet, view, effect } of this.host.residents()) {
-      effect.update(view.foot ?? pet, view.width, view.height, now, pet.state !== "sleep");
+    for (const { pet, view, effect, aura } of this.host.residents()) {
+      const visible = pet.state !== "sleep";
+      aura.update(view.foot ?? pet, view.width, view.height, now, visible);
+      // Aura của Long thay thế thời tiết quanh chính Long; pet khác vẫn theo thời tiết chung.
+      effect.update(view.foot ?? pet, view.width, view.height, now, visible && !aura.animating);
     }
   }
 

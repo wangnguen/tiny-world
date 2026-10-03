@@ -10,7 +10,7 @@ const code = ts.transpileModule(readFileSync(new URL("../desktop/src/overlay/int
 }).outputText;
 const { PetInteraction } = await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
 
-function setup(foot) {
+function setup(foot, hooks = {}) {
   const target = new EventTarget();
   globalThis.window = target;
   const captured = new Set();
@@ -22,11 +22,11 @@ function setup(foot) {
     release(vx, vy) { calls.releases.push([vx, vy]); this.state = "fall"; },
     poke() { calls.pokes++; },
   };
-  function pointer(type, x = 100, y = 190, time = 0, id = 1) {
+  function pointer(type, x = 100, y = 190, time = 0, id = 1, shiftKey = false) {
     const event = new Event(type);
     Object.defineProperties(event, {
       pointerId: { value: id }, button: { value: 0 },
-      clientX: { value: x }, clientY: { value: y }, timeStamp: { value: time },
+      clientX: { value: x }, clientY: { value: y }, timeStamp: { value: time }, shiftKey: { value: shiftKey },
     });
     target.dispatchEvent(event);
   }
@@ -41,6 +41,7 @@ function setup(foot) {
   const view = { element, foot, raises: 0, raise() { this.raises++; } };
   const interaction = new PetInteraction(() => ({ pet, view }), {
     onHold: (held) => calls.holds.push(held), onActivity: () => {},
+    ...hooks,
   });
   function drag() {
     pointer("pointerdown");
@@ -97,6 +98,15 @@ test("a regular click still pokes once when releasing capture emits an event", (
   assert.equal(captured.size, 0);
   assert.deepEqual(calls.holds, [true, false]);
   assert.deepEqual(calls.releases, []);
+});
+
+test("Shift + click calls the aura hook instead of poking or double-clicking", () => {
+  const auras = [];
+  const { pet, calls, pointer } = setup(undefined, { onAura: (target) => auras.push(target) });
+  pointer("pointerdown", 100, 190, 100, 1, true);
+  pointer("pointerup", 100, 190, 120, 1, true);
+  assert.deepEqual(auras, [pet]);
+  assert.equal(calls.pokes, 0);
 });
 
 test("a regular drag still follows the grab offset and throws on release", () => {

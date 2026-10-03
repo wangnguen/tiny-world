@@ -90,9 +90,10 @@ export class PetView {
     this.layer.remove();
   }
 
-  /** Thêm một lớp vẽ đi cùng pet (hiệu ứng thời tiết), nằm trên pet và chung lớp với pet. */
-  attach(element: HTMLElement): void {
-    this.layer.append(element);
+  /** Thêm một lớp vẽ đi cùng pet (hiệu ứng thời tiết/aura), chung lớp với pet. */
+  attach(element: HTMLElement, behind = false): void {
+    if (behind) this.layer.insertBefore(element, this.element);
+    else this.layer.append(element);
   }
 
   /** Đội mũ `hat` (`"none"`: bỏ mũ); vẽ lại ở lần `update` sau. */

@@ -22,6 +22,7 @@ import {
 } from "@tinyworld/sim";
 import { api } from "./api";
 import { Ambience, type Resident } from "./overlay/ambience";
+import { AuraEffect } from "./overlay/aura";
 import { AutoSave } from "./overlay/autosave";
 import { ClickThrough } from "./overlay/clickThrough";
 import { loadHats } from "./overlay/hats";
@@ -332,6 +333,12 @@ async function start(): Promise<void> {
       ambience.tellTime(pet);
       wake();
     },
+    onAura: (pet) => {
+      const member = members.find((candidate) => candidate.pet === pet);
+      if (member?.pack !== "c-long") return;
+      member.aura.activate(performance.now());
+      wake();
+    },
   });
 
   const ambience = new Ambience(
@@ -351,7 +358,9 @@ async function start(): Promise<void> {
 
   const addMember = (pack: string | null, sprite: SpriteSet, spot?: Spot) => {
     const view = new PetView(sprite, container, size);
+    const aura = new AuraEffect();
     const effect = new WeatherEffect();
+    view.attach(aura.element, true);
     view.attach(effect.element);
     const pet = world.spawn({
       id: pack ?? PLACEHOLDER_ID,
@@ -366,7 +375,7 @@ async function start(): Promise<void> {
     const previous: PetSnapshot | undefined =
       restoring.get(pet.id) ?? (members.length === 0 ? restoring.get(LEGACY_ID) : undefined);
     if (previous) pet.restore(previous);
-    const member = { pack, pet, view, effect };
+    const member = { pack, pet, view, effect, aura };
     members.push(member);
     ambience.adopt(member);
   };
