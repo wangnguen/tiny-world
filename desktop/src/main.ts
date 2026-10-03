@@ -22,6 +22,8 @@ import {
 } from "@tinyworld/sim";
 import { api } from "./api";
 import { Ambience, type Resident } from "./overlay/ambience";
+import { AuraEffect } from "./overlay/aura";
+import { LongActionEffect, TeleportStreakEffect } from "./overlay/longAction";
 import { AutoSave } from "./overlay/autosave";
 import { ClickThrough } from "./overlay/clickThrough";
 import { loadHats } from "./overlay/hats";
@@ -116,6 +118,10 @@ async function loadSaved(): Promise<unknown> {
 /** Một con trên màn hình: sprite pack (`null`: pet tạm), phần mô phỏng, phần vẽ và thời tiết quanh nó. */
 interface Member extends Resident {
   pack: string | null;
+  action: LongActionEffect;
+  teleport: TeleportStreakEffect;
+  /** Thời điểm pet bị Long quật đuôi được hiện lại (0: đang hiện). */
+  hiddenUntil: number;
 }
 
 /** Chỗ của một con vừa bị bỏ (đổi nhân vật trong Settings): con mới đứng đúng chỗ đó. */
@@ -159,6 +165,7 @@ async function start(): Promise<void> {
   const pick = (point: Point): Member | null => {
     let top: Member | null = null;
     for (const member of members) {
+      if (member.view.spriteHidden) continue;
       if ((!top || member.view.depth > top.view.depth) && member.view.hitTest(point)) top = member;
     }
     return top;
@@ -254,9 +261,11 @@ async function start(): Promise<void> {
   const nextDelay = () => {
     // Đang mưa, tuyết quanh pet hay con ma đang bay thì vẽ đủ nhịp của hiệu ứng.
     let wait = ambience.frameMs / 1000;
-    for (const { pet, view } of members) {
+    for (const { pet, view, action, teleport } of members) {
       if (!CALM_STATES.has(pet.state)) return FRAME_MS;
       wait = Math.min(wait, view.nextFrameIn(pet));
+      if (action.playing) wait = Math.min(wait, FRAME_MS);
+      if (teleport.playing) wait = Math.min(wait, FRAME_MS);
     }
     return clamp(wait * 1000 - VSYNC_SLACK_MS, FRAME_MS, CALM_MAX_MS);
   };
@@ -273,6 +282,7 @@ async function start(): Promise<void> {
     // Có con đang đi hoặc bay ra khỏi mép giáp màn hình khác: overlay sang bên đó, cả nhóm theo sang.
     const leaving = pets.find((pet) => pet.leaving)?.leaving;
     if (leaving) moveOverlay(leaving);
+    updateLongCombo(now);
     redraw();
     // Cả nhóm ngủ thì dừng hẳn vòng lặp (trừ lúc con ma còn đang bay); click hoặc kéo sẽ chạy lại.
     if (world.resting && !ambience.flying) {
@@ -285,7 +295,11 @@ async function start(): Promise<void> {
   };
   /** Vẽ lại cả nhóm; con đổi frame, bị cửa sổ che, hoặc đi dưới con trỏ đứng yên thì cũng tính lại click-through. */
   const redraw = () => {
-    for (const { pet, view } of members) view.update(pet, world.occluders(pet), blend.at(pet, step.alpha));
+    for (const { pet, view, action, teleport } of members) {
+      view.update(pet, world.occluders(pet), blend.at(pet, step.alpha));
+      action.update(view.foot ?? pet, view.width, view.height, performance.now(), pet.facing);
+      teleport.update(performance.now());
+    }
     ambience.place(performance.now());
     refreshClickThrough();
     refreshInterest();
@@ -304,6 +318,116 @@ async function start(): Promise<void> {
     setResting(false);
     last = performance.now();
     requestAnimationFrame(frame);
+  };
+
+  type ComboPhase = "transform" | "move" | "teleport-out" | "teleport-in" | "teleport-settle" | "attack" | "stun";
+  interface LongCombo {
+    long: Member;
+    queue: Member[];
+    phase: ComboPhase;
+    target: Member | null;
+    until: number;
+    position: Point | null;
+  }
+  let longCombo: LongCombo | null = null;
+
+  /** Kích cinematic: Long biến hình rồi lần lượt chạy tới quật đuôi từng pet khác. */
+  const startLongCombo = (long: Member, now: number) => {
+    if (longCombo) return;
+    long.aura.activate(now);
+    const queue = members.filter((member) => member !== long && !member.view.spriteHidden);
+    if (queue.length === 0) return;
+    long.view.setSpriteHidden(true);
+    long.action.play("transform", now);
+    longCombo = { long, queue, phase: "transform", target: null, until: now + 1_100, position: null };
+    wake();
+  };
+
+  const updateLongCombo = (now: number) => {
+    // Pet bị đánh chỉ biến mất tạm thời; không thay đổi cài đặt hoặc dữ liệu save.
+    for (const member of members) {
+      if (member.hiddenUntil !== 0 && now >= member.hiddenUntil) {
+        member.hiddenUntil = 0;
+        member.view.setSpriteHidden(false);
+      }
+    }
+    const combo = longCombo;
+    if (!combo) return;
+    const { long } = combo;
+    if (combo.position) {
+      long.pet.x = combo.position.x;
+      long.pet.y = combo.position.y;
+    }
+    if (combo.phase === "transform") {
+      if (now < combo.until) return;
+      long.action.stop();
+      long.view.setSpriteHidden(false);
+      combo.phase = "move";
+    }
+    if (combo.phase === "move") {
+      const target = combo.target ?? combo.queue[0];
+      if (!target) { longCombo = null; return; }
+      combo.target = target;
+      // Khóa hành vi tự đi trong cinematic để mục tiêu không trôi khỏi Long.
+      const direction: Facing = target.pet.x >= long.pet.x ? 1 : -1;
+      const targetFacing: Facing = direction === 1 ? -1 : 1;
+      target.pet.pause(targetFacing, 1);
+      // Luôn tốc biến, kể cả cùng độ cao: không để state đi bộ làm hai pet bị khóa tại chỗ.
+      long.view.setSpriteHidden(true);
+      long.teleport.play({ x: long.pet.x, y: long.pet.y }, long.view.width, long.view.height, direction, false, now);
+      combo.phase = "teleport-out";
+      combo.until = now + 180;
+      return;
+    }
+    if (combo.phase === "teleport-out") {
+      if (now < combo.until) return;
+      const target = combo.target;
+      if (!target) { longCombo = null; return; }
+      const direction: Facing = target.pet.x >= long.pet.x ? 1 : -1;
+      const reach = (long.view.width + target.view.width) * 0.42;
+      combo.position = { x: target.pet.x - direction * reach, y: target.pet.y };
+      long.pet.facing = direction;
+      long.teleport.play(combo.position, long.view.width, long.view.height, direction, true, now);
+      combo.phase = "teleport-in";
+      combo.until = now + 180;
+      return;
+    }
+    if (combo.phase === "teleport-in") {
+      if (now < combo.until) return;
+      // Vệt xuất hiện chạy hết trước, sau đó Long hiện rõ 100 ms rồi mới quật.
+      long.view.setSpriteHidden(false);
+      combo.phase = "teleport-settle";
+      combo.until = now + 100;
+      return;
+    }
+    if (combo.phase === "teleport-settle") {
+      if (now < combo.until) return;
+      long.view.setSpriteHidden(true);
+      long.action.play("tail-swipe", now);
+      combo.phase = "attack";
+      combo.until = now + 650;
+      return;
+    }
+    if (combo.phase === "attack") {
+      if (now < combo.until) return;
+      long.action.stop();
+      long.view.setSpriteHidden(false);
+      combo.position = null;
+      combo.target?.pet.startle();
+      combo.phase = "stun";
+      combo.until = now + 550;
+      return;
+    }
+    if (now < combo.until) return;
+    const target = combo.target;
+    if (target) {
+      target.hiddenUntil = now + 5_000;
+      target.view.setSpriteHidden(true);
+      combo.queue.shift();
+    }
+    combo.target = null;
+    combo.position = null;
+    combo.phase = "move";
   };
 
   let moving = false;
@@ -332,6 +456,12 @@ async function start(): Promise<void> {
       ambience.tellTime(pet);
       wake();
     },
+    onAura: (pet) => {
+      const member = members.find((candidate) => candidate.pet === pet);
+      if (member?.pack !== "c-long") return;
+      startLongCombo(member, performance.now());
+      wake();
+    },
   });
 
   const ambience = new Ambience(
@@ -351,8 +481,14 @@ async function start(): Promise<void> {
 
   const addMember = (pack: string | null, sprite: SpriteSet, spot?: Spot) => {
     const view = new PetView(sprite, container, size);
+    const aura = new AuraEffect();
+    const action = new LongActionEffect();
+    const teleport = new TeleportStreakEffect();
     const effect = new WeatherEffect();
+    view.attach(aura.element, true);
     view.attach(effect.element);
+    view.attach(action.element);
+    view.attach(teleport.element);
     const pet = world.spawn({
       id: pack ?? PLACEHOLDER_ID,
       x: spot?.x ?? spawnX(view.width),
@@ -366,7 +502,7 @@ async function start(): Promise<void> {
     const previous: PetSnapshot | undefined =
       restoring.get(pet.id) ?? (members.length === 0 ? restoring.get(LEGACY_ID) : undefined);
     if (previous) pet.restore(previous);
-    const member = { pack, pet, view, effect };
+    const member = { pack, pet, view, effect, aura, action, teleport, hiddenUntil: 0 };
     members.push(member);
     ambience.adopt(member);
   };

@@ -106,7 +106,7 @@ test("Mực's dragged edit changes only the four dragged source frames", () => {
 });
 
 test("consistent idle and alternating gait edits preserve every other silhouette and scale", () => {
-  for (const pet of PETS) {
+  for (const pet of PETS.filter((pet) => pet.locomotion)) {
     const edited = prepareFrames({ ...pet, poses: undefined });
     const original = prepareFrames({ ...pet, poses: undefined, locomotion: undefined });
     const kept = new Set((pet.keep ?? []).map((name) => ROWS.findIndex(([row]) => row === name)));
@@ -118,7 +118,7 @@ test("consistent idle and alternating gait edits preserve every other silhouette
 });
 
 test("redrawn walk/run sheets keep the character at the atlas idle height", () => {
-  for (const pet of PETS) {
+  for (const pet of PETS.filter((pet) => pet.locomotion)) {
     const edited = prepareFrames({ ...pet, poses: undefined });
     const original = prepareFrames({ ...pet, poses: undefined, locomotion: undefined });
     const idle = (frames) => frames.slice(0, 4).map((f) => boundsOf(f).height).sort((a, b) => a - b)[2];

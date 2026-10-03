@@ -21,14 +21,15 @@ desktop-pet/
 
 ## Nhân vật
 
-21 nhân vật tự vẽ cho dự án. Chọn trong **Cài đặt… → Nhân vật**, bấm một ô để thêm hoặc bớt nhân vật
+22 nhân vật tự vẽ cho dự án. Chọn trong **Cài đặt… → Nhân vật**, bấm một ô để thêm hoặc bớt nhân vật
 đó: tối đa 3 con cùng sống trên màn hình, luôn còn ít nhất một con (16 nhân vật mỗi trang, lật bằng
 mũi tên, chấm trang hoặc lăn chuột). Gồm Momo (mặc định), Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn,
-Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp, Frobu, Byte và Patch. Nhân vật nào cũng đủ 12
+Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp, Frobu, Long, Byte và Patch. Nhân vật nào cũng đủ 12
 animation: 9 của Phase 1 cộng leo, ngồi mép, nhảy. Xem chuyển động bằng [sprite studio](assets/sprite-sources/index.html) (mở
 thẳng bằng trình duyệt), thiết kế từng nhân vật ở [assets/sprite-sources/README.md](assets/sprite-sources/README.md).
 
-Định dạng `pet.json` và cách thêm nhân vật: [assets/README.md](assets/README.md).
+Định dạng `pet.json`: [assets/README.md](assets/README.md). Hướng dẫn đầy đủ để tạo và thêm nhân vật mới:
+[CREATE_PET.md](CREATE_PET.md).
 
 ## Yêu cầu
 
@@ -128,11 +129,12 @@ Logo nguồn ở [`assets/icon.png`](assets/icon.png), dùng chung cho app, syst
 (cách thay: [assets/README.md](assets/README.md#thay-logo)). Build và Release trên GitHub tự tạo bộ
 icon từ logo này trước khi compile.
 
-### Tự build khi push lên `main`
+### Tự build khi push lên `main` hoặc `test`
 
-Mỗi lần push lên `main`, workflow [`.github/workflows/build.yml`](.github/workflows/build.yml) chạy
+Mỗi lần push lên `main` hoặc `test`, workflow [`.github/workflows/build.yml`](.github/workflows/build.yml) chạy
 typecheck, test, `cargo test` rồi build file `.exe` cho Windows (mất khoảng 10–15 phút lần đầu, các
-lần sau nhanh hơn nhờ cache).
+lần sau nhanh hơn nhờ cache). Nhánh `test` dùng để tải artifact kiểm thử trước khi merge vào `main`;
+workflow này không tạo GitHub Release.
 
 Tải về: GitHub → tab **Actions** → bấm vào lần chạy mới nhất → mục **Artifacts** ở cuối trang. Mỗi
 file là một artifact, tải về là file `.exe` luôn, không phải zip (giữ 30 ngày). Trước đây cả hai nằm
