@@ -82,6 +82,35 @@ export const OCCASION_NAME_MAX = 40;
 export const OCCASION_MESSAGE_MAX = 80;
 export const OCCASION_DAYS_MAX = 10;
 
+/**
+ * Thời tiết quanh pet, khớp `Sky` trong preview.rs. Trời không mây: ban ngày là `sunny` (mùa xuân thì
+ * `petals`), ban đêm là `clear` (sao), xem `daySky` trong packages/sim.
+ */
+export type Sky = "sunny" | "clear" | "cloudy" | "fog" | "rain" | "snow" | "storm" | "petals";
+
+/**
+ * Xem thử thời tiết, nhiệt độ (mục Xem thử trong Cài đặt), khớp `WeatherPreview` trong preview.rs: `null` là
+ * theo trời thật, cả hai `null` là thôi xem thử. Xem thử kéo dài `PREVIEW_SECONDS` giây.
+ */
+export interface WeatherPreview {
+  sky: Sky | null;
+  /** °C. */
+  temperature: number | null;
+}
+
+/** Overlay đang xem thử gì (nút đang bật trong Cài đặt), khớp `PreviewState` trong preview.rs. */
+export interface PreviewState extends WeatherPreview {
+  /** Hết xem thử thời tiết, nhiệt độ lúc này (ms từ 1970); `null` là không xem thử. */
+  until: number | null;
+  /** Con ma đang bay. */
+  ghost: boolean;
+}
+
+export const PREVIEW_SECONDS = 30;
+/** Nút Nóng, Lạnh trong mục Xem thử (°C). */
+export const PREVIEW_HOT = 36;
+export const PREVIEW_COLD = 8;
+
 /** Cài đặt người dùng (command `get_settings` / `set_settings`), khớp `Settings` trong settings.rs. */
 export interface Settings {
   /** Cỡ nhân vật so với cỡ gốc của sprite pack, 0.5–2. */
@@ -95,8 +124,10 @@ export interface Settings {
   pets: string[];
   /** Thành phố để lấy thời tiết thật; `null` là thời tiết giả lập, không gọi mạng. */
   city: City | null;
-  /** Hiệu ứng thời tiết quanh pet (mưa, tuyết, sương mù, sấm, cánh hoa). */
+  /** Hiệu ứng thời tiết quanh pet (nắng, mây, sao, mưa, tuyết, sương mù, sấm, cánh hoa; nóng, lạnh). */
   weather: boolean;
+  /** Nhãn nhiệt độ cạnh pet (cần chọn thành phố). */
+  temperatureTag: boolean;
   /** Pet nói câu cho vui (chào nhau, thời tiết). */
   chatter: boolean;
   /** Lịch sự kiện: đúng dịp thì một con nói câu của dịp đó. */

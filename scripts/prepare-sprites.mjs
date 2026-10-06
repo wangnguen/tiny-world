@@ -44,7 +44,7 @@ const ROWS = [
 // small palette shifts a regenerated sheet causes.
 const PETS = [
   {
-    source: "momo", folder: "a-momo", name: "Momo — Axolotl",
+    source: "momo", folder: "a-momo", mouthY: 127, name: "Momo — Axolotl",
     poses: [{ image: "poses-v3.png", rows: ["idle", "fall", "land", "dizzy"] }, { image: "fix-v1.png", rows: ["ref", "react", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "dragged", "dizzy", "fall"] }],
     palette: "pose-palette.json",
     // Walk frame 2's far hind leg is gill coral and its lower gill is only an outline.
@@ -52,34 +52,34 @@ const PETS = [
     fill: [{ row: "walk", frame: 2, at: [88, 131], box: [83, 121, 109, 141], color: "#fd6159" }],
   },
   {
-    source: "bong", folder: "b-bong", name: "Bông — Bunny", dizzy: 1,
+    source: "bong", folder: "b-bong", mouthY: 120, name: "Bông — Bunny", dizzy: 1,
     poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "land"] }],
     // The redrawn far legs are tan; both legs are cream in the design.
     recolor: { rows: ["idle", "walk", "run", "fall"], colors: { "#b4967d": "#ebc6a3", "#d6a584": "#fbd5b7" } },
   },
-  { source: "kitsu", folder: "b-kitsu", name: "Kitsu — Fox", poses: { image: "fix-v1.png", rows: ["ref", "walk", "run", "fall"] } },
-  { source: "mam", folder: "c-mam", name: "Mầm — Sprout", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "react", "dragged"] }], reuse: { climb: [2, 1, 2, 3] } },
-  { source: "bip", folder: "c-bip", name: "Bíp — Robot", poses: [{ image: "fix-v1.png", rows: ["ref", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "climb", "perch"] }] },
-  { source: "lumi", folder: "c-lumi", name: "Lumi — Star Spirit", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "climb"] }], reuse: { dragged: [0, 1, 0, 3] } },
-  { source: "nam", folder: "c-nam", name: "Nấm — Mushroom", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep", "fall", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "climb"] }] },
-  { source: "may", folder: "c-may", name: "Mây — Cloud", poses: { image: "fix-v3.png", rows: ["ref", "dragged", "climb"] }, reuse: { fall: [0, 1, 0, 3] } },
-  { source: "tan", folder: "c-tan", name: "Tàn — Ember", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "run"] }], reuse: { climb: [0, 3, 2, 3] } },
-  { source: "reu", folder: "c-reu", name: "Rêu — Leaf Dragon", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "land", "dragged"] }], reuse: { idle: [0, 1, 3, 3], fall: [0, 3, 0, 3] } },
-  { source: "cuc", folder: "c-cuc", name: "Cục — Pebble", atlas: "atlas-v2.png", poses: [{ image: "fix-v1.png", rows: ["ref", "fall", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "land"] }] },
+  { source: "kitsu", folder: "b-kitsu", mouthY: 116, name: "Kitsu — Fox", poses: { image: "fix-v1.png", rows: ["ref", "walk", "run", "fall"] } },
+  { source: "mam", folder: "c-mam", mouthY: 110, name: "Mầm — Sprout", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "react", "dragged"] }], reuse: { climb: [2, 1, 2, 3] } },
+  { source: "bip", folder: "c-bip", mouthY: 112, name: "Bíp — Robot", poses: [{ image: "fix-v1.png", rows: ["ref", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "climb", "perch"] }] },
+  { source: "lumi", folder: "c-lumi", mouthY: 128, name: "Lumi — Star Spirit", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "climb"] }], reuse: { dragged: [0, 1, 0, 3] } },
+  { source: "nam", folder: "c-nam", mouthY: 130, name: "Nấm — Mushroom", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep", "fall", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "climb"] }] },
+  { source: "may", folder: "c-may", mouthY: 106, name: "Mây — Cloud", poses: { image: "fix-v3.png", rows: ["ref", "dragged", "climb"] }, reuse: { fall: [0, 1, 0, 3] } },
+  { source: "tan", folder: "c-tan", mouthY: 116, name: "Tàn — Ember", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "run"] }], reuse: { climb: [0, 3, 2, 3] } },
+  { source: "reu", folder: "c-reu", mouthY: 115, name: "Rêu — Leaf Dragon", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "land", "dragged"] }], reuse: { idle: [0, 1, 3, 3], fall: [0, 3, 0, 3] } },
+  { source: "cuc", folder: "c-cuc", mouthY: 107, name: "Cục — Pebble", atlas: "atlas-v2.png", poses: [{ image: "fix-v1.png", rows: ["ref", "fall", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "land"] }] },
   // The redrawn walk/run lose one or two of Mực's five tentacles; keep the atlas gait.
-  { source: "muc", folder: "c-muc", name: "Mực — Octopus", overrides: { dragged: "dragged-v2.png" }, keep: ["walk", "run"], poses: [{ image: "fix-v1.png", rows: ["ref", "idle", "fall"] }, { image: "fix-v2.png", rows: ["ref", "fall", "climb"] }] },
+  { source: "muc", folder: "c-muc", mouthY: 107, name: "Mực — Octopus", overrides: { dragged: "dragged-v2.png" }, keep: ["walk", "run"], poses: [{ image: "fix-v1.png", rows: ["ref", "idle", "fall"] }, { image: "fix-v2.png", rows: ["ref", "fall", "climb"] }] },
   {
-    source: "dua", folder: "c-dua", name: "Dứa — Pineapple", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "react"] }], reuse: { climb: [0, 0, 2, 2] },
+    source: "dua", folder: "c-dua", mouthY: 120, name: "Dứa — Pineapple", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "react"] }], reuse: { climb: [0, 0, 2, 2] },
   },
-  { source: "su", folder: "c-su", name: "Su — Astronaut", dizzy: 1, poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "dizzy", "react"] }], reuse: { dragged: [0, 1, 2, 1] } },
-  { source: "bap", folder: "c-bap", name: "Bắp — Bumblebee", poses: [{ image: "fix-v1.png", rows: ["ref", "fall", "dragged", "dizzy"] }, { image: "fix-v2.png", rows: ["ref", "jump"] }] },
-  { source: "boggo", folder: "c-boggo", name: "Boggo — Coder Frog", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep", "fall", "dizzy"] }, { image: "fix-v2.png", rows: ["ref", "react", "climb"] }] },
-  { source: "gloop", folder: "c-gloop", name: "Gloop — Chaos Frog", poses: { image: "fix-v2.png", rows: ["ref", "land", "react"] } },
+  { source: "su", folder: "c-su", mouthY: 115, name: "Su — Astronaut", dizzy: 1, poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "dizzy", "react"] }], reuse: { dragged: [0, 1, 2, 1] } },
+  { source: "bap", folder: "c-bap", mouthY: 117, name: "Bắp — Bumblebee", poses: [{ image: "fix-v1.png", rows: ["ref", "fall", "dragged", "dizzy"] }, { image: "fix-v2.png", rows: ["ref", "jump"] }] },
+  { source: "boggo", folder: "c-boggo", mouthY: 100, name: "Boggo — Coder Frog", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep", "fall", "dizzy"] }, { image: "fix-v2.png", rows: ["ref", "react", "climb"] }] },
+  { source: "gloop", folder: "c-gloop", mouthY: 100, name: "Gloop — Chaos Frog", poses: { image: "fix-v2.png", rows: ["ref", "land", "react"] } },
   // fix-v2.png came back with its outer columns cropped (react 0 loses the back, react 3 half the face):
   // react replays the two intact middle poses.
-  { source: "bep", folder: "c-bep", name: "Bẹp — Grumpy Toad", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep"] }, { image: "fix-v2.png", rows: ["ref", "react"] }], reuse: { fall: [0, 1, 0, 3], react: [1, 1, 2, 2] } },
+  { source: "bep", folder: "c-bep", mouthY: 114, name: "Bẹp — Grumpy Toad", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep"] }, { image: "fix-v2.png", rows: ["ref", "react"] }], reuse: { fall: [0, 1, 0, 3], react: [1, 1, 2, 2] } },
   {
-    source: "frobu", folder: "c-frobu", name: "Frobu — Night Frog", poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "run", "land"] },
+    source: "frobu", folder: "c-frobu", mouthY: 110, name: "Frobu — Night Frog", poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "run", "land"] },
     // A dark eye-like blot on the forehead in react frame 2.
     // Paint it over with the head's shading: darker under the headphone band, lighter below.
     recolor: [
@@ -88,12 +88,12 @@ const PETS = [
     ],
   },
   {
-    source: "long", folder: "c-long", name: "Long — Eastern Dragon", grid: true,
+    source: "long", folder: "c-long", mouthY: 127, name: "Long — Eastern Dragon", grid: true,
     // The atlas poses overlap their fixed cells; redraw the affected actions separately.
     poses: { image: "fix-v1.png", rows: ["ref", "dizzy", "climb"] }, poseScale: 0.95,
   },
-  { source: "byte", folder: "c-byte", name: "Byte — Coder Penguin", singleSheet: true, poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "sleep", "fall"] }, reuse: { fall: [2, 1, 2, 3] } },
-  { source: "patch", folder: "c-patch", name: "Patch — Coder Red Panda", singleSheet: true, dizzy: 1, poses: [{ image: "fix-v1.png", rows: ["ref", "idle"] }, { image: "fix-v2.png", rows: ["ref", "run"] }], reuse: { dragged: [0, 2, 0, 2] } },
+  { source: "byte", folder: "c-byte", mouthY: 118, name: "Byte — Coder Penguin", singleSheet: true, poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "sleep", "fall"] }, reuse: { fall: [2, 1, 2, 3] } },
+  { source: "patch", folder: "c-patch", mouthY: 116, name: "Patch — Coder Red Panda", singleSheet: true, dizzy: 1, poses: [{ image: "fix-v1.png", rows: ["ref", "idle"] }, { image: "fix-v2.png", rows: ["ref", "run"] }], reuse: { dragged: [0, 2, 0, 2] } },
 ].map((pet) => ({
   ...pet,
   // New packs can use their complete atlas alone; corrected locomotion is optional.
@@ -733,7 +733,7 @@ async function prepare(pet) {
   const files = new Map(await Promise.all([...strips].map(async ([file, image]) => [file, await encodeWebp(image)])));
   mkdirSync(dir, { recursive: true });
   for (const [file, data] of files) writeFileSync(join(dir, file), data);
-  const manifest = { name: pet.name, frameWidth: SIZE, frameHeight: SIZE, scale: DISPLAY_SIZE / SIZE, pixelArt: true, facing: "right", anchor: { x: SIZE / 2, y: BASELINE + 1 }, animations };
+  const manifest = { name: pet.name, frameWidth: SIZE, frameHeight: SIZE, scale: DISPLAY_SIZE / SIZE, pixelArt: true, facing: "right", anchor: { x: SIZE / 2, y: BASELINE + 1 }, mouthY: pet.mouthY, animations };
   writeFileSync(join(dir, "pet.json"), JSON.stringify(manifest, null, 2) + "\n");
   // Ảnh pet.json không dùng tới (PNG trước khi đổi sang WebP, sheet gộp cũ...) thì xoá, Vite sẽ gom cả chúng vào bản build.
   for (const file of packImages(dir)) if (!files.has(file)) rmSync(join(dir, file));
@@ -759,6 +759,7 @@ async function check(pets = PETS) {
     assert.equal(manifest.frameWidth * manifest.scale, DISPLAY_SIZE, `${pet.folder}: default display size`);
     assert.equal(manifest.scale * 2, 1, `${pet.folder}: native source resolution at 200%`);
     assert.deepEqual(manifest.anchor, { x: SIZE / 2, y: BASELINE + 1 });
+    assert.equal(manifest.mouthY, pet.mouthY, `${pet.folder}: mouth row`);
     assert.deepEqual(Object.keys(manifest.animations).sort(), [...ANIMATION_NAMES].sort());
     assert.ok(!existsSync(join(dir, "phase2")), `${pet.folder}: stale phase2/ folder; regenerate sprites`);
     // Exactly the images pet.json uses: Vite bundles every image in the folder,

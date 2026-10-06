@@ -2,19 +2,35 @@
  * Mọi câu pet nói (speech bubble), gom một chỗ để dễ sửa câu chữ. Giọng thân mật, dùng ":)))" thay emoji.
  */
 import type { LunarDate } from "./lunar";
-import type { Sky } from "./weather";
+import type { Sky, Warmth } from "./weather";
 
 /** Câu chào khi gặp nhau (chọn ngẫu nhiên một câu). */
 export const GREETINGS = ["Chào :)))", "Xin chào :)))", "Ơ, cậu đây rồi!", ":))))?", "Đi đâu đấy :)?"];
 
-/** Trời vừa chuyển sang kiểu thời tiết này: một con nói một câu (theo giới hạn tần suất). */
-export const SKY_LINES: Partial<Record<Sky, string>> = {
-  rain: "Mưa rồi :(",
-  storm: "Sấm to quá :(((",
-  snow: "Tuyết rơi kìa :)))",
-  fog: "Sương mù dày ghê :)",
-  petals: "Hoa rơi đẹp quá :)))",
+/** Trời vừa chuyển sang kiểu thời tiết này: một con nói một câu (theo giới hạn tần suất). [câu, mặt cười] */
+const SKY_TALK: Record<Sky, [string, string]> = {
+  sunny: ["Nắng đẹp ghê", ":)))"],
+  clear: ["Trời quang, sao đẹp ghê", ":)))"],
+  cloudy: ["Trời nhiều mây quá", ":)"],
+  rain: ["Mưa rồi", ":("],
+  storm: ["Sấm to quá", ":((("],
+  snow: ["Tuyết rơi kìa", ":)))"],
+  fog: ["Sương mù dày ghê", ":)"],
+  petals: ["Hoa rơi đẹp quá", ":)))"],
 };
+
+const degrees = (temperature: number) => `${Math.round(temperature)}°C`;
+
+/** Câu khi trời vừa đổi, kèm nhiệt độ nếu biết, ví dụ "Mưa rồi, 24°C :(". Nắng mà nóng thì kêu nóng. */
+export function skyLine(sky: Sky, temperature: number | null, warmth: Warmth | null): string {
+  const [text, mood] = sky === "sunny" && warmth === "hot" ? ["Nắng to quá", ":((("] : SKY_TALK[sky];
+  return temperature === null ? `${text} ${mood}` : `${text}, ${degrees(temperature)} ${mood}`;
+}
+
+/** Câu khi trời vừa chuyển nóng hay lạnh (thời tiết không đổi), ví dụ "Nóng quá, 36°C :(((". */
+export function warmthLine(warmth: Warmth, temperature: number): string {
+  return warmth === "hot" ? `Nóng quá, ${degrees(temperature)} :(((` : `Lạnh ghê, ${degrees(temperature)} :(((`;
+}
 
 /** Không lấy được thời tiết: mất mạng, hoặc máy chủ thời tiết lỗi. */
 export const NO_NETWORK = "Không có mạng :))";
@@ -35,15 +51,16 @@ export const SAVE_SPAM_LINE = "Lưu rồi mà :((((";
 /** Click chuột phải vào pet mà chưa bật chat. */
 export const CHAT_OFF_LINE = "Bật Chat với pet trong Cài đặt rồi nói chuyện nhé :)))";
 
-/** Thời tiết khi bấm đúp vào pet (`clear` mà mùa xuân thì là `petals`). */
+/** Thời tiết khi bấm đúp vào pet (trời nắng mùa xuân thì là `petals`). */
 export const SKY_NAMES: Record<Sky, string> = {
+  sunny: "trời nắng",
   clear: "trời quang",
   cloudy: "nhiều mây",
   fog: "sương mù",
   rain: "mưa",
   snow: "tuyết",
   storm: "có sấm",
-  petals: "trời quang",
+  petals: "trời nắng",
 };
 
 /** Đã chọn thành phố mà chưa lấy được thời tiết lần nào (hoặc kết quả đã quá cũ). */
@@ -66,7 +83,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 /** Một dòng thời tiết, ví dụ "Hà Nội: mưa, 27°C"; lấy không được thì là câu báo lỗi (`problem`). */
 export function weatherLine(weather: PlaceWeather): string {
   if (weather.sky && weather.temperature !== undefined) {
-    return `${weather.place}: ${SKY_NAMES[weather.sky]}, ${Math.round(weather.temperature)}°C`;
+    return `${weather.place}: ${SKY_NAMES[weather.sky]}, ${degrees(weather.temperature)}`;
   }
   return weather.problem ?? `${weather.place}: ${WEATHER_UNKNOWN}`;
 }

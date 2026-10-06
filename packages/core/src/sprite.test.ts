@@ -37,6 +37,13 @@ describe("parseSpriteManifest", () => {
     expect(manifest.animations.idle.image).toBe("sheets/Idle.png");
   });
 
+  it("hàng miệng không bắt buộc, phải nằm trong frame", () => {
+    expect(parseSpriteManifest(minimal).mouthY).toBeUndefined();
+    expect(parseSpriteManifest({ ...minimal, mouthY: 20 }).mouthY).toBe(20);
+    expect(() => parseSpriteManifest({ ...minimal, mouthY: 40 })).toThrow("mouthY");
+    expect(() => parseSpriteManifest({ ...minimal, mouthY: "giữa" })).toThrow("mouthY");
+  });
+
   it("bắt buộc có idle", () => {
     expect(() =>
       parseSpriteManifest({ ...minimal, animations: { walk: { image: "Walk.png", fps: 8 } } }),

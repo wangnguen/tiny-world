@@ -554,6 +554,106 @@ h2 {
   stroke: #b48cff;
 }
 
+.icon--play {
+  stroke: #7fd8be;
+}
+
+/* Mục Xem thử: mỗi hàng một nhóm nút (thời tiết, nhiệt độ, sự kiện), nút đang bật sáng lên. */
+.preview-row {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  align-items: start;
+  gap: 8px;
+}
+
+.preview-row__label {
+  padding-top: 7px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.segment--icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sky-icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+}
+
+.sky-icon svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.segment--hot {
+  color: #ffb38a;
+}
+
+.segment--cold {
+  color: #9cc4ff;
+}
+
+.segment--hot.segment--active,
+.segment--hot.segment--active:hover {
+  border-color: #ff9a6b;
+  background: #8a3a1e;
+  color: #fff;
+}
+
+.segment--cold.segment--active,
+.segment--cold.segment--active:hover {
+  border-color: #7ea8ff;
+  background: #1f4f9c;
+  color: #fff;
+}
+
+.segment:disabled {
+  cursor: default;
+}
+
+/* Dòng trạng thái xem thử: đang xem gì, còn bao lâu (vạch dưới ngắn dần), nút Dừng. */
+.preview-status {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 5px 6px 5px 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(15, 25, 48, 0.8);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.preview-status--on {
+  border-color: #3f5f9f;
+  color: var(--text);
+}
+
+.preview-status__text {
+  flex: 1;
+}
+
+.preview-status__bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: #7fd8be;
+  transition: width 0.5s linear;
+}
+
+.hint--error {
+  color: var(--danger);
+}
+
 /* Dòng chữ nhỏ giải thích dưới tiêu đề mục. */
 .hint {
   margin: 0;

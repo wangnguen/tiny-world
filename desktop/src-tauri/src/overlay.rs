@@ -231,6 +231,11 @@ impl Overlay {
         !self.user_hidden.load(Ordering::Relaxed) && !self.auto_hidden.load(Ordering::Relaxed)
     }
 
+    /// Tray đang bật Tạm dừng.
+    pub fn is_paused(&self) -> bool {
+        self.paused.load(Ordering::Relaxed)
+    }
+
     /// Pet đang ngủ (trên taskbar), overlay dừng vòng lặp vẽ.
     pub fn is_resting(&self) -> bool {
         self.resting.load(Ordering::Relaxed)

@@ -26,4 +26,10 @@ export const EVENTS = {
   chatTarget: "chat-target",
   /** Không có payload, chỉ gửi cho overlay: cửa sổ chat vừa đóng. */
   chatClosed: "chat-closed",
+  /** `WeatherPreview`, chỉ gửi cho overlay: người dùng bấm xem thử thời tiết, nhiệt độ trong Cài đặt. */
+  weatherPreview: "weather-preview",
+  /** Không có payload, chỉ gửi cho overlay: người dùng bấm xem thử con ma trong Cài đặt. */
+  ghostPreview: "ghost-preview",
+  /** `PreviewState`, chỉ gửi cho cửa sổ Cài đặt: overlay vừa đổi thứ đang xem thử. */
+  previewChanged: "preview-changed",
 } as const;

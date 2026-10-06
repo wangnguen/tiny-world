@@ -39,6 +39,11 @@ export class AuraEffect {
     return performance.now() < this.until;
   }
 
+  /** Vòng lặp phải vẽ lại trong vòng chừng này ms; `Infinity` nếu aura đang tắt. */
+  get frameMs(): number {
+    return this.animating ? AURA_FRAME_MS : Number.POSITIVE_INFINITY;
+  }
+
   /** Bật aura trong một khoảng ngẫu nhiên 5–7 giây; kích lại thì bắt đầu một lượt mới. */
   activate(now: number): void {
     this.until = now + AURA_MIN_MS + Math.random() * (AURA_MAX_MS - AURA_MIN_MS);

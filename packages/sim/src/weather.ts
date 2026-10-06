@@ -1,17 +1,31 @@
+import type { Sky } from "@tinyworld/core";
 import { Rng } from "./rng";
 
-/** Thời tiết quanh pet. `clear`, `cloudy` không có hiệu ứng gì. */
-export type Sky = "clear" | "cloudy" | "fog" | "rain" | "snow" | "storm" | "petals";
+/** Thời tiết quanh pet (khai báo ở packages/core để Cài đặt và Rust dùng chung). */
+export type { Sky };
 
-/** Thời tiết có hiệu ứng vẽ quanh pet. */
-export const ANIMATED_SKIES: ReadonlySet<Sky> = new Set(["fog", "rain", "snow", "storm", "petals"]);
+/** Từ nhiệt độ này trở lên là nóng (hơi nóng bốc lên quanh pet), °C. */
+export const HOT_FROM = 33;
+/** Từ nhiệt độ này trở xuống là lạnh (pet thở ra khói), °C. */
+export const COLD_UNTIL = 15;
+
+export type Warmth = "hot" | "cold";
+
+/** Nóng, lạnh hay bình thường (`null`, kể cả khi chưa biết nhiệt độ). */
+export function warmthOf(temperature: number | null): Warmth | null {
+  if (temperature === null) return null;
+  if (temperature >= HOT_FROM) return "hot";
+  if (temperature <= COLD_UNTIL) return "cold";
+  return null;
+}
 
 /** Kết quả thật (`WeatherReport`) quá chừng này giây thì coi như không có. */
 export const REPORT_MAX_AGE = 3 * 3600;
 
 /**
  * Mã thời tiết WMO (Open-Meteo) thành thời tiết quanh pet: 0–3 quang/nhiều mây, 45/48 sương mù, 51–67 và
- * 80–82 mưa, 71–77 và 85–86 tuyết, 95–99 sấm. Mã lạ thì coi như nhiều mây.
+ * 80–82 mưa, 71–77 và 85–86 tuyết, 95–99 sấm. Mã lạ thì coi như nhiều mây. Trời quang ban ngày: gọi `daySky`
+ * sau đó.
  */
 export function skyOf(code: number): Sky {
   if (code <= 1) return "clear";
@@ -23,9 +37,13 @@ export function skyOf(code: number): Sky {
   return "cloudy";
 }
 
-/** Mùa xuân (tháng 2–4, quanh Tết tới hết tháng 4), trời quang, ban ngày: cánh hoa rơi. `month`: 0–11. */
-export function withPetals(sky: Sky, month: number, day: boolean): Sky {
-  return sky === "clear" && day && month >= 1 && month <= 3 ? "petals" : sky;
+/**
+ * Trời quang ban ngày là nắng; mùa xuân (tháng 2–4, quanh Tết tới hết tháng 4) thì cánh hoa rơi. Ban đêm vẫn
+ * là trời quang (sao). `month`: 0–11.
+ */
+export function daySky(sky: Sky, month: number, day: boolean): Sky {
+  if (sky !== "clear" || !day) return sky;
+  return month >= 1 && month <= 3 ? "petals" : "sunny";
 }
 
 type Season = "spring" | "summer" | "autumn" | "winter";
@@ -71,7 +89,7 @@ const SIMULATED_BLOCK_HOURS = 3;
 
 /**
  * Thời tiết giả lập (chưa chọn thành phố): đổi theo mùa mỗi 3 tiếng. Cùng ngày, cùng khung giờ thì luôn ra
- * cùng một thời tiết, mở lại app không bị đổi. Chưa có cánh hoa: gọi `withPetals` sau đó.
+ * cùng một thời tiết, mở lại app không bị đổi. Chưa phân nắng, cánh hoa: gọi `daySky` sau đó.
  */
 export function simulatedSky(date: Date): Sky {
   const block = Math.floor(date.getHours() / SIMULATED_BLOCK_HOURS);

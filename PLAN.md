@@ -199,9 +199,19 @@ Nội dung:
   đi ngủ thì nằm cạnh nhau. Không có chỉ số hay quan hệ
 - Ngày/đêm: đêm đi chậm hơn (`nightPace`), buồn ngủ sớm hơn (`sleepAfterNight`). Có thời tiết thật thì
   theo `is_day` (giờ mặt trời mọc/lặn thật), không thì 19:00–6:00 theo giờ ở thành phố đã chọn
-- Thời tiết chỉ quanh pet (mưa, tuyết, sương mù, sấm, cánh hoa): canvas nhỏ đi theo từng con, vẽ 12 fps,
-  hạt mờ dần ra xa. Trời quang, nhiều mây hay pet đang ngủ thì không vẽ gì. Có sấm thì chớp sáng và cả nhóm
-  giật mình. Trời đổi kiểu thì một con nói một câu (theo giới hạn câu nói cho vui)
+- Thời tiết chỉ quanh pet: canvas nhỏ đi theo từng con, cỡ theo thân thật của con đó (`PetView.body`, phần
+  có hình của frame đầu `idle`, không theo khung ảnh), hạt mờ dần ra xa. Mưa, tuyết, cánh hoa vẽ 12 fps;
+  nắng (tia nắng, lấp lánh), trời quang ban đêm (sao, sao băng), nhiều mây (mây pixel trên đỉnh đầu),
+  sương mù (vệt ngang quanh chân) vẽ 8 fps. Pet đang ngủ thì không vẽ gì. Có sấm thì chớp sáng và cả nhóm
+  giật mình. Trời đổi kiểu thì một con nói một câu kèm nhiệt độ (theo giới hạn câu nói cho vui)
+- Nóng lạnh theo nhiệt độ thật (`warmthOf`): từ 33°C vệt hơi nóng bốc lên hai bên thân; từ 15°C trở xuống
+  pet thở ra hơi nước từ miệng, thở cách nhau 3,4 giây lúc đứng, 1,4 giây lúc chạy. Miệng là mép mặt phía
+  trước ở hàng `mouthY` trong pet.json (đo ở frame đầu `idle`, lệch theo đỉnh đầu từng frame); pack không ghi
+  thì đoán chỗ nhô ra trước nhất của phần mặt. Nhãn nhiệt độ (`temperatureTag`) đứng sau lưng con đầu tiên
+- Mục Xem thử trong Cài đặt (preview.rs): `preview_weather` (một kiểu thời tiết, một mức nhiệt, 30 giây) và
+  `preview_ghost` gửi sang overlay; pet đang ẩn, tạm dừng thì lệnh báo lỗi. Overlay báo lại thứ đang xem thử
+  (`report_preview`), Rust giữ bản mới nhất (`get_preview`) và gửi `preview-changed` sang Cài đặt, nên nút
+  đang bật sáng lên, đếm ngược đúng như thứ đang vẽ, mở lại Cài đặt vẫn đúng
 - Bấm đúp vào một con: con đó nói giờ, thứ, ngày dương lịch, ngày âm lịch, và thời tiết ở thành phố đã
   chọn (`nowText`), ví dụ `15:04 · Thứ Năm 01/10`, `Âm lịch 21/8`, `Hà Nội: mưa, 27°C`. Âm lịch tính
   trên máy (thuật toán Hồ Ngọc Đức, múi giờ +7), không gọi mạng
@@ -216,7 +226,8 @@ Nội dung:
     lúc mở app, lúc đổi thành phố, rồi 30 phút một lần, gửi qua event `weather-changed`. Webview không gọi
     mạng. Kết quả gần nhất lưu ở `weather.json`, mở app lúc chưa có mạng vẫn dùng được nếu chưa quá 3 giờ
   - Mã WMO thành hiệu ứng: 0–3 quang/nhiều mây, 45/48 sương mù, 51–67 và 80–82 mưa, 71–77 và 85–86
-    tuyết, 95–99 sấm. Cánh hoa không có trong dữ liệu: rơi vào tháng 2–4 những ngày quang
+    tuyết, 95–99 sấm. Trời quang ban ngày (`is_day`) là nắng, ban đêm là sao (`daySky`). Cánh hoa không có
+    trong dữ liệu: rơi vào tháng 2–4 những ngày quang
   - Lỗi thì chờ lâu dần mới hỏi lại (1 phút, gấp đôi mỗi lần, tối đa 30 phút). Lần lỗi đầu của mỗi đợt
     Rust gửi `weather-failed`: một con nói "Không có mạng :))" (mất mạng, hết giờ chờ) hoặc "Không có
     thời tiết :))" (API trả lỗi); bấm đúp lúc đó cũng nói câu này thay cho thời tiết. Không có kết quả còn
@@ -232,8 +243,11 @@ Nội dung:
   Trung thu, Giáng sinh; bật tắt, sửa, xoá từng dịp, thêm dịp riêng (sinh nhật, ngày kỷ niệm), tối đa 30
   dịp. Đúng dịp thì một con nói câu của dịp đó mỗi ngày một lần. Không làm: đội mũ theo dịp (đặt mũ lên
   đầu bằng đo tự động lệch ở nhiều nhân vật, nhìn xấu)
-- Sự kiện hiếm: 2:00–2:30 sáng, có con còn thức thì một con ma bay ngang qua, mỗi đêm một lần; con nào
-  nó bay qua thì giật mình, con đầu tiên kêu "Ma... ma kìa :((("
+- Sự kiện hiếm: 2:00–2:30 sáng, người dùng đang ngồi máy (vừa có phím hay chuột trong một phút, không cần
+  pet còn thức: 3 phút không đụng tới là pet ngủ) thì một con ma bay qua, mỗi đêm một lần. Nó bay từ mép
+  này sang mép kia trong 14 giây, lượn lên xuống khắp chiều cao vùng làm việc và sà xuống ngang tầm đầu
+  từng con (`ghostAt` trong ghost.ts); con nào nó bay qua thì giật mình (đang ngủ thì tỉnh dậy), con đầu
+  tiên kêu "Ma... ma kìa :((("
 
 | Bước | Nội dung | Trạng thái |
 |---|---|---|
