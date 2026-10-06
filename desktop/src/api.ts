@@ -56,6 +56,8 @@ export const api = {
   getStats: () => invoke<ScreenStats>("get_stats"),
   /** Xoá hết giờ ngồi máy đã lưu. */
   clearStats: () => invoke<void>("clear_stats"),
+  /** Số ms từ lần có phím hay chuột cuối cùng (ở bất kỳ app nào); `null` nếu không đọc được. */
+  idleMs: () => invoke<number | null>("idle_ms"),
   /**
    * Mở cửa sổ chat với `pet` cạnh pet (`box`: khung của pet, CSS pixel của overlay). Trả về phía của cửa sổ so
    * với pet: -1 bên trái, 1 bên phải.

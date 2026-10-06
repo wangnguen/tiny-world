@@ -64,6 +64,8 @@ export interface AmbienceHost {
   live(): boolean;
   /** Chạy lại vòng lặp vẽ. */
   wake(): void;
+  /** Người dùng đang ngồi máy (vừa có phím hay chuột ở app bất kỳ). */
+  present(): Promise<boolean>;
 }
 
 /** Câu bắt buộc phải nói (không qua giới hạn câu nói cho vui); `key`: đánh dấu đã nói hôm nay. */
@@ -97,6 +99,8 @@ export class Ambience {
   private readonly ghost: Ghost;
   /** Các con đã bị con ma đang bay làm giật mình. */
   private scared = new Set<Pet>();
+  /** Đang hỏi Rust người dùng có ngồi máy không, để gọi con ma. */
+  private ghostPending = false;
   /** Vừa chọn thành phố mới: lấy được thời tiết ở đó thì một con báo luôn, để biết là đã chạy. */
   private announce = false;
 
@@ -200,11 +204,13 @@ export class Ambience {
     if (ghostX === null) this.scared.clear();
     else {
       for (const { pet, view } of residents) {
-        if (this.scared.has(pet) || pet.state === "sleep" || pet.vanished > 0) continue;
+        if (this.scared.has(pet) || pet.vanished > 0) continue;
         if (Math.abs(pet.x - ghostX) > view.width / 2) continue;
+        // Đang ngủ thì giật mình tỉnh dậy, đang thức thì nhảy dựng lên.
+        if (pet.state === "sleep") pet.wake();
+        else pet.startle();
         if (this.scared.size === 0) pet.say(GHOST_LINE);
         this.scared.add(pet);
-        pet.startle();
       }
     }
 
@@ -277,21 +283,33 @@ export class Ambience {
     }
 
     const ghostTime = hour === GHOST_HOUR && wall.getMinutes() < GHOST_MINUTES;
-    const residents = this.host.residents();
-    if (
-      this.settings.ghost &&
-      ghostTime &&
-      !this.ghost.flying &&
-      this.host.live() &&
-      !this.said.has(day, "ghost") &&
-      residents.some((r) => r.pet.state !== "sleep")
-    ) {
-      this.said.add(day, "ghost");
-      const height = Math.max(...residents.map((r) => r.view.height));
-      this.ghost.fly(world.bounds, height * GHOST_HEIGHT, performance.now());
-      changed = true;
+    if (this.settings.ghost && ghostTime && !this.ghost.flying && !this.said.has(day, "ghost")) {
+      this.summonGhost(day);
     }
     if (changed) this.host.wake();
+  }
+
+  /**
+   * Con ma bay qua nếu người dùng đang ngồi máy để còn thấy, kể cả khi cả nhóm đã ngủ: 3 phút không đụng tới
+   * là pet ngủ, nên chờ có con thức thì gần như không bao giờ thấy ma. Mỗi đêm một lần.
+   */
+  private summonGhost(day: string): void {
+    if (this.ghostPending || !this.host.live()) return;
+    this.ghostPending = true;
+    this.host
+      .present()
+      .then((present) => {
+        if (!present || this.ghost.flying || this.said.has(day, "ghost") || !this.host.live()) return;
+        const residents = this.host.residents();
+        if (residents.length === 0) return;
+        this.said.add(day, "ghost");
+        const height = Math.max(...residents.map((r) => r.view.height));
+        this.ghost.fly(this.host.world.bounds, height * GHOST_HEIGHT, performance.now());
+        this.host.wake();
+      })
+      .finally(() => {
+        this.ghostPending = false;
+      });
   }
 
   /** Thời tiết quanh pet: thành phố đã chọn thì theo thời tiết thật (chưa có thì không có gì), chưa chọn thì giả lập. */

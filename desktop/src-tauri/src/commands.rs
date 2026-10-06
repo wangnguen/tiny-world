@@ -1,6 +1,6 @@
 //! Tauri commands gọi từ frontend qua `invoke()`.
 
-use crate::activity::{Activity, StatsView};
+use crate::activity::{self, Activity, StatsView};
 use crate::autostart;
 use crate::chat::{self, Chat, ChatTarget};
 use crate::cursor::CursorInterest;
@@ -163,6 +163,12 @@ pub fn get_stats(activity: State<'_, Activity>) -> StatsView {
 #[tauri::command]
 pub fn clear_stats(activity: State<'_, Activity>) -> AppResult<()> {
     activity.clear()
+}
+
+/// Số ms từ lần có phím hay chuột cuối cùng: overlay biết người dùng có đang ngồi máy không (con ma).
+#[tauri::command]
+pub fn idle_ms() -> Option<u64> {
+    activity::idle_ms()
 }
 
 #[tauri::command]

@@ -107,7 +107,8 @@ Những thứ không cần bấm gì (tắt từng thứ trong tab **Thế giớ
 - Câu nói cho vui (chào nhau, kêu trời mưa): cả nhóm 15 phút mới được một câu
 - Lịch sự kiện: đúng dịp (Tết, Trung thu, Giáng sinh... hoặc dịp tự thêm, dương hoặc âm lịch) thì một con
   nói câu của dịp đó mỗi ngày một lần. Tab Thế giới ghi hôm nay có dịp nào
-- 2:00–2:30 sáng, có con còn thức thì một con ma bay ngang qua, mỗi đêm một lần
+- 2:00–2:30 sáng, đang ngồi máy (vừa có phím hay chuột trong một phút) thì một con ma bay ngang qua, mỗi
+  đêm một lần; con nào nó bay qua thì giật mình, đang ngủ cũng tỉnh dậy
 
 Tab **Sức khoẻ** (mặc định tắt hết, số liệu chỉ ở máy này):
 

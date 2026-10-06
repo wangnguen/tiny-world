@@ -232,8 +232,9 @@ Nội dung:
   Trung thu, Giáng sinh; bật tắt, sửa, xoá từng dịp, thêm dịp riêng (sinh nhật, ngày kỷ niệm), tối đa 30
   dịp. Đúng dịp thì một con nói câu của dịp đó mỗi ngày một lần. Không làm: đội mũ theo dịp (đặt mũ lên
   đầu bằng đo tự động lệch ở nhiều nhân vật, nhìn xấu)
-- Sự kiện hiếm: 2:00–2:30 sáng, có con còn thức thì một con ma bay ngang qua, mỗi đêm một lần; con nào
-  nó bay qua thì giật mình, con đầu tiên kêu "Ma... ma kìa :((("
+- Sự kiện hiếm: 2:00–2:30 sáng, người dùng đang ngồi máy (vừa có phím hay chuột trong một phút, không cần
+  pet còn thức: 3 phút không đụng tới là pet ngủ) thì một con ma bay ngang qua, mỗi đêm một lần; con nào
+  nó bay qua thì giật mình (đang ngủ thì tỉnh dậy), con đầu tiên kêu "Ma... ma kìa :((("
 
 | Bước | Nội dung | Trạng thái |
 |---|---|---|

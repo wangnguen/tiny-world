@@ -445,6 +445,11 @@ fn last_input() -> Option<(u64, u32)> {
     None
 }
 
+/// Số ms từ lần có phím hay chuột cuối cùng (ở bất kỳ app nào); `None` nếu không đọc được.
+pub fn idle_ms() -> Option<u64> {
+    last_input().map(|(idle, _)| idle)
+}
+
 #[cfg(windows)]
 fn cursor_position() -> Option<(i32, i32)> {
     use windows_sys::Win32::Foundation::POINT;

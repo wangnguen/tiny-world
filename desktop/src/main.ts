@@ -72,6 +72,8 @@ const SPAWN_MARGIN = 48;
 const SPAWN_GAP = 1.4;
 /** Chu kỳ lưu world.json (chỉ ghi khi có thay đổi). */
 const SAVE_INTERVAL_MS = 30_000;
+/** Vừa có phím hay chuột trong chừng này ms là người dùng đang ngồi máy (con ma lúc 2 giờ sáng). */
+const PRESENT_MS = 60_000;
 /** Hai lần xin Rust cho overlay sang màn hình khác cách nhau ít nhất chừng này (ms). */
 const MOVE_INTERVAL_MS = 200;
 /** Id của pet tạm vẽ bằng code, khi bản build chưa có sprite pack nào. */
@@ -364,7 +366,17 @@ async function start(): Promise<void> {
   });
 
   const ambience = new Ambience(
-    { world, residents: () => members, live: () => !hidden && !paused, wake },
+    {
+      world,
+      residents: () => members,
+      live: () => !hidden && !paused,
+      wake,
+      present: () =>
+        api
+          .idleMs()
+          .then((idle) => idle !== null && idle < PRESENT_MS)
+          .catch(() => false),
+    },
     container,
     settings,
   );

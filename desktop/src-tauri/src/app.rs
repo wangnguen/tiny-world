@@ -54,6 +54,7 @@ pub fn run() {
             commands::search_city,
             commands::get_stats,
             commands::clear_stats,
+            commands::idle_ms,
             commands::open_chat,
             commands::chat_suggestions,
             commands::chat_target,
