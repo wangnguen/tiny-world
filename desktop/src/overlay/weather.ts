@@ -4,17 +4,33 @@ import { ANIMATED_SKIES, type Sky } from "@tinyworld/sim";
 /** Vẽ hiệu ứng thời tiết chừng này lần mỗi giây: hạt mưa, tuyết nhỏ, 12 fps là đủ, đỡ tốn CPU. */
 export const EFFECT_FPS = 12;
 const EFFECT_MS = 1000 / EFFECT_FPS;
-/** Vùng có thời tiết quanh pet: rộng gấp chừng này lần bề ngang, cao gấp chừng này lần chiều cao pet. */
-const AREA_WIDTH = 3;
-const AREA_HEIGHT = 2.2;
 /**
- * Vùng còn chừa xuống dưới chân pet chừng này lần chiều cao pet, cho sương mù quanh chân. Mưa, tuyết, cánh
- * hoa thì dừng ở mặt đất (chỗ chân pet): rơi tiếp xuống phần này thì thành vệt trên taskbar hay trên cửa sổ
- * nằm dưới.
+ * Vùng có thời tiết quanh pet: rộng gấp chừng này lần bề ngang, cao gấp chừng này lần chiều cao pet tính từ
+ * mặt đất (chỗ chân pet) lên. Không vẽ gì dưới mặt đất: thò xuống thì thành vệt trên taskbar hay trên cửa
+ * sổ nằm dưới.
  */
-const BELOW_FEET = 0.25;
+const AREA_WIDTH = 3;
+const AREA_HEIGHT = 2;
 /** Chớp lúc có sấm kéo dài chừng này ms. */
 const FLASH_MS = 160;
+
+/**
+ * Các đám sương mù: giữa đám cao hơn mặt đất chừng này lần chiều cao pet, nửa bề ngang bằng chừng này lần
+ * bề ngang pet, trôi ngang chừng này lần bề ngang pet mỗi giây, độ đậm ở giữa đám. Đám thấp đậm hơn, nằm
+ * sát mặt đất như sương đọng.
+ */
+const FOG_BANKS: { rise: number; reach: number; drift: number; density: number }[] = [
+  { rise: 0.04, reach: 1.15, drift: 0.035, density: 0.5 },
+  { rise: 0.12, reach: 0.8, drift: 0.06, density: 0.42 },
+  { rise: 0.26, reach: 0.95, drift: 0.045, density: 0.34 },
+  { rise: 0.42, reach: 0.7, drift: 0.07, density: 0.28 },
+  { rise: 0.58, reach: 0.85, drift: 0.04, density: 0.22 },
+  { rise: 0.08, reach: 0.65, drift: 0.08, density: 0.36 },
+];
+/** Đám sương dẹt: cao bằng chừng này lần bề ngang. */
+const FOG_FLAT = 0.3;
+/** Màu sương: trắng hơi xanh, thấy được trên cả hình nền sáng lẫn tối. */
+const FOG_RGB = "196, 208, 228";
 
 interface Particle {
   x: number;
@@ -50,8 +66,9 @@ export class WeatherEffect {
   /** Cỡ vùng đang vẽ (CSS pixel). */
   private width = 0;
   private height = 0;
-  /** Mặt đất (chỗ chân pet), tính từ mép trên vùng vẽ (CSS pixel). */
-  private ground = 0;
+  /** Cỡ pet (CSS pixel). */
+  private petWidth = 0;
+  private petHeight = 0;
   private lastDraw = 0;
   private flashUntil = 0;
   private shown = false;
@@ -97,9 +114,11 @@ export class WeatherEffect {
     const width = Math.round(petWidth * AREA_WIDTH);
     const height = Math.round(petHeight * AREA_HEIGHT);
     if (width !== this.width || height !== this.height) this.resize(width, height);
+    this.petWidth = petWidth;
+    this.petHeight = petHeight;
     const left = Math.round(foot.x - width / 2);
-    const top = Math.round(foot.y - height + petHeight * BELOW_FEET);
-    this.ground = foot.y - top;
+    // Mép dưới vùng vẽ là mặt đất.
+    const top = Math.round(foot.y) - height;
     this.element.style.transform = `translate(${left}px, ${top}px)`;
     if (now - this.lastDraw < EFFECT_MS) return;
     const dt = Math.min(0.2, (now - this.lastDraw) / 1000);
@@ -125,7 +144,7 @@ export class WeatherEffect {
     const [z0, z1] = kind?.size ?? [0, 0];
     return {
       x: Math.random() * this.width,
-      y: anywhere ? Math.random() * this.ground : -Math.random() * 20,
+      y: anywhere ? Math.random() * this.height : -Math.random() * 20,
       speed: s0 + Math.random() * (s1 - s0),
       size: z0 + Math.random() * (z1 - z0),
       phase: Math.random() * Math.PI * 2,
@@ -141,7 +160,7 @@ export class WeatherEffect {
       p.y += p.speed * dt;
       if (sway) p.x += Math.sin(now / 700 + p.phase) * sway * dt;
       // Chạm mặt đất thì hết, rơi lại từ trên.
-      if (p.y >= this.ground) Object.assign(p, this.spawn(sky, false));
+      if (p.y >= this.height) Object.assign(p, this.spawn(sky, false));
     }
   }
 
@@ -168,7 +187,7 @@ export class WeatherEffect {
       const x = Math.round(p.x);
       const y = Math.round(p.y);
       // Phần chạm xuống dưới mặt đất thì cắt bỏ.
-      const room = this.ground - y;
+      const room = this.height - y;
       if (room <= 0) continue;
       if (sky === "rain" || sky === "storm") {
         // Xanh vừa phải để thấy được trên cả hình nền sáng lẫn tối.
@@ -194,23 +213,34 @@ export class WeatherEffect {
     }
   }
 
-  /** Sương mù: vài dải mờ trôi chậm quanh chân pet. */
+  /**
+   * Sương mù: các đám mờ dẹt trôi ngang chậm quanh chân và thân pet. Mỗi đám hiện dần từ mép trái, đậm nhất
+   * ở giữa (chỗ pet), tan dần trước khi tới mép phải rồi hiện lại bên trái, nên không có mép nào bị cắt.
+   */
   private drawFog(now: number): void {
     const { ctx } = this;
-    const base = this.height * 0.82;
-    for (let i = 0; i < 3; i++) {
-      const drift = Math.sin(now / 4000 + i * 2.1) * this.width * 0.12;
-      const x = this.width * (0.3 + 0.2 * i) + drift;
-      const y = base - i * this.height * 0.08;
-      const rx = this.width * 0.32;
-      const ry = this.height * 0.07;
-      const glow = ctx.createRadialGradient(x, y, 0, x, y, rx);
-      glow.addColorStop(0, "rgba(225, 230, 240, 0.32)");
-      glow.addColorStop(1, "rgba(225, 230, 240, 0)");
+    const seconds = now / 1000;
+    FOG_BANKS.forEach((bank, i) => {
+      const rx = bank.reach * this.petWidth;
+      const ry = rx * FOG_FLAT;
+      const span = this.width - 2 * rx;
+      if (span <= 0) return;
+      // Mỗi đám lệch pha nhau để không cùng hiện, cùng tan.
+      const progress = (seconds * bank.drift * this.petWidth / span + i * 0.37) % 1;
+      const x = rx + progress * span;
+      const y = this.height - bank.rise * this.petHeight + Math.sin(seconds * 0.6 + i * 1.7) * this.petHeight * 0.02;
+      const alpha = bank.density * Math.sin(progress * Math.PI);
+      ctx.save();
+      ctx.translate(x, y);
+      // Vẽ hình tròn rồi bóp dẹt, để độ mờ cũng dẹt theo: mép trên, mép dưới tan dần chứ không bị cắt.
+      ctx.scale(1, ry / rx);
+      const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+      glow.addColorStop(0, `rgba(${FOG_RGB}, ${alpha})`);
+      glow.addColorStop(0.5, `rgba(${FOG_RGB}, ${alpha * 0.6})`);
+      glow.addColorStop(1, `rgba(${FOG_RGB}, 0)`);
       ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+      ctx.fillRect(-rx, -rx, 2 * rx, 2 * rx);
+      ctx.restore();
+    });
   }
 }
