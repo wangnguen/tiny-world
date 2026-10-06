@@ -1,6 +1,7 @@
 import {
   PREVIEW_SECONDS,
   type City,
+  type Point,
   type EffectPreview,
   type Reminder,
   type Settings,
@@ -30,7 +31,7 @@ import {
   type Sky,
   type World,
 } from "@tinyworld/sim";
-import { Ghost } from "./ghost";
+import { GHOST_SIZE, Ghost } from "./ghost";
 import type { PetView } from "./petView";
 import { EFFECT_FPS, type WeatherEffect } from "./weather";
 import type { AuraEffect } from "./aura";
@@ -46,7 +47,7 @@ const PREVIEW_THUNDER_GAP: [number, number] = [5_000, 9_000];
 /** Con ma chỉ bay trong khoảng 2:00–2:30 (giờ ở thành phố đã chọn), mỗi đêm một lần. */
 const GHOST_HOUR = 2;
 const GHOST_MINUTES = 30;
-/** Con ma bay ngang tầm chừng này lần chiều cao pet tính từ mặt đất. */
+/** Con ma sà xuống ngang tầm chừng này lần chiều cao pet tính từ chân (bụng con ma ở đó). */
 const GHOST_HEIGHT = 0.6;
 /** Bấm đúp: câu giờ, ngày, thời tiết hiện chừng này giây. */
 const INFO_SECONDS = 6;
@@ -215,12 +216,14 @@ export class Ambience {
       this.nextThunder = 0;
     }
 
-    const ghostX = this.ghost.update(now);
-    if (ghostX === null) this.scared.clear();
+    const ghost = this.ghost.update(now, ghostTargets(residents));
+    if (ghost === null) this.scared.clear();
     else {
       for (const { pet, view } of residents) {
         if (this.scared.has(pet) || pet.vanished > 0) continue;
-        if (Math.abs(pet.x - ghostX) > view.width / 2) continue;
+        // Con ma bay ngang qua ngay trên pet (từ ngang thân tới hơn đầu một chút) thì mới giật mình.
+        if (Math.abs(pet.x - ghost.x) > view.width / 2) continue;
+        if (ghost.y > pet.y || ghost.y < pet.y - view.height * 1.5 - GHOST_SIZE.height) continue;
         // Đang ngủ thì giật mình tỉnh dậy, đang thức thì nhảy dựng lên.
         if (pet.state === "sleep") pet.wake();
         else pet.startle();
@@ -258,11 +261,7 @@ export class Ambience {
    */
   preview(effect: EffectPreview, now: number): void {
     if (effect === "ghost") {
-      const residents = this.host.residents();
-      if (!this.ghost.flying && residents.length > 0) {
-        const height = Math.max(...residents.map((r) => r.view.height));
-        this.ghost.fly(this.host.world.bounds, height * GHOST_HEIGHT, now);
-      }
+      if (!this.ghost.flying && this.host.residents().length > 0) this.ghost.fly(this.host.world.bounds, now);
       this.host.wake();
       return;
     }
@@ -352,8 +351,7 @@ export class Ambience {
         const residents = this.host.residents();
         if (residents.length === 0) return;
         this.said.add(day, "ghost");
-        const height = Math.max(...residents.map((r) => r.view.height));
-        this.ghost.fly(this.host.world.bounds, height * GHOST_HEIGHT, performance.now());
+        this.ghost.fly(this.host.world.bounds, performance.now());
         this.host.wake();
       })
       .finally(() => {
@@ -392,6 +390,13 @@ export class Ambience {
 
 function sameCity(a: City | null, b: City | null): boolean {
   return a?.latitude === b?.latitude && a?.longitude === b?.longitude;
+}
+
+/** Chỗ con ma sà qua (giữa thân con ma), mỗi pet một chỗ, ngang tầm đầu con đó. */
+function ghostTargets(residents: readonly Resident[]): Point[] {
+  return residents
+    .filter((r) => r.pet.vanished === 0)
+    .map(({ pet, view }) => ({ x: pet.x, y: pet.y - view.height * GHOST_HEIGHT - GHOST_SIZE.height / 2 }));
 }
 
 /** Một con đang thức (và đang hiện) bất kỳ, `null` nếu cả nhóm ngủ. */
