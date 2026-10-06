@@ -15,22 +15,20 @@ const AREA_HEIGHT = 2;
 const FLASH_MS = 160;
 
 /**
- * Các đám sương mù: giữa đám cao hơn mặt đất chừng này lần chiều cao pet, nửa bề ngang bằng chừng này lần
- * bề ngang pet, trôi ngang chừng này lần bề ngang pet mỗi giây, độ đậm ở giữa đám. Đám thấp đậm hơn, nằm
- * sát mặt đất như sương đọng.
+ * Các lớp sương mù, vẽ từ lớp sau ra lớp trước: đám sương bồng bềnh đáy nằm trên mặt đất, ngay chỗ pet cao
+ * hơn mặt đất chừng `rise` lần chiều cao pet (mấp mô thêm `bumps` lần) rồi thấp dần ra hai bên, từng cụm to
+ * chừng `puff` lần chiều cao pet, trôi ngang `drift` lần bề ngang pet mỗi giây (âm là sang trái), độ đậm
+ * `density`.
  */
-const FOG_BANKS: { rise: number; reach: number; drift: number; density: number }[] = [
-  { rise: 0.04, reach: 1.15, drift: 0.035, density: 0.5 },
-  { rise: 0.12, reach: 0.8, drift: 0.06, density: 0.42 },
-  { rise: 0.26, reach: 0.95, drift: 0.045, density: 0.34 },
-  { rise: 0.42, reach: 0.7, drift: 0.07, density: 0.28 },
-  { rise: 0.58, reach: 0.85, drift: 0.04, density: 0.22 },
-  { rise: 0.08, reach: 0.65, drift: 0.08, density: 0.36 },
+const FOG_LAYERS: { rise: number; bumps: number; puff: number; drift: number; density: number }[] = [
+  { rise: 0.48, bumps: 0.1, puff: 0.2, drift: -0.05, density: 0.22 },
+  { rise: 0.24, bumps: 0.08, puff: 0.15, drift: 0.08, density: 0.42 },
 ];
-/** Đám sương dẹt: cao bằng chừng này lần bề ngang. */
-const FOG_FLAT = 0.3;
-/** Màu sương: trắng hơi xanh, thấy được trên cả hình nền sáng lẫn tối. */
-const FOG_RGB = "196, 208, 228";
+/** Ụ sương thấp dần ra hai bên: gần tới mép vùng vẽ còn chừng này phần độ cao ở giữa. */
+const FOG_SPREAD = 0;
+/** Màu sương và viền: trắng hơi xanh, viền xám xanh để thấy được trên cả nền sáng lẫn tối. */
+const FOG_FILL = "#e6ecf7";
+const FOG_EDGE = "#8a9cc0";
 
 interface Particle {
   x: number;
@@ -72,6 +70,8 @@ export class WeatherEffect {
   private lastDraw = 0;
   private flashUntil = 0;
   private shown = false;
+  /** Canvas phụ để vẽ từng lớp sương mù. */
+  private fogLayer: HTMLCanvasElement | null = null;
 
   constructor() {
     this.element = document.createElement("canvas");
@@ -214,33 +214,66 @@ export class WeatherEffect {
   }
 
   /**
-   * Sương mù: các đám mờ dẹt trôi ngang chậm quanh chân và thân pet. Mỗi đám hiện dần từ mép trái, đậm nhất
-   * ở giữa (chỗ pet), tan dần trước khi tới mép phải rồi hiện lại bên trái, nên không có mép nào bị cắt.
+   * Sương mù: vài lớp đám sương bồng bềnh (viền mảnh, đáy nằm trên mặt đất) trôi ngược chiều nhau quanh chân
+   * pet, tan dần ra hai bên. Mỗi lớp vẽ đặc vào canvas phụ rồi mới phủ lên với độ đậm của lớp, để chỗ các cụm
+   * chồng lên nhau không đậm hơn.
    */
   private drawFog(now: number): void {
-    const { ctx } = this;
+    const layer = (this.fogLayer ??= document.createElement("canvas"));
+    const dpr = window.devicePixelRatio || 1;
+    if (layer.width !== this.element.width || layer.height !== this.element.height) {
+      layer.width = this.element.width;
+      layer.height = this.element.height;
+    }
+    const lctx = layer.getContext("2d");
+    if (!lctx) return;
     const seconds = now / 1000;
-    FOG_BANKS.forEach((bank, i) => {
-      const rx = bank.reach * this.petWidth;
-      const ry = rx * FOG_FLAT;
-      const span = this.width - 2 * rx;
-      if (span <= 0) return;
-      // Mỗi đám lệch pha nhau để không cùng hiện, cùng tan.
-      const progress = (seconds * bank.drift * this.petWidth / span + i * 0.37) % 1;
-      const x = rx + progress * span;
-      const y = this.height - bank.rise * this.petHeight + Math.sin(seconds * 0.6 + i * 1.7) * this.petHeight * 0.02;
-      const alpha = bank.density * Math.sin(progress * Math.PI);
-      ctx.save();
-      ctx.translate(x, y);
-      // Vẽ hình tròn rồi bóp dẹt, để độ mờ cũng dẹt theo: mép trên, mép dưới tan dần chứ không bị cắt.
-      ctx.scale(1, ry / rx);
-      const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
-      glow.addColorStop(0, `rgba(${FOG_RGB}, ${alpha})`);
-      glow.addColorStop(0.5, `rgba(${FOG_RGB}, ${alpha * 0.6})`);
-      glow.addColorStop(1, `rgba(${FOG_RGB}, 0)`);
-      ctx.fillStyle = glow;
-      ctx.fillRect(-rx, -rx, 2 * rx, 2 * rx);
-      ctx.restore();
+    const { width, height, petWidth, petHeight } = this;
+    FOG_LAYERS.forEach((fog, i) => {
+      lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      lctx.clearRect(0, 0, width, height);
+      const radius = fog.puff * petHeight;
+      const gap = radius * 1.3;
+      const count = Math.ceil(width / gap) + 2;
+      const period = count * gap;
+      const offset = (((seconds * fog.drift * petWidth) % period) + period) % period;
+      const puffs: [number, number, number][] = [];
+      for (let k = 0; k < count; k++) {
+        // Cụm thứ k luôn cao thấp, to nhỏ như nhau (không ngẫu nhiên mỗi lần vẽ), trôi vòng lại.
+        const x = ((k * gap + offset) % period) - gap;
+        const r = radius * (0.8 + 0.4 * (0.5 + 0.5 * Math.sin(k * 1.71 + i)));
+        // Cao nhất ở giữa (chỗ pet), thấp dần ra hai bên.
+        const across = (x - width / 2) / (width / 2);
+        const mound = FOG_SPREAD + (1 - FOG_SPREAD) * Math.cos((Math.min(1, Math.abs(across) * 1.1) * Math.PI) / 2);
+        const bump = (0.5 + 0.5 * Math.sin(k * 2.39 + i * 1.3)) * fog.bumps;
+        const y = height - (fog.rise - bump) * petHeight * mound + r * 0.4;
+        puffs.push([x, Math.min(y, height - r * 0.3), r]);
+      }
+      // Viền: hình sương nở thêm một chút, tô màu viền; rồi thân sương tô đè lên. Dưới mỗi cụm tô kín xuống
+      // tới mặt đất.
+      for (const [grow, color] of [[1.2, FOG_EDGE], [0, FOG_FILL]] as const) {
+        lctx.fillStyle = color;
+        lctx.beginPath();
+        for (const [x, y, r] of puffs) {
+          lctx.moveTo(x + r + grow, y);
+          lctx.arc(x, y, r + grow, 0, Math.PI * 2);
+          lctx.rect(x - r - grow, y, 2 * (r + grow), height - y);
+        }
+        lctx.fill();
+      }
+      // Tan dần ra hai bên.
+      lctx.globalCompositeOperation = "destination-in";
+      const fade = lctx.createLinearGradient(0, 0, width, 0);
+      fade.addColorStop(0, "rgba(0, 0, 0, 0)");
+      fade.addColorStop(0.15, "rgba(0, 0, 0, 1)");
+      fade.addColorStop(0.85, "rgba(0, 0, 0, 1)");
+      fade.addColorStop(1, "rgba(0, 0, 0, 0)");
+      lctx.fillStyle = fade;
+      lctx.fillRect(0, 0, width, height);
+      lctx.globalCompositeOperation = "source-over";
+      this.ctx.globalAlpha = fog.density;
+      this.ctx.drawImage(layer, 0, 0, width, height);
+      this.ctx.globalAlpha = 1;
     });
   }
 }
