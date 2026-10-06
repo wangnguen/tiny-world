@@ -105,8 +105,8 @@ Những thứ không cần bấm gì (tắt từng thứ trong tab **Thế giớ
   hoa rơi. Trời quang hay nhiều mây thì không có gì. Chưa chọn thành phố thì thời tiết giả lập theo mùa;
   đã chọn mà mất mạng thì một con nói "Không có mạng :))", không có hiệu ứng
 - Câu nói cho vui (chào nhau, kêu trời mưa): cả nhóm 15 phút mới được một câu
-- Lịch sự kiện: đúng dịp (Tết, Trung thu, Giáng sinh... hoặc dịp tự thêm, dương hoặc âm lịch) thì cả nhóm
-  đội mũ, một con nói câu của dịp đó mỗi ngày một lần. Tab Thế giới ghi hôm nay có dịp nào
+- Lịch sự kiện: đúng dịp (Tết, Trung thu, Giáng sinh... hoặc dịp tự thêm, dương hoặc âm lịch) thì một con
+  nói câu của dịp đó mỗi ngày một lần. Tab Thế giới ghi hôm nay có dịp nào
 - 2:00–2:30 sáng, có con còn thức thì một con ma bay ngang qua, mỗi đêm một lần
 
 Tab **Sức khoẻ** (mặc định tắt hết, số liệu chỉ ở máy này):
@@ -227,7 +227,7 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
   thì hỏi Open-Meteo lúc mở app, lúc đổi thành phố, rồi 30 phút một lần, gửi event `weather-changed`;
   lỗi thì chờ 1 phút, gấp đôi mỗi lần tới tối đa 30 phút, và chỉ gửi `weather-failed` ở lần lỗi đầu.
   Tìm thành phố (`search_city`) cũng qua Rust. Overlay (`src/overlay/ambience.ts`) đổi thời tiết thành
-  hiệu ứng, ban đêm, mũ của dịp lễ, con ma, theo giờ ở thành phố đã chọn (`wallClock`, múi giờ IANA);
+  hiệu ứng, ban đêm, câu của dịp lễ, con ma, theo giờ ở thành phố đã chọn (`wallClock`, múi giờ IANA);
   âm lịch tính trên máy (`packages/sim/src/lunar.ts`). Mọi câu pet nói nằm ở `packages/sim/src/lines.ts`.
 - **Sức khoẻ** (`src-tauri/src/activity.rs`): luồng nền đọc mỗi giây thời điểm input cuối
   (`GetLastInputInfo`) và vị trí con trỏ, không hook bàn phím. `Tracker` (thuần logic, có test) cộng giờ
@@ -267,6 +267,5 @@ cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên 
 ```
 
 `pnpm test` gồm `pnpm test:sprites` (script chuẩn hoá sprite, `prepare-sprites.mjs --check` trên
-cả 22 pack, `prepare-items.mjs --check` cho ảnh mũ và `prepare-aura.mjs --check` cho effect của Long),
-`pnpm test:overlay` (kéo thả, bấm đúp trên overlay, combo quật đuôi của Long, đo đỉnh đầu để đội mũ,
-markdown và câu gửi của khung chat) và vitest của `packages/*`.
+cả 22 pack và `prepare-aura.mjs --check` cho effect của Long), `pnpm test:overlay` (kéo thả, bấm đúp
+trên overlay, combo quật đuôi của Long, markdown và câu gửi của khung chat) và vitest của `packages/*`.

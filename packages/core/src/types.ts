@@ -99,7 +99,7 @@ export interface Settings {
   weather: boolean;
   /** Pet nói câu cho vui (chào nhau, thời tiết). */
   chatter: boolean;
-  /** Lịch sự kiện: đúng dịp thì cả nhóm đội mũ, một con nói câu của dịp đó. */
+  /** Lịch sự kiện: đúng dịp thì một con nói câu của dịp đó. */
   events: boolean;
   /** Các dịp trong lịch sự kiện; mặc định là các ngày lễ Việt Nam. */
   occasions: Occasion[];
@@ -161,9 +161,6 @@ export interface ScreenStats {
   days: Record<string, DayStats>;
 }
 
-/** Mũ cả nhóm đội trong một dịp, khớp `HATS` trong settings.rs. */
-export type Hat = "none" | "party" | "tet" | "noel";
-
 /**
  * Một dịp trong lịch sự kiện, khớp `Occasion` trong settings.rs: lặp lại mỗi năm vào ngày `day/month`
  * (dương lịch, hoặc âm lịch Việt Nam nếu `lunar`) trong `days` ngày.
@@ -175,7 +172,6 @@ export interface Occasion {
   lunar: boolean;
   /** Kéo dài 1–10 ngày kể từ ngày đó. */
   days: number;
-  hat: Hat;
   /** Câu một con nói (mỗi ngày một lần) trong dịp đó; rỗng là không nói. */
   message: string;
   enabled: boolean;

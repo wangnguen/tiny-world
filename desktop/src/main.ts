@@ -24,7 +24,6 @@ import { api } from "./api";
 import { Ambience, type Resident } from "./overlay/ambience";
 import { AutoSave } from "./overlay/autosave";
 import { ClickThrough } from "./overlay/clickThrough";
-import { loadHats } from "./overlay/hats";
 import { PetInteraction } from "./overlay/interaction";
 import { LongKit } from "./overlay/longAction";
 import { LONG_PACK, LongCombo } from "./overlay/longCombo";
@@ -135,7 +134,6 @@ async function start(): Promise<void> {
     api.screenInfo(),
     api.getSettings(),
     loadSaved(),
-    loadHats(),
   ]);
 
   const world = new World(boundsOf(screen), Date.now());

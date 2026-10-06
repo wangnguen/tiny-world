@@ -1,4 +1,4 @@
-import type { City, Hat, Reminder, Settings, WeatherFailure, WeatherReport } from "@tinyworld/core";
+import type { City, Reminder, Settings, WeatherFailure, WeatherReport } from "@tinyworld/core";
 import {
   GHOST_LINE,
   SAVE_SPAM_LINE,
@@ -10,7 +10,6 @@ import {
   REPORT_MAX_AGE,
   SKY_LINES,
   activeOccasions,
-  hatOf,
   nowText,
   simulatedSky,
   skyOf,
@@ -79,8 +78,8 @@ interface Notice {
 }
 
 /**
- * Những thứ quanh nhóm pet theo giờ ở thành phố đã chọn: thời tiết (thật hoặc giả lập), ban đêm, mũ và câu
- * của dịp lễ, con ma lúc 2 giờ sáng, câu giờ/ngày/thời tiết khi bấm đúp.
+ * Những thứ quanh nhóm pet theo giờ ở thành phố đã chọn: thời tiết (thật hoặc giả lập), ban đêm, câu của
+ * dịp lễ, con ma lúc 2 giờ sáng, câu giờ/ngày/thời tiết khi bấm đúp.
  */
 export class Ambience {
   private settings: Settings;
@@ -88,7 +87,6 @@ export class Ambience {
   private failure: WeatherFailure | null = null;
   /** `undefined`: chưa tính lần nào, lần đầu không nói câu thời tiết. */
   private sky: Sky | null | undefined = undefined;
-  private hat: Hat = "none";
   /** Câu thời tiết đang chờ tới lượt nói cho vui (`World.chat`). */
   private skyLine: string | null = null;
   private notices: Notice[] = [];
@@ -161,9 +159,8 @@ export class Ambience {
     this.host.wake();
   }
 
-  /** Con mới hiện ra (đổi nhân vật): đội mũ, theo thời tiết như cả nhóm. */
+  /** Con mới hiện ra (đổi nhân vật): theo thời tiết như cả nhóm. */
   adopt(resident: Resident): void {
-    resident.view.setHat(this.hat);
     resident.effect.setSky(this.sky ?? null);
   }
 
@@ -248,7 +245,7 @@ export class Ambience {
   }
 
   /**
-   * Tính lại thời tiết, ban đêm, mũ, câu của dịp lễ và con ma theo giờ hiện tại; có gì đổi thì chạy lại
+   * Tính lại thời tiết, ban đêm, câu của dịp lễ và con ma theo giờ hiện tại; có gì đổi thì chạy lại
    * vòng lặp vẽ (cả nhóm đang ngủ mà không có gì đổi thì để yên).
    */
   private refresh(): void {
@@ -271,12 +268,6 @@ export class Ambience {
 
     const day = dayKey(wall);
     const active = this.settings.events ? activeOccasions(this.settings.occasions, wall) : [];
-    const hat = hatOf(active);
-    if (hat !== this.hat) {
-      this.hat = hat;
-      for (const { view } of this.host.residents()) view.setHat(hat);
-      changed = true;
-    }
     for (const occasion of active) {
       const key = `occasion:${occasion.name}`;
       if (!occasion.message || this.said.has(day, key) || this.queued.has(`${day}/${key}`)) continue;

@@ -1,19 +1,18 @@
 import type { Occasion } from "@tinyworld/core";
 import { describe, expect, it } from "vitest";
-import { activeOccasions, hatOf, wallClock } from "./calendar";
+import { activeOccasions, wallClock } from "./calendar";
 
 const occasion = (o: Partial<Occasion> & Pick<Occasion, "name" | "day" | "month">): Occasion => ({
   lunar: false,
   days: 1,
-  hat: "none",
   message: "",
   enabled: true,
   ...o,
 });
 
-const tet = occasion({ name: "Tết Nguyên Đán", day: 1, month: 1, lunar: true, days: 5, hat: "tet" });
-const noel = occasion({ name: "Giáng sinh", day: 24, month: 12, days: 2, hat: "noel" });
-const birthday = occasion({ name: "Sinh nhật", day: 17, month: 2, hat: "party", message: "Chúc mừng sinh nhật :)))" });
+const tet = occasion({ name: "Tết Nguyên Đán", day: 1, month: 1, lunar: true, days: 5 });
+const noel = occasion({ name: "Giáng sinh", day: 24, month: 12, days: 2 });
+const birthday = occasion({ name: "Sinh nhật", day: 17, month: 2, message: "Chúc mừng sinh nhật :)))" });
 const midAutumn = occasion({ name: "Trung thu", day: 15, month: 8, lunar: true });
 
 const at = (y: number, m: number, d: number) => new Date(y, m - 1, d, 9);
@@ -55,12 +54,11 @@ describe("lịch sự kiện", () => {
     expect(names(at(2026, 9, 25), [midAutumn])).toEqual(["Trung thu"]);
   });
 
-  it("nhiều dịp cùng ngày: mũ theo dịp xếp trước có mũ; dịp tắt thì không tính", () => {
+  it("nhiều dịp cùng ngày theo thứ tự trong lịch; dịp tắt thì không tính", () => {
     const list = [midAutumn, birthday, tet];
     const date = at(2026, 2, 17);
     expect(names(date, list)).toEqual(["Sinh nhật", "Tết Nguyên Đán"]);
-    expect(hatOf(activeOccasions(list, date))).toBe("party");
-    expect(hatOf(activeOccasions([{ ...birthday, enabled: false }, tet], date))).toBe("tet");
-    expect(hatOf(activeOccasions(list, at(2026, 5, 5)))).toBe("none");
+    expect(names(date, [{ ...birthday, enabled: false }, tet])).toEqual(["Tết Nguyên Đán"]);
+    expect(names(at(2026, 5, 5), list)).toEqual([]);
   });
 });

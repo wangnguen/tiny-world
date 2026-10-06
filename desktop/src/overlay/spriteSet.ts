@@ -133,64 +133,6 @@ export function headOf(mask: Mask): Head {
   return { top, centerX: (min + max + 1) / 2 };
 }
 
-/** Chỗ đội mũ trên đầu nhân vật trong một frame (pixel của frame, nhân vật quay theo `SpriteSet.facing`). */
-export interface Crown {
-  /** Giữa đỉnh đầu theo chiều ngang. */
-  x: number;
-  /** Hàng đỉnh đầu, chỗ vành mũ đặt lên. */
-  y: number;
-}
-
-/** Hàng đã rộng chừng này phần bề ngang đầu thì là đỉnh đầu; hẹp hơn là tai, râu, ăng-ten, lá. */
-export const CROWN_SHARE = 0.5;
-/** Đầu nằm trong chừng này phần trên cùng của hình. */
-const HEAD_SHARE = 0.45;
-const crowns = new WeakMap<Mask, Map<number, Crown>>();
-
-/** Đoạn liền dài nhất có hình trong hàng `y`: [đầu, cuối). */
-function widestRun(mask: Mask, y: number): [number, number] {
-  let best: [number, number] = [0, 0];
-  let start = -1;
-  for (let x = mask.left; x <= mask.right + 1; x++) {
-    const solid = x <= mask.right && mask.has(x, y);
-    if (solid && start < 0) start = x;
-    if (!solid && start >= 0) {
-      if (x - start > best[1] - best[0]) best = [start, x];
-      start = -1;
-    }
-  }
-  return best;
-}
-
-/**
- * Đỉnh đầu thật của nhân vật: hàng đầu tiên (từ trên xuống) mà đoạn liền dài nhất đã rộng bằng `share`
- * phần cái đầu, nên tai thỏ, râu ong, ăng-ten, ngọn lá mảnh phía trên bị bỏ qua. Tính một lần cho mỗi
- * frame và mỗi `share`.
- */
-export function crownOf(mask: Mask, share = CROWN_SHARE): Crown {
-  let cache = crowns.get(mask);
-  if (!cache) {
-    cache = new Map();
-    crowns.set(mask, cache);
-  }
-  const cached = cache.get(share);
-  if (cached) return cached;
-  const { width, height, top } = mask;
-  let crown: Crown = { x: width / 2, y: top };
-  if (mask.right >= 0) {
-    const span = height - top;
-    const bottom = Math.min(height, top + Math.max(1, Math.ceil(span * HEAD_SHARE)));
-    const runs: [number, number][] = [];
-    for (let y = top; y < bottom; y++) runs.push(widestRun(mask, y));
-    const widest = Math.max(...runs.map(([a, b]) => b - a));
-    const i = runs.findIndex(([a, b]) => b - a >= widest * share);
-    const [a, b] = runs[i];
-    crown = { x: (a + b) / 2, y: top + i };
-  }
-  cache.set(share, crown);
-  return crown;
-}
-
 function alphaMask(image: CanvasImageSource, frame: Rect): Mask {
   const canvas = new OffscreenCanvas(frame.width, frame.height);
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
