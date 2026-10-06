@@ -8,6 +8,7 @@ import { PetPreview } from "./PetPreview";
 import { CornerDecor, HILL_SPOT, NightScene, PineDecor } from "./scenery";
 import { HealthSettings } from "./HealthSettings";
 import { Toggle } from "./Toggle";
+import { UpdateCard, UpdateCheck, useUpdate } from "./Update";
 import { WorldSettings } from "./WorldSettings";
 
 interface Option {
@@ -50,6 +51,7 @@ export function SettingsApp() {
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("pet");
+  const updater = useUpdate();
 
   useEffect(() => {
     Promise.all([api.getSettings(), api.getAutostart()])
@@ -100,7 +102,9 @@ export function SettingsApp() {
         {settings && <PetPreview pet={pets[0] ?? null} footX={HILL_SPOT.x} footY={HILL_SPOT.y} height={96} />}
         <h1>Cài đặt</h1>
         {version && <p className="hero__version">{versionLabel(version)}</p>}
+        <UpdateCheck update={updater} />
       </header>
+      <UpdateCard update={updater} />
 
       {!settings || autostart === null ? (
         <p className="muted loading">{error ?? "Đang tải..."}</p>

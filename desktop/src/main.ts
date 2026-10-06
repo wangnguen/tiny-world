@@ -550,6 +550,8 @@ async function start(): Promise<void> {
   await api.onReminder((reminder) => {
     if (!hidden && !paused) ambience.remind(reminder);
   });
+  // Có bản mới: một con báo (mỗi bản một lần); đang ẩn hay tạm dừng thì câu chờ tới lúc có con thức.
+  await api.onUpdateAvailable((info) => ambience.announceUpdate(info.version));
   // Phase 6: đóng khung chat (hay tắt chat trong Cài đặt) thì con đang chat lại đi lại.
   await api.onChatClosed(() => {
     stopListening();

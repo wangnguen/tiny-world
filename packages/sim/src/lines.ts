@@ -51,6 +51,9 @@ export const SAVE_SPAM_LINE = "Lưu rồi mà :((((";
 /** Click chuột phải vào pet mà chưa bật chat. */
 export const CHAT_OFF_LINE = "Bật Chat với pet trong Cài đặt rồi nói chuyện nhé :)))";
 
+/** GitHub có bản mới (update.rs): một con báo, mỗi bản một lần. */
+export const updateLine = (version: string) => `Có bản mới ${version} rồi, vào Cài đặt cập nhật nhé :)))`;
+
 /** Thời tiết khi bấm đúp vào pet (trời nắng mùa xuân thì là `petals`). */
 export const SKY_NAMES: Record<Sky, string> = {
   sunny: "trời nắng",

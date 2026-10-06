@@ -78,6 +78,103 @@ h2 {
   font-size: 13px;
 }
 
+/* Nút nhỏ "Kiểm tra bản mới" dưới dòng phiên bản; bấm xong câu kết quả hiện thế chỗ (Update.tsx). */
+.hero__check {
+  position: absolute;
+  left: 24px;
+  top: 104px;
+  max-width: 180px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+.hero__check:hover:not(:disabled) {
+  color: var(--text-2);
+  opacity: 1;
+}
+
+.hero__check:disabled {
+  cursor: default;
+  text-decoration: none;
+}
+
+.hero__check:focus-visible {
+  outline: 2px solid #9cc0ff;
+  outline-offset: 2px;
+}
+
+.hero__check--message {
+  text-decoration: none;
+  cursor: default;
+}
+
+/* Thẻ "Có bản mới" ngay dưới đầu trang: chữ bên trái, hai nút bên phải, vạch tiến độ tải ở đáy. */
+.update {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 12px 14px;
+  overflow: hidden;
+  border: 1px solid #3f5f9f;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(36, 60, 112, 0.92) 0%, rgba(20, 34, 66, 0.92) 100%);
+  box-shadow: 0 0 18px rgba(79, 134, 255, 0.18);
+}
+
+.update__text {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.update__text strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.update__text small {
+  color: var(--text-2);
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.update__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.update__message {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.update__bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: #7fd8be;
+  transition: width 0.3s linear;
+}
+
 .hero__scene {
   position: absolute;
   inset: 0;

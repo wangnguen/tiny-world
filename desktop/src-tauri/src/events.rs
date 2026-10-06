@@ -34,3 +34,7 @@ pub const WEATHER_PREVIEW: &str = "weather-preview";
 pub const GHOST_PREVIEW: &str = "ghost-preview";
 /// `PreviewState` (preview.rs), chỉ gửi cho cửa sổ Cài đặt: overlay vừa đổi thứ đang xem thử.
 pub const PREVIEW_CHANGED: &str = "preview-changed";
+/// `UpdateInfo` (update.rs): GitHub có bản mới hơn bản đang chạy (Cài đặt hiện thẻ cập nhật, pet nói).
+pub const UPDATE_AVAILABLE: &str = "update-available";
+/// `UpdateProgress` (update.rs): đang tải bộ cài bản mới.
+pub const UPDATE_PROGRESS: &str = "update-progress";

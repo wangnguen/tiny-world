@@ -2,6 +2,7 @@ use crate::activity::{self, Activity};
 use crate::chat::Chat;
 use crate::cursor::CursorInterest;
 use crate::preview::{self, Preview};
+use crate::update::{self, Updater};
 use crate::settings::SettingsStore;
 use crate::storage::Storage;
 use crate::weather::{self, Weather};
@@ -31,6 +32,7 @@ pub fn run() {
             app.manage(CursorInterest::default());
             app.manage(Chat::default());
             app.manage(Preview::default());
+            app.manage(Updater::default());
             overlay::setup(app.handle())?;
             overlay::watch(app.handle().clone());
             tray::setup(app.handle())?;
@@ -39,6 +41,7 @@ pub fn run() {
             window_list::spawn(app.handle().clone());
             weather::spawn(app.handle().clone());
             activity::spawn(app.handle().clone());
+            update::spawn(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -61,6 +64,9 @@ pub fn run() {
             preview::preview_ghost,
             preview::report_preview,
             preview::get_preview,
+            update::get_update,
+            update::check_update,
+            update::install_update,
             commands::open_chat,
             commands::chat_suggestions,
             commands::chat_target,
@@ -70,8 +76,14 @@ pub fn run() {
             commands::set_autostart,
             commands::quit,
         ])
-        .run(tauri::generate_context!())
-        .expect("không khởi động được ứng dụng");
+        .build(tauri::generate_context!())
+        .expect("không khởi động được ứng dụng")
+        .run(|app, event| {
+            // Thoát theo đường nào cũng vậy: có bộ cài bản mới đã tải thì chạy nó.
+            if let tauri::RunEvent::Exit = event {
+                update::launch_pending(app);
+            }
+        });
 }
 
 /// Tray bấm Thoát: nhờ overlay lưu trạng thái, overlay lưu xong thì gọi command `quit`. Overlay không
