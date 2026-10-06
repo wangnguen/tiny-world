@@ -254,6 +254,10 @@ export class PetView {
         this.layer.append(this.bubble);
       }
       this.bubble.textContent = text;
+      // Câu dài bị xuống dòng thì khung vẫn rộng bằng max-width, dư một khoảng sau dòng dài nhất: co lại.
+      this.bubble.style.width = "";
+      const widest = widestLine(this.bubble);
+      if (widest > 0) this.bubble.style.width = `${Math.ceil(widest)}px`;
       this.bubbleSize = { width: this.bubble.offsetWidth, height: this.bubble.offsetHeight };
     }
     const bubble = this.bubble;
@@ -440,6 +444,15 @@ function overlaps(a: Rect, b: Rect): boolean {
 
 function rectKey(r: Rect): string {
   return [r.x, r.y, r.width, r.height].map((v) => Math.round(v * 4) / 4).join(",");
+}
+
+/** Bề rộng dòng chữ dài nhất trong `element` sau khi đã xuống dòng (CSS pixel); 0 nếu chưa hiện ra. */
+function widestLine(element: HTMLElement): number {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  let widest = 0;
+  for (const rect of range.getClientRects()) widest = Math.max(widest, rect.width);
+  return widest;
 }
 
 /** Làm tròn theo pixel thật của màn hình để pixel art không bị nhoè khi di chuyển. */
