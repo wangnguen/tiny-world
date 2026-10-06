@@ -190,6 +190,10 @@ trỏ "Chạy cùng Windows" sang bản vừa cài.
 
 - Chỉ release đã **Publish** mới được gợi ý: bản nháp và pre-release không có trong `releases/latest`.
 - Bản 1.5.0 trở về trước chưa có updater: người dùng phải cài đè tay bản đầu tiên có updater một lần.
+- Bấm đúp bộ cài mới hơn bản đang cài cũng đi đúng luồng này: hook trong
+  [`hooks.nsh`](desktop/src-tauri/windows/hooks.nsh) chạy lại bộ cài với `/P /UPDATE /R`, không qua trang
+  "Already Installed" (trang đó chọn sẵn gỡ bản cũ trước, có máy báo "Unable to uninstall!"). Bộ cài 1.6.0 chưa
+  có hook này.
 - Bản build từ `main`/`test` có version ≥ release mới nhất nên không bị gợi ý cập nhật về bản cũ.
 - Chạy dev không tự hỏi (đặt `TINYWORLD_CHECK_UPDATE` để bật) và không tự cài, vì bộ cài ghi đè bản đã cài
   thật trong máy (đặt `TINYWORLD_INSTALL_UPDATE` để thử cả luồng).
