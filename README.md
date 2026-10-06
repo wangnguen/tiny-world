@@ -53,7 +53,7 @@ tray:
 |---|---|
 | **Tạm dừng** | Pet đứng yên, chuột đi xuyên qua pet; bấm lần nữa để pet sống tiếp |
 | **Ẩn / hiện pet** | Ẩn hẳn pet (app dừng vòng lặp, không tốn CPU) |
-| **Cài đặt…** | Tab **Pet**: chọn 1–3 nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chat với pet (mặc định tắt), chạy cùng Windows. Tab **Thế giới**: thành phố (thời tiết thật, giờ ở đó), bật tắt thời tiết quanh pet, câu nói cho vui, lịch sự kiện, con ma lúc 2 giờ sáng; mục Xem thử cho pet gặp ngay mưa, giông, tuyết, sương mù, hoa rơi (30 giây) hoặc con ma; sửa lịch sự kiện. Tab **Sức khoẻ** (mặc định tắt hết): giờ ngồi máy hôm nay và 7 ngày, nhắc nghỉ, nhắc uống nước, nhắc đi ngủ, spam Ctrl+S. Đổi là áp dụng ngay. Dưới tiêu đề là version đang chạy |
+| **Cài đặt…** | Tab **Pet**: chọn 1–3 nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chat với pet (mặc định tắt), chạy cùng Windows. Tab **Thế giới**: thành phố (thời tiết thật, giờ ở đó), bật tắt thời tiết quanh pet, nhãn nhiệt độ cạnh pet, câu nói cho vui, lịch sự kiện, con ma lúc 2 giờ sáng; mục Xem thử cho pet gặp ngay mưa, giông, tuyết, sương mù, hoa rơi (30 giây) hoặc con ma; sửa lịch sự kiện. Tab **Sức khoẻ** (mặc định tắt hết): giờ ngồi máy hôm nay và 7 ngày, nhắc nghỉ, nhắc uống nước, nhắc đi ngủ, spam Ctrl+S. Đổi là áp dụng ngay. Dưới tiêu đề là version đang chạy |
 | **Thoát** | Lưu trạng thái pet rồi thoát |
 | **Mở DevTools** | Chỉ khi chạy dev (overlay để chuột đi xuyên nên không bấm F12 được) |
 
@@ -101,9 +101,13 @@ Những thứ không cần bấm gì (tắt từng thứ trong tab **Thế giớ
 
 - Ban đêm (theo giờ mặt trời lặn ở thành phố đã chọn, chưa chọn thì 19:00–6:00) pet đi chậm hơn, buồn
   ngủ sớm hơn
-- Thời tiết chỉ quanh pet: mưa, tuyết, sương mù, sấm (chớp sáng, pet giật mình), mùa xuân trời quang thì
-  hoa rơi. Trời quang hay nhiều mây thì không có gì. Chưa chọn thành phố thì thời tiết giả lập theo mùa;
-  đã chọn mà mất mạng thì một con nói "Không có mạng :))", không có hiệu ứng
+- Thời tiết chỉ quanh pet, vừa với dáng từng con: nắng (tia nắng, lấp lánh; mùa xuân thì hoa rơi), trời
+  quang ban đêm (sao, thỉnh thoảng sao băng), nhiều mây (mây trôi trên đầu), mưa (giọt bắn lên ở mặt đất),
+  tuyết, sương mù, sấm (chớp sáng, pet giật mình). Từ 33°C hơi nóng bốc lên hai bên pet, từ 15°C trở
+  xuống pet thở ra khói từ miệng (đi, chạy thì thở dồn hơn). Chưa chọn thành phố thì thời tiết giả lập
+  theo mùa, không có nhiệt độ; đã chọn mà mất mạng thì một con nói "Không có mạng :))", không có hiệu ứng
+- Nhãn nhiệt độ cạnh pet (cần chọn thành phố): hình thời tiết và số °C, đứng sau lưng một con. Trời đổi
+  thì câu của pet kèm nhiệt độ, ví dụ "Mưa rồi, 24°C :("
 - Câu nói cho vui (chào nhau, kêu trời mưa): cả nhóm 15 phút mới được một câu
 - Lịch sự kiện: đúng dịp (Tết, Trung thu, Giáng sinh... hoặc dịp tự thêm, dương hoặc âm lịch) thì một con
   nói câu của dịp đó mỗi ngày một lần. Tab Thế giới ghi hôm nay có dịp nào

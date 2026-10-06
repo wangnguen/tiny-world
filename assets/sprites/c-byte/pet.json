@@ -9,6 +9,7 @@
     "x": 96,
     "y": 180
   },
+  "mouthY": 118,
   "animations": {
     "idle": {
       "image": "atlas.webp",

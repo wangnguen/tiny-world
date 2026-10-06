@@ -51,6 +51,8 @@ export interface SpriteManifest {
   facing: "left" | "right";
   /** Điểm chân nhân vật trong frame (pixel của frame), dùng để đặt pet lên mặt đất. */
   anchor: Point;
+  /** Hàng pixel của miệng ở frame đầu của `idle` (chỗ thở ra khói lúc lạnh); không có thì app tự đoán. */
+  mouthY?: number;
   animations: { idle: AnimationSpec } & Partial<Record<AnimationName, AnimationSpec>>;
 }
 
@@ -93,6 +95,7 @@ export function parseSpriteManifest(value: unknown): SpriteManifest {
     pixelArt: optional(root.pixelArt, true, (v) => boolean(v, "pixelArt")),
     facing: optional(root.facing, "right", (v) => oneOf(v, "facing", ["left", "right"] as const)),
     anchor,
+    mouthY: optional(root.mouthY, undefined, (v) => number(v, "mouthY", 0, frameHeight)),
     animations: { ...animations, idle },
   };
 }

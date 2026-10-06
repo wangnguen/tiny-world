@@ -21,6 +21,7 @@ import {
   REPORT_MAX_AGE,
   SKY_NAMES,
   activeOccasions,
+  daySky,
   skyOf,
   toLunar,
   wallClock,
@@ -54,9 +55,15 @@ export function WorldSettings({ settings, onChange }: Props) {
         <div className="toggles">
           <Toggle
             label="Thời tiết quanh pet"
-            hint="Mưa, tuyết, sương mù, sấm; trời quang thì không có gì"
+            hint="Nắng, mây, sao, mưa, tuyết, sương mù; nóng thì hơi nóng bốc lên, lạnh thì thở ra khói"
             checked={settings.weather}
             onChange={(weather) => onChange({ weather })}
+          />
+          <Toggle
+            label="Nhiệt độ cạnh pet"
+            hint="Số °C ở thành phố đã chọn, kèm hình thời tiết"
+            checked={settings.temperatureTag}
+            onChange={(temperatureTag) => onChange({ temperatureTag })}
           />
           <Toggle
             label="Pet nói chuyện cho vui"
@@ -213,9 +220,9 @@ function CityField({ city, onChange }: { city: City | null; onChange: (city: Cit
 
   let weatherText = "Đang lấy thời tiết...";
   const fresh = city ? freshReport(report, city) : null;
-  if (fresh) weatherText = `${SKY_NAMES[skyOf(fresh.code)]}, ${Math.round(fresh.temperature)}°C`;
-  else if (failure) weatherText = failure.offline ? NO_NETWORK : NO_WEATHER;
   const wall = wallClock(now, city?.timezone);
+  if (fresh) weatherText = `${SKY_NAMES[daySky(skyOf(fresh.code), wall.getMonth(), fresh.isDay)]}, ${Math.round(fresh.temperature)}°C`;
+  else if (failure) weatherText = failure.offline ? NO_NETWORK : NO_WEATHER;
 
   return (
     <section className="field">

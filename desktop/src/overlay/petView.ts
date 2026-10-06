@@ -1,7 +1,7 @@
 import { frameIndex, type AnimationName, type Point, type Rect } from "@tinyworld/core";
 import { contains, type Bounds, type Pet } from "@tinyworld/sim";
 import { DizzyStars, dizzyLean, dizzyReach, leanShift, ringRow } from "./dizzy";
-import { headOf, type Animation, type Head, type Mask, type SpriteSet } from "./spriteSet";
+import { headOf, mouthOf, type Animation, type Head, type Mask, type SpriteSet } from "./spriteSet";
 
 /** Đáy speech bubble (cả đuôi) cách đỉnh đầu pet chừng này CSS pixel. */
 const BUBBLE_LIFT = 12;
@@ -36,6 +36,8 @@ export class PetView {
   private shownState: AnimationName | null = null;
   /** Đầu nhân vật trong animation hiện tại, đo lại khi đổi state. */
   private head: Head = { top: 0, centerX: 0 };
+  /** Miệng nhân vật ở từng frame (pixel của frame, theo hướng nhìn trong sprite), đo lần đầu cần tới. */
+  private readonly mouths = new WeakMap<Mask, Point>();
   private animation: Animation | null = null;
   private frame = 0;
   private flip = false;
@@ -271,6 +273,47 @@ export class PetView {
     this.shownState = state;
     this.head = headOf(animation.masks[0]);
     if (state !== "dizzy") this.stars.hide();
+  }
+
+  /**
+   * Miệng ở frame đang vẽ (chỗ thở ra khói lúc lạnh) theo CSS pixel của overlay, và hướng mặt trên màn hình
+   * (1: sang phải); `null` nếu chưa vẽ lần nào.
+   */
+  get mouthAt(): (Point & { dir: 1 | -1 }) | null {
+    const animation = this.animation;
+    if (!animation || Number.isNaN(this.left)) return null;
+    const mask = animation.masks[this.frame];
+    let mouth = this.mouths.get(mask);
+    if (!mouth) {
+      const { anchor, facing, mouthY, animations } = this.sprite;
+      const hint = mouthY === undefined ? undefined : { y: mouthY, top: animations.idle.masks[0].top };
+      mouth = mouthOf(mask, anchor.y, facing, hint);
+      this.mouths.set(mask, mouth);
+    }
+    const { frameWidth } = this.sprite;
+    const x = this.left + (this.flip ? frameWidth - mouth.x : mouth.x) * this.scale;
+    const right = (this.sprite.facing === "right") !== this.flip;
+    return { x, y: this.top + mouth.y * this.scale, dir: right ? 1 : -1 };
+  }
+
+  /**
+   * Phần có hình của nhân vật lúc đứng yên (frame đầu của `idle`, từ đỉnh đầu tới chân) ở chỗ đang đứng, CSS
+   * pixel của overlay: hiệu ứng thời tiết và nhãn nhiệt độ đặt theo thân thật của từng con chứ không theo khung
+   * ảnh (có con chỉ chiếm nửa khung). Lấy dáng đứng yên để vùng hiệu ứng không co giãn theo từng frame.
+   * `null` nếu chưa vẽ lần nào.
+   */
+  get body(): Rect | null {
+    if (Number.isNaN(this.left)) return null;
+    const mask = this.sprite.animations.idle.masks[0];
+    const { anchor, frameWidth } = this.sprite;
+    if (mask.right < 0) return { x: this.left, y: this.top, width: this.width, height: anchor.y * this.scale };
+    const left = this.flip ? frameWidth - (mask.right + 1) : mask.left;
+    return {
+      x: this.left + left * this.scale,
+      y: this.top + mask.top * this.scale,
+      width: (mask.right + 1 - mask.left) * this.scale,
+      height: Math.max(1, anchor.y - mask.top) * this.scale,
+    };
   }
 
   /** Vòng sao quanh đầu, lệch theo đầu lúc lảo đảo. */

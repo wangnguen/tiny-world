@@ -165,8 +165,10 @@ pub struct Settings {
     pet: Option<String>,
     /// Thành phố để lấy thời tiết thật; `None` là thời tiết giả lập, không gọi mạng.
     pub city: Option<City>,
-    /// Hiệu ứng thời tiết quanh pet (mưa, tuyết, sương mù, sấm, cánh hoa).
+    /// Hiệu ứng thời tiết quanh pet (nắng, mây, sao, mưa, tuyết, sương mù, sấm, cánh hoa; nóng, lạnh).
     pub weather: bool,
+    /// Nhãn nhiệt độ cạnh pet (cần chọn thành phố).
+    pub temperature_tag: bool,
     /// Pet nói câu cho vui (chào nhau, thời tiết).
     pub chatter: bool,
     /// Lịch sự kiện: đúng dịp thì một con nói câu của dịp đó.
@@ -201,6 +203,7 @@ impl Default for Settings {
             pet: None,
             city: None,
             weather: true,
+            temperature_tag: true,
             chatter: true,
             events: true,
             occasions: Occasion::presets(),
@@ -533,7 +536,8 @@ mod tests {
     fn file_cu_chua_co_cong_tac_thi_bat_san_va_co_san_ngay_le() {
         let settings: Settings = serde_json::from_str(r#"{ "pet": "a-momo" }"#).unwrap();
         let settings = settings.sanitized();
-        assert!(settings.weather && settings.chatter && settings.events && settings.ghost);
+        assert!(settings.weather && settings.temperature_tag && settings.chatter);
+        assert!(settings.events && settings.ghost);
         assert_eq!(settings.city, None);
         assert_eq!(settings.occasions, Occasion::presets());
         // Ngày lễ có sẵn đều hợp lệ.

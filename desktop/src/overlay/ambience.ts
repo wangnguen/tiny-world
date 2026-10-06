@@ -17,23 +17,27 @@ import {
   NO_NETWORK,
   NO_WEATHER,
   REPORT_MAX_AGE,
-  SKY_LINES,
   activeOccasions,
+  daySky,
   nowText,
   simulatedSky,
+  skyLine,
   skyOf,
   toLunar,
   wallClock,
+  warmthLine,
+  warmthOf,
   weatherLine,
-  withPetals,
   type Pet,
   type PlaceWeather,
   type Sky,
+  type Warmth,
   type World,
 } from "@tinyworld/sim";
 import { GHOST_SIZE, Ghost } from "./ghost";
 import type { PetView } from "./petView";
-import { EFFECT_FPS, type WeatherEffect } from "./weather";
+import { TemperatureTag } from "./temperatureTag";
+import type { WeatherEffect } from "./weather";
 import type { AuraEffect } from "./aura";
 
 /** Chưa có thời tiết thật thì ban đêm theo giờ ở thành phố đã chọn: từ 19 giờ tới trước 6 giờ sáng. */
@@ -57,6 +61,8 @@ const NOTICE_SECONDS = 5;
 const REMINDER_SECONDS = 30;
 /** Tính lại thời tiết, ban đêm, dịp lễ, con ma mỗi chừng này ms. */
 const REFRESH_MS = 60_000;
+/** Đang chạy, leo, nhảy thì thở dồn (1), đang đi thì vừa (0.5), còn lại thở đều (0). */
+const EFFORT: Partial<Record<Pet["state"], number>> = { run: 1, climb: 1, jump: 1, walk: 0.5 };
 /** Những câu đã nói hôm nay (câu của dịp lễ, con ma), để mở lại app không nói lại. */
 const STORAGE_KEY = "tinyworld.said";
 
@@ -101,6 +107,12 @@ export class Ambience {
   private failure: WeatherFailure | null = null;
   /** `undefined`: chưa tính lần nào, lần đầu không nói câu thời tiết. */
   private sky: Sky | null | undefined = undefined;
+  /** Nhiệt độ ở thành phố đã chọn (°C, `null`: chưa biết) và nóng hay lạnh. */
+  private temperature: number | null = null;
+  private warmth: Warmth | null = null;
+  /** Nóng lạnh đang vẽ quanh pet (tắt hiệu ứng thời tiết thì không vẽ). */
+  private warmthShown: Warmth | null = null;
+  private readonly tag: TemperatureTag;
   /** Câu thời tiết đang chờ tới lượt nói cho vui (`World.chat`). */
   private skyLine: string | null = null;
   private notices: Notice[] = [];
@@ -126,6 +138,7 @@ export class Ambience {
   ) {
     this.settings = settings;
     this.ghost = new Ghost(container);
+    this.tag = new TemperatureTag(container);
     host.world.chatter = settings.chatter;
     this.refresh();
     window.setInterval(() => this.refresh(), REFRESH_MS);
@@ -136,11 +149,12 @@ export class Ambience {
     return this.ghost.flying;
   }
 
-  /** Vòng lặp phải vẽ lại trong vòng chừng này ms (hiệu ứng thời tiết, con ma); `Infinity` nếu không cần. */
+  /** Vòng lặp phải vẽ lại trong vòng chừng này ms (hiệu ứng thời tiết, aura, con ma); `Infinity` nếu không cần. */
   get frameMs(): number {
     if (this.ghost.flying) return 0;
-    const animating = this.host.residents().some((r) => r.effect.animating || r.aura?.animating);
-    return animating ? 1000 / EFFECT_FPS : Number.POSITIVE_INFINITY;
+    let ms = Number.POSITIVE_INFINITY;
+    for (const { effect, aura } of this.host.residents()) ms = Math.min(ms, effect.frameMs, aura?.frameMs ?? ms);
+    return ms;
   }
 
   setSettings(next: Settings): void {
@@ -181,6 +195,7 @@ export class Ambience {
   /** Con mới hiện ra (đổi nhân vật): theo thời tiết như cả nhóm. */
   adopt(resident: Resident): void {
     resident.effect.setSky(this.sky ?? null);
+    resident.effect.setWarmth(this.warmthShown);
   }
 
   /** Bấm đúp vào `pet`: nói giờ, thứ, ngày dương lịch, âm lịch và thời tiết ở thành phố đã chọn. */
@@ -189,14 +204,25 @@ export class Ambience {
     pet.say(nowText(wall, toLunar(wall), this.placeWeather(wall)), INFO_SECONDS);
   }
 
-  /** Mỗi lần vẽ: đặt hiệu ứng thời tiết theo pet, con ma bay tiếp. */
+  /**
+   * Mỗi lần vẽ: đặt hiệu ứng thời tiết theo thân thật của từng pet (khói thở ra đúng miệng con đó), nhãn nhiệt
+   * độ cạnh con đầu tiên đang hiện.
+   */
   place(now: number): void {
+    let tagged = false;
     for (const { pet, view, effect, aura } of this.host.residents()) {
       const visible = pet.state !== "sleep" && !view.spriteHidden;
       aura?.update(view.foot ?? pet, view.width, view.height, now, visible);
+      const body = view.body;
+      if (!body) continue;
       // Aura của Long thay thế thời tiết quanh chính Long; pet khác vẫn theo thời tiết chung.
-      effect.update(view.foot ?? pet, view.width, view.height, now, visible && !aura?.animating);
+      effect.update(body, now, visible && !aura?.animating, view.mouthAt, EFFORT[pet.state] ?? 0);
+      if (!tagged && !view.spriteHidden) {
+        this.tag.place(body, pet.facing, this.host.world.bounds);
+        tagged = true;
+      }
     }
+    if (!tagged) this.tag.place(null, 1, this.host.world.bounds);
   }
 
   /** Mỗi lượt của vòng lặp: sấm, con ma làm giật mình, câu báo đang chờ. */
@@ -277,8 +303,7 @@ export class Ambience {
     if (this.previewSky) {
       // Câu của thời tiết đó nói luôn, không chờ tới lượt câu nói cho vui.
       this.skyLine = null;
-      const line = SKY_LINES[this.previewSky];
-      if (line) this.notices.push({ text: line });
+      this.notices.push({ text: skyLine(this.previewSky, this.temperature, this.warmth) });
       this.nextThunder = 0;
     }
     this.host.wake();
@@ -312,13 +337,31 @@ export class Ambience {
     world.night = report ? !report.isDay : hour >= NIGHT_FROM || hour < NIGHT_UNTIL;
 
     const sky = this.previewSky ?? this.skyAt(wall, report);
+    const temperature = report ? report.temperature : null;
+    const warmth = warmthOf(temperature);
+    const shown = this.settings.weather ? warmth : null;
+    // Câu nói: trời đổi từ kiểu này sang kiểu khác thì nói câu của trời mới (kèm nhiệt độ); trời không đổi mà
+    // chuyển nóng, lạnh thì kêu nóng, lạnh. Lúc mới mở app hay mới có thời tiết thì không nói.
+    const known = this.sky !== undefined && this.sky !== null;
+    if (known && sky && sky !== this.sky) this.skyLine = skyLine(sky, temperature, warmth);
+    else if (known && sky === this.sky && shown && warmth !== this.warmth && temperature !== null) {
+      this.skyLine = warmthLine(shown, temperature);
+    } else if (!sky) this.skyLine = null;
     if (sky !== this.sky) {
-      const first = this.sky === undefined;
       this.sky = sky;
       for (const { effect } of this.host.residents()) effect.setSky(sky);
-      this.skyLine = first || !sky ? null : (SKY_LINES[sky] ?? null);
       changed = true;
     }
+    if (shown !== this.warmthShown) {
+      this.warmthShown = shown;
+      for (const { effect } of this.host.residents()) effect.setWarmth(shown);
+      changed = true;
+    }
+    this.temperature = temperature;
+    this.warmth = warmth;
+    // Hình trên nhãn nhiệt độ theo trời thật, kể cả khi tắt hiệu ứng thời tiết.
+    const icon = this.previewSky ?? (report ? daySky(skyOf(report.code), wall.getMonth(), report.isDay) : null);
+    if (this.tag.set(icon, this.settings.temperatureTag ? temperature : null, warmth)) changed = true;
 
     const day = dayKey(wall);
     const active = this.settings.events ? activeOccasions(this.settings.occasions, wall) : [];
@@ -362,8 +405,8 @@ export class Ambience {
   /** Thời tiết quanh pet: thành phố đã chọn thì theo thời tiết thật (chưa có thì không có gì), chưa chọn thì giả lập. */
   private skyAt(wall: Date, report: WeatherReport | null): Sky | null {
     if (!this.settings.weather) return null;
-    if (this.settings.city) return report ? withPetals(skyOf(report.code), wall.getMonth(), report.isDay) : null;
-    return withPetals(simulatedSky(wall), wall.getMonth(), !this.host.world.night);
+    if (this.settings.city) return report ? daySky(skyOf(report.code), wall.getMonth(), report.isDay) : null;
+    return daySky(simulatedSky(wall), wall.getMonth(), !this.host.world.night);
   }
 
   /** Thời tiết thật của đúng thành phố đang chọn, chưa quá cũ; `null` nếu không có. */
@@ -384,7 +427,7 @@ export class Ambience {
       const problem = this.failure ? (this.failure.offline ? NO_NETWORK : NO_WEATHER) : undefined;
       return { place, sky: null, problem };
     }
-    return { place, sky: withPetals(skyOf(report.code), wall.getMonth(), report.isDay), temperature: report.temperature };
+    return { place, sky: daySky(skyOf(report.code), wall.getMonth(), report.isDay), temperature: report.temperature };
   }
 }
 

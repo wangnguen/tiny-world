@@ -146,6 +146,7 @@ async function loadPack(id: string, manifestPath: string, manifest: SpriteManife
     pixelArt: manifest.pixelArt,
     facing: manifest.facing,
     anchor: manifest.anchor,
+    mouthY: manifest.mouthY,
     animations: withFallback({ ...animations, idle }),
   };
 }

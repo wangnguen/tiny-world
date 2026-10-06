@@ -78,6 +78,7 @@ Nhiều animation chung một sheet thì dùng `row` (như Byte và Patch):
 | `pixelArt` | | `true` | Phóng to kiểu pixel art, không làm mờ. Hình vẽ mượt thì đặt `false` |
 | `facing` | | `"right"` | Hướng nhân vật nhìn trong ảnh gốc; đi ngược hướng thì app tự lật |
 | `anchor` | | giữa mép dưới frame | Điểm chân nhân vật trong frame. Frame có khoảng trống dưới chân thì giảm `y` cho pet chạm đất |
+| `mouthY` | | tự đoán | Hàng pixel của miệng ở frame đầu của `idle`: lúc trời lạnh pet thở ra khói từ mép mặt ở hàng này. Không ghi thì app lấy chỗ nhô ra trước nhất của phần mặt, dễ nhầm với tay, mũ, tai nghe |
 | `animations` | có | | Mỗi animation của engine ứng với một ảnh |
 
 Mỗi animation:

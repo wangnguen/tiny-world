@@ -102,8 +102,10 @@ export interface Settings {
   pets: string[];
   /** Thành phố để lấy thời tiết thật; `null` là thời tiết giả lập, không gọi mạng. */
   city: City | null;
-  /** Hiệu ứng thời tiết quanh pet (mưa, tuyết, sương mù, sấm, cánh hoa). */
+  /** Hiệu ứng thời tiết quanh pet (nắng, mây, sao, mưa, tuyết, sương mù, sấm, cánh hoa; nóng, lạnh). */
   weather: boolean;
+  /** Nhãn nhiệt độ cạnh pet (cần chọn thành phố). */
+  temperatureTag: boolean;
   /** Pet nói câu cho vui (chào nhau, thời tiết). */
   chatter: boolean;
   /** Lịch sự kiện: đúng dịp thì một con nói câu của dịp đó. */

@@ -64,6 +64,8 @@ export interface SpriteSet {
   pixelArt: boolean;
   facing: "left" | "right";
   anchor: Point;
+  /** Hàng miệng ở frame đầu của `idle` (`mouthY` trong pet.json), không có thì đoán (`mouthOf`). */
+  mouthY?: number;
   animations: Record<AnimationName, Animation>;
 }
 
@@ -131,6 +133,41 @@ export function headOf(mask: Mask): Head {
     }
   }
   return { top, centerX: (min + max + 1) / 2 };
+}
+
+/**
+ * Miệng (chỗ thở ra khói lúc lạnh) ở frame có hình `mask`, pixel của frame: mép mặt phía trước ở hàng miệng.
+ * `hint`: hàng miệng `y` đo ở frame đầu của `idle` (`mouthY` trong pet.json) và đỉnh đầu `top` của frame
+ * đó; frame này đầu cao thấp hơn bao nhiêu thì hàng miệng lệch theo bấy nhiêu. Không có thì đoán: chỗ nhô ra
+ * phía trước nhất trong khoảng 25–65% chiều cao từ đỉnh đầu tới chân (`bottom`), dễ lấy nhầm tay, mũ, tai
+ * nghe. `facing`: hướng nhân vật nhìn trong sprite.
+ */
+export function mouthOf(
+  mask: Mask,
+  bottom: number,
+  facing: "left" | "right",
+  hint?: { y: number; top: number },
+): Point {
+  const { top } = mask;
+  if (mask.right < 0) return { x: mask.width / 2, y: mask.height / 2 };
+  const tall = Math.max(1, bottom - top);
+  const row = hint ? Math.round(hint.y + top - hint.top) : -1;
+  const from = hint ? Math.max(top, row - 2) : Math.round(top + tall * 0.25);
+  const to = Math.min(mask.height - 1, hint ? row + 2 : Math.round(top + tall * 0.65));
+  const ahead = (x: number) => (facing === "right" ? x : -x);
+  let best: Point | null = null;
+  for (let y = from; y <= to; y++) {
+    // Pixel có hình phía trước nhất của hàng này.
+    for (let i = 0; i <= mask.right - mask.left; i++) {
+      const x = facing === "right" ? mask.right - i : mask.left + i;
+      if (!mask.has(x, y)) continue;
+      if (!best || ahead(x) > ahead(best.x)) best = { x, y };
+      break;
+    }
+  }
+  const front = best ?? { x: facing === "right" ? mask.right : mask.left, y: Math.round((from + to) / 2) };
+  // Ngay mép ngoài của pixel đó, đúng hàng miệng nếu đã biết.
+  return { x: facing === "right" ? front.x + 1 : front.x, y: hint ? row : front.y };
 }
 
 function alphaMask(image: CanvasImageSource, frame: Rect): Mask {

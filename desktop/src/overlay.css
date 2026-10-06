@@ -51,6 +51,53 @@ body {
   pointer-events: none;
 }
 
+/* Nhãn nhiệt độ cạnh pet (temperatureTag.ts): hình thời tiết và số độ, chuột đi xuyên. */
+.temperature {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px 1px 4px;
+  border: 2px solid #2a2340;
+  border-radius: 9px;
+  background: #fffaf0;
+  color: #2a2340;
+  font: 700 11px/1.35 "Segoe UI", system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 0 rgba(42, 35, 64, 0.35);
+}
+
+.temperature[hidden] {
+  display: none;
+}
+
+.temperature[data-warmth="hot"] {
+  color: #d9480f;
+}
+
+.temperature[data-warmth="cold"] {
+  color: #1c64d8;
+}
+
+.temperature__icon {
+  display: flex;
+  width: 13px;
+  height: 13px;
+}
+
+.temperature__icon:empty {
+  display: none;
+}
+
+.temperature__icon svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
 /* Aura của Long: canvas nằm sau sprite và không được bắt chuột. */
 .aura {
   position: absolute;
