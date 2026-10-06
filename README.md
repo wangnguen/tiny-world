@@ -178,6 +178,23 @@ Chạy lại với version đã *publish* sẽ bị từ chối (phải tăng ve
 thì file cũ được ghi đè. App chưa ký số nên Windows hiện cảnh báo SmartScreen: chọn
 **More info → Run anyway**.
 
+### Cập nhật trong app
+
+App ([`update.rs`](desktop/src-tauri/src/update.rs)) hỏi `releases/latest` của repo trên GitHub 20 giây sau
+khi mở rồi cứ 6 tiếng một lần; nút **Kiểm tra bản mới** dưới dòng phiên bản trong Cài đặt thì hỏi ngay. Bản
+mới hơn (so theo số `x.y.z`) mà có file `*-setup.exe` thì Cài đặt hiện thẻ **Có bản mới** và một con pet
+nói một câu (mỗi bản một lần). Bấm **Cập nhật ngay**: tải bộ cài về `%TEMP%\TinyWorld-update`, kiểm tra đúng
+cỡ, thoát app như bấm Thoát, rồi chạy bộ cài với `/P /UPDATE /R` (chỉ hiện tiến trình, cài đè vào đúng thư
+mục đã cài, xong tự mở lại). Bản portable cập nhật thì thành bản cài đặt; hook NSIS tắt bản đang chạy và
+trỏ "Chạy cùng Windows" sang bản vừa cài.
+
+- Chỉ release đã **Publish** mới được gợi ý: bản nháp và pre-release không có trong `releases/latest`.
+- Bản 1.5.0 trở về trước chưa có updater: người dùng phải cài đè tay bản đầu tiên có updater một lần.
+- Bản build từ `main`/`test` có version ≥ release mới nhất nên không bị gợi ý cập nhật về bản cũ.
+- Chạy dev không tự hỏi (đặt `TINYWORLD_CHECK_UPDATE` để bật) và không tự cài, vì bộ cài ghi đè bản đã cài
+  thật trong máy (đặt `TINYWORLD_INSTALL_UPDATE` để thử cả luồng).
+- Kiểm tra hỏi/tải với GitHub thật: `cargo test -- --ignored github_that` trong `desktop/src-tauri`.
+
 ## Kiến trúc
 
 ```

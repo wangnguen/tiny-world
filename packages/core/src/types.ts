@@ -248,6 +248,25 @@ export interface WeatherFailure {
   offline: boolean;
 }
 
+/** Event `update-available` và command `get_update`/`check_update`, khớp `UpdateInfo` trong update.rs. */
+export interface UpdateInfo {
+  /** Bản mới, ví dụ "1.6.0". */
+  version: string;
+  /** Bản đang chạy. */
+  current: string;
+  /** Trang release trên GitHub (có gì mới). */
+  page: string;
+  /** Cỡ bộ cài (byte). */
+  size: number;
+}
+
+/** Event `update-progress`: đang tải bộ cài, khớp `UpdateProgress` trong update.rs. */
+export interface UpdateProgress {
+  /** Byte đã tải. */
+  received: number;
+  total: number;
+}
+
 export interface AppError {
   code: ErrorCode;
   message: string;

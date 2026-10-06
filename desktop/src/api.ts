@@ -14,6 +14,8 @@ import {
   type ScreenInfo,
   type ScreenStats,
   type Settings,
+  type UpdateInfo,
+  type UpdateProgress,
   type WeatherFailure,
   type WeatherReport,
   type WindowList,
@@ -84,6 +86,15 @@ export const api = {
   sendChat: (prompt: string) => invoke<string>("send_chat", { prompt }),
   /** Mở link http/https bằng trình duyệt. */
   openLink: (url: string) => invoke<void>("open_link", { url }),
+  /** Bản mới theo lần hỏi GitHub gần nhất; `null` là chưa thấy (update.rs). */
+  getUpdate: () => invoke<UpdateInfo | null>("get_update"),
+  /** Hỏi GitHub ngay; `null` là đang dùng bản mới nhất, mất mạng thì lỗi `OFFLINE`. */
+  checkUpdate: () => invoke<UpdateInfo | null>("check_update"),
+  /**
+   * Tải bộ cài bản mới (tiến độ qua `onUpdateProgress`) rồi thoát app; bộ cài chạy lúc app thoát hẳn, cài đè
+   * rồi tự mở lại TinyWorld. Đang tải thì lỗi `BUSY`.
+   */
+  installUpdate: () => invoke<void>("install_update"),
 
   /** Vị trí con trỏ và phím Ctrl, Rust chỉ gửi khi có thay đổi (xem `setCursorInterest`). */
   onCursorMoved: (callback: (cursor: CursorInfo) => void) =>
@@ -126,4 +137,10 @@ export const api = {
   /** Overlay vừa đổi thứ đang xem thử (cửa sổ Cài đặt nghe). */
   onPreviewChanged: (callback: (state: PreviewState) => void) =>
     listen<PreviewState>(EVENTS.previewChanged, (event) => callback(event.payload)),
+  /** GitHub có bản mới hơn bản đang chạy (vòng hỏi nền hoặc nút Kiểm tra bản mới). */
+  onUpdateAvailable: (callback: (info: UpdateInfo) => void) =>
+    listen<UpdateInfo>(EVENTS.updateAvailable, (event) => callback(event.payload)),
+  /** Đang tải bộ cài bản mới (sau khi bấm Cập nhật ngay). */
+  onUpdateProgress: (callback: (progress: UpdateProgress) => void) =>
+    listen<UpdateProgress>(EVENTS.updateProgress, (event) => callback(event.payload)),
 };

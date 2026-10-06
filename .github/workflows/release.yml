@@ -90,6 +90,7 @@ jobs:
               "",
               "- App chưa ký số: Windows báo SmartScreen thì chọn **More info → Run anyway**.",
               "- Pet chạy nền, điều khiển bằng icon TinyWorld ở system tray (góc phải taskbar).",
+              "- Đang dùng bản 1.5.0 trở về trước: tải setup ở trên cài đè một lần (giữ nguyên pet, cài đặt). Từ đó app tự báo khi có bản mới, vào Cài đặt bấm **Cập nhật ngay**.",
             ].join("\n");
 
             // Release nháp không tìm được bằng API theo tag, nên duyệt danh sách.

@@ -32,4 +32,8 @@ export const EVENTS = {
   ghostPreview: "ghost-preview",
   /** `PreviewState`, chỉ gửi cho cửa sổ Cài đặt: overlay vừa đổi thứ đang xem thử. */
   previewChanged: "preview-changed",
+  /** `UpdateInfo`: GitHub có bản mới hơn bản đang chạy (Cài đặt hiện thẻ cập nhật, pet nói một câu). */
+  updateAvailable: "update-available",
+  /** `UpdateProgress`: đang tải bộ cài bản mới. */
+  updateProgress: "update-progress",
 } as const;

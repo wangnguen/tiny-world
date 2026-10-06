@@ -25,6 +25,7 @@ import {
   skyLine,
   skyOf,
   toLunar,
+  updateLine,
   wallClock,
   warmthLine,
   warmthOf,
@@ -66,6 +67,8 @@ const REFRESH_MS = 60_000;
 const EFFORT: Partial<Record<Pet["state"], number>> = { run: 1, climb: 1, jump: 1, walk: 0.5 };
 /** Những câu đã nói hôm nay (câu của dịp lễ, con ma), để mở lại app không nói lại. */
 const STORAGE_KEY = "tinyworld.said";
+/** Bản mới nhất pet đã báo (`announceUpdate`), để mỗi bản chỉ báo một lần. */
+const UPDATE_SAID_KEY = "tinyworld.updateSaid";
 
 /** Một con trên màn hình, kèm hiệu ứng thời tiết đi theo nó. */
 export interface Resident {
@@ -98,6 +101,8 @@ interface Notice {
   seconds?: number;
   /** Lời nhắc: con nói nhảy lên một cái cho dễ thấy, cả nhóm đang ngủ thì đánh thức một con dậy nói. */
   urgent?: boolean;
+  /** Gọi lúc đã nói thật (không phải lúc xếp hàng). */
+  onSaid?: () => void;
 }
 
 /**
@@ -290,6 +295,7 @@ export class Ambience {
         }
         pet.say(notice.text, notice.seconds ?? NOTICE_SECONDS);
         if (notice.day && notice.key) this.said.add(notice.day, notice.key);
+        notice.onSaid?.();
       }
     }
   }
@@ -353,6 +359,18 @@ export class Ambience {
         reminder.kind === "break" ? breakLine(reminder.minutes) : reminder.kind === "water" ? WATER_LINE : bedtimeLine(time);
       this.notices.push({ text, seconds: REMINDER_SECONDS, urgent: true });
     }
+    this.host.wake();
+  }
+
+  /**
+   * GitHub có bản mới (update.rs, hỏi lại mỗi vài giờ): con thức đầu tiên báo một câu, mỗi bản một lần kể cả
+   * khi mở lại app. Không đánh thức ai, không nhảy lên: không gấp.
+   */
+  announceUpdate(version: string): void {
+    const key = `update:${version}`;
+    if (this.queued.has(key) || readUpdateSaid() === version) return;
+    this.queued.add(key);
+    this.notices.push({ text: updateLine(version), seconds: REMINDER_SECONDS, onSaid: () => saveUpdateSaid(version) });
     this.host.wake();
   }
 
@@ -493,6 +511,23 @@ function gap([min, max]: [number, number]): number {
 function dayKey(wall: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${wall.getFullYear()}-${pad(wall.getMonth() + 1)}-${pad(wall.getDate())}`;
+}
+
+/** Bản mới pet đã báo gần nhất, `null` nếu chưa báo hay không đọc được. */
+function readUpdateSaid(): string | null {
+  try {
+    return localStorage.getItem(UPDATE_SAID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function saveUpdateSaid(version: string): void {
+  try {
+    localStorage.setItem(UPDATE_SAID_KEY, version);
+  } catch {
+    // Không lưu được thì mở lại app có thể báo lại một lần.
+  }
 }
 
 /** Những câu đã nói trong một ngày, lưu trong localStorage của overlay; mất thì cùng lắm nói lại một lần. */

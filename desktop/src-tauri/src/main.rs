@@ -17,6 +17,7 @@ mod preview;
 mod settings;
 mod storage;
 mod tray;
+mod update;
 mod weather;
 mod window_list;
 
