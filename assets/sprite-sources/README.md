@@ -1,6 +1,7 @@
 # Nhân vật TinyWorld
 
-21 nhân vật được tạo riêng cho dự án bằng công cụ **imagegen tích hợp** ngày 2026-09-28. Bộ
+22 nhân vật được tạo riêng cho dự án bằng công cụ **imagegen tích hợp**: 21 con ngày 2026-09-28, Long
+thêm ngày 2026-10-03 (cách tạo nhân vật mới: [CREATE_PET.md](../../CREATE_PET.md)). Bộ
 ếch/cóc (Boggo, Gloop, Bẹp, Frobu) dùng atlas Mầm và Rêu làm tham chiếu nét vẽ, tỉ lệ chibi và bố
 cục để đồng bộ với các pet có trước. Ảnh nguồn đặt ở đây, ngoài `assets/sprites/`, để Vite không
 nhúng atlas lớn vào app.
@@ -26,6 +27,7 @@ nhúng atlas lớn vào app.
 | Gloop | Ếch nghịch xanh lá, khăn quàng cam gạch | `../sprites/c-gloop/` |
 | Bẹp | Cóc lùn xanh nâu, mặt chán đời, túi đeo chéo | `../sprites/c-bep/` |
 | Frobu | Ếch thức khuya, hoodie xanh navy, tai nghe tím nhạt | `../sprites/c-frobu/` |
+| Long | Rồng phương Đông xanh lục, bờm lửa cam, sừng vàng; có aura và combo quật đuôi riêng (Shift + click) | `../sprites/c-long/` |
 | Byte | Chim cánh cụt coder xanh đen, mỏ/chân vàng, kính tròn, hoodie teal | `../sprites/c-byte/` |
 | Patch | Gấu trúc đỏ coder, tai nghe/hoodie tím, đuôi sọc cuộn ngắn | `../sprites/c-patch/` |
 
@@ -65,7 +67,7 @@ Trang đọc thẳng ảnh trong `../sprites/` theo `gallery-data.js`, file này
 Từ thư mục gốc dự án:
 
 ```powershell
-node scripts/prepare-sprites.mjs              # tạo lại cả 21 pack và gallery-data.js
+node scripts/prepare-sprites.mjs              # tạo lại cả 22 pack và gallery-data.js
 node scripts/prepare-sprites.mjs --pet=cuc    # một nhân vật, theo tên thư mục nguồn
 node scripts/prepare-sprites.mjs --only-new   # chỉ các pack chưa có pet.json
 node scripts/prepare-sprites.mjs --check      # chỉ kiểm tra, không ghi file
@@ -137,6 +139,8 @@ Các tùy chọn của mỗi nhân vật trong `PETS`:
 | `recolor` | `{ rows, frames?, box?, colors }`: đổi màu trong các hàng, có thể chỉ vài frame và một ô `[trái, trên, phải, dưới]` (toạ độ trong frame 192px). Nhiều luật thì dùng mảng |
 | `fill` | `[{ row, frame, at: [x, y], box?, color }]`: tô vùng được viền bao quanh điểm `at` |
 | `singleSheet` | Gộp 12 hàng vào một `atlas.webp` trong pack (Byte, Patch) |
+| `grid` | Cắt atlas theo lưới đều 4×12 thay vì theo khoảng trống, khi pose chạm mép ô; chỉ dùng khi ô đúng cỡ (Long) |
+| `poseScale` | Thu nhỏ mọi pose của sheet sửa khi tỉ lệ của chúng vượt khung frame (Long: 0,95) |
 
 Màu trong `recolor` / `fill` được so với màu gần nhất của bảng màu pack (lệch tối đa 24), nên luật
 vẫn chạy khi bảng màu xê dịch nhẹ sau khi thêm sheet mới; lệch xa hơn thì script báo lỗi để cập nhật luật.

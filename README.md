@@ -85,6 +85,7 @@ Tương tác với pet:
 | Hai con gặp nhau | Dừng lại quay mặt vào nhau, có lúc chào một câu hoặc đi cùng nhau một đoạn; đi ngủ thì nằm cạnh nhau |
 | 3 phút không đụng tới con nào | Cả nhóm xuống taskbar (đang ở trên cửa sổ thì nhảy hoặc leo xuống) rồi lần lượt ngủ: click hay kéo con nào cũng tính chung cho cả nhóm. Click bất kỳ đâu trên màn hình hoặc kéo pet là cả nhóm dậy |
 | Giữ **Ctrl** khi click | Click xuyên qua pet xuống app bên dưới |
+| Giữ **Shift** khi click Long | Long bật aura lửa vài giây. Có con khác thì Long biến hình, rồi lần lượt tốc biến tới cạnh từng con quật đuôi một cái; con bị trúng giật mình rồi biến mất 5 giây, hiện lại đúng chỗ cũ. Con đang bị kéo, đang leo, nhảy hay đang chat thì Long chờ một lúc rồi bỏ qua; nhấc Long lên giữa chừng thì thôi. Shift + click con khác tính như click thường |
 
 Đổi độ phân giải, tỉ lệ DPI, chỗ đặt hay cỡ taskbar, cắm hoặc rút màn hình trong lúc app đang chạy thì
 overlay tự khớp lại trong khoảng một giây: pet đứng lên mặt đất mới, pet đang đứng trên cửa sổ thì
@@ -261,9 +262,11 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
 
 ```bash
 pnpm typecheck
-pnpm test                               # sprite pack, kéo thả/bấm đúp overlay, pet.json, FSM, World/Pet, nhóm pet, địa hình cửa sổ, con trỏ, đổi màn hình, world.json, thời tiết, âm lịch, lịch sự kiện
+pnpm test                               # sprite pack, effect của Long, kéo thả/bấm đúp overlay, combo của Long, pet.json, FSM, World/Pet, nhóm pet, địa hình cửa sổ, con trỏ, đổi màn hình, world.json, thời tiết, âm lịch, lịch sự kiện
 cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên cạnh, đổi toạ độ giữa hai màn hình, danh sách cửa sổ, lưu trạng thái, cài đặt, lịch sự kiện, đọc kết quả Open-Meteo, giờ ngồi máy và lời nhắc, spam Ctrl+S, giới hạn gửi chat, vị trí cửa sổ chat, đọc trang và câu trả lời Gemini, câu gợi ý, registry
 ```
 
 `pnpm test` gồm `pnpm test:sprites` (script chuẩn hoá sprite, `prepare-sprites.mjs --check` trên
-cả 21 pack và `prepare-items.mjs --check` cho ảnh mũ), `pnpm test:overlay` (kéo thả, bấm đúp trên overlay, đo đỉnh đầu để đội mũ, markdown và câu gửi của khung chat) và vitest của `packages/*`.
+cả 22 pack, `prepare-items.mjs --check` cho ảnh mũ và `prepare-aura.mjs --check` cho effect của Long),
+`pnpm test:overlay` (kéo thả, bấm đúp trên overlay, combo quật đuôi của Long, đo đỉnh đầu để đội mũ,
+markdown và câu gửi của khung chat) và vitest của `packages/*`.

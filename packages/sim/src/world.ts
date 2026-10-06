@@ -75,10 +75,12 @@ export class World implements PetEnv {
 
   /**
    * `pet` nói một câu cho vui: cả nhóm `TUNING.chatGap` giây mới nói một câu (tối đa 4 câu mỗi giờ), không
-   * nói lúc người dùng đang gõ phím, lúc pet đang ngủ hay lúc tắt `chatter`. Trả về `true` nếu đã nói.
+   * nói lúc người dùng đang gõ phím, lúc pet đang ngủ hay đang biến mất, lúc tắt `chatter`. Trả về `true`
+   * nếu đã nói.
    */
   chat(pet: Pet, text: string): boolean {
-    if (!this.chatter || this.busy || this.sinceChat < TUNING.chatGap || pet.state === "sleep") return false;
+    if (!this.chatter || this.busy || this.sinceChat < TUNING.chatGap) return false;
+    if (pet.state === "sleep" || pet.vanished > 0) return false;
     this.sinceChat = 0;
     pet.say(text);
     return true;

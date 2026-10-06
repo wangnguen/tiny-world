@@ -34,8 +34,10 @@ const ROWS = [
 // only) / `overrides` imagegen sheets that redraw rows; `keep` rows that stay from the atlas even
 // when a sheet redraws them; `dizzy` the source column of the one dizzy pose
 // the app shows; `reuse` a row's column order, replaying good poses in place of
-  // broken ones; `poseScale` shrinks all correction-sheet poses when their
-  // aspect ratio would otherwise exceed the runtime frame; `recolor` palette swaps within some rows, optionally only some
+// broken ones; `grid` cuts the atlas on its even 4x12 grid instead of at the
+// alpha gaps (poses that touch their cell edges); `poseScale` shrinks all
+// correction-sheet poses when their aspect ratio would otherwise exceed the
+// runtime frame; `recolor` palette swaps within some rows, optionally only some
 // `frames` and a `box` [left, top, right, bottom] in frame pixels; `fill` paints
 // the region enclosed by outline around `at` in one frame with one colour.
 // Recolor/fill colours resolve to the nearest pack colour, so a rule survives the

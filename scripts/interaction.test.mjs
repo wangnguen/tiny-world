@@ -100,13 +100,22 @@ test("a regular click still pokes once when releasing capture emits an event", (
   assert.deepEqual(calls.releases, []);
 });
 
-test("Shift + click calls the aura hook instead of poking or double-clicking", () => {
-  const auras = [];
-  const { pet, calls, pointer } = setup(undefined, { onAura: (target) => auras.push(target) });
+test("Shift + click calls the skill hook instead of poking or double-clicking", () => {
+  const skills = [];
+  const { pet, calls, pointer } = setup(undefined, { onSkill: (target) => skills.push(target) > 0 });
   pointer("pointerdown", 100, 190, 100, 1, true);
   pointer("pointerup", 100, 190, 120, 1, true);
-  assert.deepEqual(auras, [pet]);
+  assert.deepEqual(skills, [pet]);
   assert.equal(calls.pokes, 0);
+});
+
+test("Shift + click on a pet without a skill is a regular click", () => {
+  const skills = [];
+  const { pet, calls, pointer } = setup(undefined, { onSkill: (target) => skills.push(target) < 0 });
+  pointer("pointerdown", 100, 190, 100, 1, true);
+  pointer("pointerup", 100, 190, 120, 1, true);
+  assert.deepEqual(skills, [pet]);
+  assert.equal(calls.pokes, 1);
 });
 
 test("a regular drag still follows the grab offset and throws on release", () => {

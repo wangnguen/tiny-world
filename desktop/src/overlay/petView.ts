@@ -59,6 +59,10 @@ export class PetView {
   private bubble: HTMLDivElement | null = null;
   private bubbleText = "";
   private bubbleSize = { width: 0, height: 0 };
+  /** Có cinematic đang vẽ thay sprite (`setCovered`). */
+  private covered = false;
+  /** Pet đang biến mất (`Pet.vanished`), theo lần `update` gần nhất. */
+  private gone = false;
 
   /** `size`: cỡ trong Settings (1 là cỡ gốc của pack). */
   constructor(
@@ -90,13 +94,20 @@ export class PetView {
     this.layer.remove();
   }
 
-  /** Ẩn riêng sprite khi một cinematic thay nó; các lớp effect vẫn tiếp tục vẽ. */
-  setSpriteHidden(hidden: boolean): void {
-    this.element.hidden = hidden;
+  /** Một cinematic vẽ thay sprite (Long biến hình, quật đuôi): ẩn riêng sprite, các lớp effect vẫn vẽ. */
+  setCovered(covered: boolean): void {
+    this.covered = covered;
+    this.syncHidden();
   }
 
+  /** Sprite đang ẩn (bị cinematic thay, hoặc pet đang biến mất): không bắt chuột, không hiện bubble. */
   get spriteHidden(): boolean {
     return this.element.hidden;
+  }
+
+  private syncHidden(): void {
+    const hidden = this.covered || this.gone;
+    if (this.element.hidden !== hidden) this.element.hidden = hidden;
   }
 
   /** Thêm một lớp vẽ đi cùng pet (hiệu ứng thời tiết/aura), chung lớp với pet. */
@@ -181,6 +192,8 @@ export class PetView {
    * đúng chỗ của pet; vòng lặp truyền vị trí nội suy giữa hai bước mô phỏng (`StepBlend`).
    */
   update(pet: Pet, occluders: readonly Rect[] = [], at: Point = pet): void {
+    this.gone = pet.vanished > 0;
+    this.syncHidden();
     const animation = this.sprite.animations[pet.state];
     const fps = animationFps(pet, animation);
     const count = animation.frames.length;
@@ -236,7 +249,8 @@ export class PetView {
 
   /** Speech bubble ngay trên đầu, luôn nằm trong màn hình; đuôi bubble chỉ vào giữa đầu. */
   private placeBubble(pet: Pet, flip: boolean): void {
-    const text = pet.speech?.text ?? "";
+    // Sprite đang ẩn thì cất bubble; câu chưa hết giờ thì hiện lại cùng pet.
+    const text = this.element.hidden ? "" : (pet.speech?.text ?? "");
     if (text !== this.bubbleText) {
       this.bubbleText = text;
       if (!text) {
