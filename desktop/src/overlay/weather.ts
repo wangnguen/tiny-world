@@ -7,6 +7,12 @@ const EFFECT_MS = 1000 / EFFECT_FPS;
 /** Vùng có thời tiết quanh pet: rộng gấp chừng này lần bề ngang, cao gấp chừng này lần chiều cao pet. */
 const AREA_WIDTH = 3;
 const AREA_HEIGHT = 2.2;
+/**
+ * Vùng còn chừa xuống dưới chân pet chừng này lần chiều cao pet, cho sương mù quanh chân. Mưa, tuyết, cánh
+ * hoa thì dừng ở mặt đất (chỗ chân pet): rơi tiếp xuống phần này thì thành vệt trên taskbar hay trên cửa sổ
+ * nằm dưới.
+ */
+const BELOW_FEET = 0.25;
 /** Chớp lúc có sấm kéo dài chừng này ms. */
 const FLASH_MS = 160;
 
@@ -44,6 +50,8 @@ export class WeatherEffect {
   /** Cỡ vùng đang vẽ (CSS pixel). */
   private width = 0;
   private height = 0;
+  /** Mặt đất (chỗ chân pet), tính từ mép trên vùng vẽ (CSS pixel). */
+  private ground = 0;
   private lastDraw = 0;
   private flashUntil = 0;
   private shown = false;
@@ -90,7 +98,8 @@ export class WeatherEffect {
     const height = Math.round(petHeight * AREA_HEIGHT);
     if (width !== this.width || height !== this.height) this.resize(width, height);
     const left = Math.round(foot.x - width / 2);
-    const top = Math.round(foot.y - height + petHeight * 0.25);
+    const top = Math.round(foot.y - height + petHeight * BELOW_FEET);
+    this.ground = foot.y - top;
     this.element.style.transform = `translate(${left}px, ${top}px)`;
     if (now - this.lastDraw < EFFECT_MS) return;
     const dt = Math.min(0.2, (now - this.lastDraw) / 1000);
@@ -116,7 +125,7 @@ export class WeatherEffect {
     const [z0, z1] = kind?.size ?? [0, 0];
     return {
       x: Math.random() * this.width,
-      y: anywhere ? Math.random() * this.height : -Math.random() * 20,
+      y: anywhere ? Math.random() * this.ground : -Math.random() * 20,
       speed: s0 + Math.random() * (s1 - s0),
       size: z0 + Math.random() * (z1 - z0),
       phase: Math.random() * Math.PI * 2,
@@ -131,7 +140,8 @@ export class WeatherEffect {
     for (const p of this.particles) {
       p.y += p.speed * dt;
       if (sway) p.x += Math.sin(now / 700 + p.phase) * sway * dt;
-      if (p.y > this.height) Object.assign(p, this.spawn(sky, false));
+      // Chạm mặt đất thì hết, rơi lại từ trên.
+      if (p.y >= this.ground) Object.assign(p, this.spawn(sky, false));
     }
   }
 
@@ -157,17 +167,20 @@ export class WeatherEffect {
       if (alpha <= 0.02) continue;
       const x = Math.round(p.x);
       const y = Math.round(p.y);
+      // Phần chạm xuống dưới mặt đất thì cắt bỏ.
+      const room = this.ground - y;
+      if (room <= 0) continue;
       if (sky === "rain" || sky === "storm") {
         // Xanh vừa phải để thấy được trên cả hình nền sáng lẫn tối.
         ctx.fillStyle = `rgba(110, 160, 235, ${0.85 * alpha})`;
-        ctx.fillRect(x, y, 1.5, p.size);
+        ctx.fillRect(x, y, 1.5, Math.min(p.size, room));
       } else if (sky === "snow") {
         ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * alpha})`;
-        ctx.fillRect(x, y, p.size, p.size);
+        ctx.fillRect(x, y, p.size, Math.min(p.size, room));
       } else {
         ctx.globalAlpha = alpha;
         ctx.fillStyle = PETAL_COLORS[Math.floor(p.phase) % PETAL_COLORS.length];
-        ctx.fillRect(x, y, p.size, p.size * 0.6);
+        ctx.fillRect(x, y, p.size, Math.min(p.size * 0.6, room));
         ctx.globalAlpha = 1;
       }
     }
