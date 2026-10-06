@@ -1,13 +1,10 @@
-import { frameIndex, type AnimationName, type Hat, type Point, type Rect } from "@tinyworld/core";
+import { frameIndex, type AnimationName, type Point, type Rect } from "@tinyworld/core";
 import { contains, type Bounds, type Pet } from "@tinyworld/sim";
 import { DizzyStars, dizzyLean, dizzyReach, leanShift, ringRow } from "./dizzy";
-import { drawHat } from "./hats";
 import { headOf, type Animation, type Head, type Mask, type SpriteSet } from "./spriteSet";
 
 /** Đáy speech bubble (cả đuôi) cách đỉnh đầu pet chừng này CSS pixel. */
 const BUBBLE_LIFT = 12;
-/** Bị nhấc lên hay đang rơi thì nhân vật lộn ngược, chổng chân lên: mũ tạm cất, chạm đất lại đội. */
-const HATLESS: ReadonlySet<AnimationName> = new Set(["dragged", "fall"]);
 
 /**
  * Một pet trên màn hình: canvas nhỏ bằng một frame (chừa thêm vài cột mỗi bên cho lúc lảo đảo),
@@ -53,8 +50,6 @@ export class PetView {
   private occluders: readonly Rect[] = [];
   /** Khoảng từ điểm chân tới tường lúc leo (CSS pixel), đo theo tay nhân vật trong animation `climb`. */
   reach = 0;
-  /** Mũ đang đội (lịch sự kiện), vẽ thẳng vào canvas trên đỉnh đầu của từng frame. */
-  private hat: Hat = "none";
   /** Speech bubble đang hiện (`pet.speech`), câu đang hiện và cỡ của nó (đo một lần khi đổi câu). */
   private bubble: HTMLDivElement | null = null;
   private bubbleText = "";
@@ -114,13 +109,6 @@ export class PetView {
   attach(element: HTMLElement, behind = false): void {
     if (behind) this.layer.insertBefore(element, this.element);
     else this.layer.append(element);
-  }
-
-  /** Đội mũ `hat` (`"none"`: bỏ mũ); vẽ lại ở lần `update` sau. */
-  setHat(hat: Hat): void {
-    if (hat === this.hat) return;
-    this.hat = hat;
-    this.drawnKey = "";
   }
 
   /**
@@ -367,10 +355,6 @@ export class PetView {
     if (flip) target.setTransform(-1, 0, 0, 1, x + width, 0);
     else target.setTransform(1, 0, 0, 1, x, 0);
     target.drawImage(animation.image, source.x, source.y, source.width, source.height, 0, 0, width, element.height);
-    // Mũ theo đỉnh đầu của đúng frame này, nên nhún nhảy, lật, lảo đảo đều đi theo đầu.
-    if (this.hat !== "none" && !(this.shownState && HATLESS.has(this.shownState))) {
-      drawHat(target, this.hat, this.sprite, animation.masks[frame], this.density);
-    }
     if (target === ctx) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, element.width, element.height);

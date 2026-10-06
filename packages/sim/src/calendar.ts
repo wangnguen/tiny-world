@@ -1,4 +1,4 @@
-import type { Hat, Occasion } from "@tinyworld/core";
+import type { Occasion } from "@tinyworld/core";
 import { toLunar } from "./lunar";
 
 /**
@@ -46,9 +46,4 @@ function happening(occasion: Occasion, today: Date): boolean {
  */
 export function activeOccasions(occasions: readonly Occasion[], today: Date): Occasion[] {
   return occasions.filter((occasion) => occasion.enabled && happening(occasion, today));
-}
-
-/** Mũ cả nhóm đội hôm nay: mũ của dịp đầu tiên (theo thứ tự trong lịch) có đội mũ. */
-export function hatOf(active: readonly Occasion[]): Hat {
-  return active.find((occasion) => occasion.hat !== "none")?.hat ?? "none";
 }

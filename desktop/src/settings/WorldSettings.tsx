@@ -8,7 +8,6 @@ import {
   isAppError,
   type City,
   type CityResult,
-  type Hat,
   type Occasion,
   type Settings,
   type WeatherFailure,
@@ -33,14 +32,6 @@ const SEARCH_DELAY_MS = 450;
 const SEARCH_MIN = 2;
 /** Giờ ở thành phố đã chọn cập nhật mỗi chừng này ms. */
 const CLOCK_MS = 15_000;
-
-const HAT_LABELS: Record<Hat, string> = {
-  none: "Không",
-  party: "Sinh nhật",
-  noel: "Noel",
-  tet: "Tết",
-};
-const HATS = Object.keys(HAT_LABELS) as Hat[];
 
 interface Props {
   settings: Settings;
@@ -73,7 +64,7 @@ export function WorldSettings({ settings, onChange }: Props) {
           />
           <Toggle
             label="Lịch sự kiện"
-            hint="Đúng dịp thì đội mũ, nói câu chúc"
+            hint="Đúng dịp thì pet nói câu chúc"
             checked={settings.events}
             onChange={(events) => onChange({ events })}
           />
@@ -256,7 +247,6 @@ function blankOccasion(): Occasion {
     month: today.getMonth() + 1,
     lunar: false,
     days: 1,
-    hat: "none",
     message: "",
     enabled: true,
   };
@@ -272,13 +262,12 @@ function maxDay(month: number, lunar: boolean): number {
 function describe(occasion: Occasion): string {
   const parts = [`${occasion.day}/${occasion.month}${occasion.lunar ? " âm lịch" : ""}`];
   if (occasion.days > 1) parts.push(`${occasion.days} ngày`);
-  if (occasion.hat !== "none") parts.push(`mũ ${HAT_LABELS[occasion.hat]}`);
   return parts.join(" · ");
 }
 
 /**
  * Mục "Lịch sự kiện": các dịp lặp lại mỗi năm (dương hoặc âm lịch). Bật tắt từng dịp, sửa, xoá, thêm dịp
- * mới (sinh nhật, ngày kỷ niệm...). Đúng dịp thì cả nhóm đội mũ, một con nói câu của dịp đó mỗi ngày một lần.
+ * mới (sinh nhật, ngày kỷ niệm...). Đúng dịp thì một con nói câu của dịp đó mỗi ngày một lần.
  */
 function OccasionList({
   occasions,
@@ -331,7 +320,7 @@ function OccasionList({
       <p className="hint">
         {active.length
           ? `${todayText}: ${active.map((o) => o.name).join(", ")}.`
-          : `${todayText}: không có dịp nào, pet không đội mũ.`}
+          : `${todayText}: không có dịp nào.`}
       </p>
       {occasions.length === 0 && editing !== -1 && <p className="hint">Chưa có dịp nào.</p>}
       <ul className="occasions">
@@ -471,23 +460,6 @@ function OccasionEditor({
           onChange={(event) => set({ days: number(event.target.value) })}
         />
       </label>
-      <div className="editor__row">
-        <span>Mũ</span>
-        <div className="segments" role="radiogroup" aria-label="Mũ">
-          {HATS.map((hat) => (
-            <button
-              key={hat}
-              type="button"
-              role="radio"
-              aria-checked={draft.hat === hat}
-              className={draft.hat === hat ? "segment segment--active" : "segment"}
-              onClick={() => set({ hat })}
-            >
-              {HAT_LABELS[hat]}
-            </button>
-          ))}
-        </div>
-      </div>
       <label className="editor__row">
         <span>Câu nói</span>
         <input

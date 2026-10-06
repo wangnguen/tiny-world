@@ -26,8 +26,6 @@ const MAX_OCCASIONS: usize = 30;
 const OCCASION_NAME_MAX_LEN: usize = 40;
 const OCCASION_MESSAGE_MAX_LEN: usize = 80;
 const OCCASION_DAYS: (u8, u8) = (1, 10);
-/// Mũ cả nhóm đội trong dịp đó, khớp `Hat` trong packages/core.
-const HATS: [&str; 4] = ["none", "party", "tet", "noel"];
 /// Nhắc nghỉ sau chừng này phút ngồi liền (mặc định 50).
 const BREAK_MINUTES: (u16, u16) = (15, 120);
 /// Nhắc uống nước sau chừng này phút ngồi máy (mặc định 60).
@@ -72,6 +70,7 @@ fn is_timezone(value: &str) -> bool {
 
 /// Một dịp trong lịch sự kiện (Tết, Noel, sinh nhật...), khớp `Occasion` trong packages/core. Lặp lại
 /// mỗi năm vào ngày `day/month` (dương lịch, hoặc âm lịch Việt Nam nếu `lunar`) trong `days` ngày.
+/// File của bản cũ còn trường `hat` (mũ, đã bỏ) thì bỏ qua lúc đọc, lần lưu sau không ghi nữa.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Occasion {
     pub name: String,
@@ -81,9 +80,6 @@ pub struct Occasion {
     pub lunar: bool,
     #[serde(default = "one_day")]
     pub days: u8,
-    /// Mũ cả nhóm đội: "none", "party", "tet", "noel".
-    #[serde(default = "no_hat")]
-    pub hat: String,
     /// Câu một con nói (mỗi ngày một lần) trong dịp đó; rỗng là không nói.
     #[serde(default)]
     pub message: String,
@@ -95,23 +91,18 @@ fn one_day() -> u8 {
     1
 }
 
-fn no_hat() -> String {
-    "none".into()
-}
-
 fn enabled() -> bool {
     true
 }
 
 impl Occasion {
-    fn new(name: &str, day: u8, month: u8, lunar: bool, days: u8, hat: &str, message: &str) -> Self {
+    fn new(name: &str, day: u8, month: u8, lunar: bool, days: u8, message: &str) -> Self {
         Self {
             name: name.into(),
             day,
             month,
             lunar,
             days,
-            hat: hat.into(),
             message: message.into(),
             enabled: true,
         }
@@ -120,19 +111,19 @@ impl Occasion {
     /// Ngày lễ Việt Nam có sẵn trong lịch lúc mới cài; người dùng tắt, sửa, xoá hay thêm dịp riêng được.
     pub fn presets() -> Vec<Self> {
         vec![
-            Self::new("Tết Nguyên Đán", 1, 1, true, 5, "tet", "Chúc mừng năm mới :)))"),
-            Self::new("Tết Dương lịch", 1, 1, false, 1, "party", "Năm mới vui vẻ nha :)))"),
-            Self::new("Giỗ Tổ Hùng Vương", 10, 3, true, 1, "none", "Hôm nay Giỗ Tổ Hùng Vương đó :)"),
-            Self::new("Ngày Thống nhất", 30, 4, false, 1, "none", "30/4 rồi, nghỉ lễ chưa :)))"),
-            Self::new("Quốc tế Lao động", 1, 5, false, 1, "none", "1/5 nghỉ ngơi chút đi :)))"),
-            Self::new("Quốc khánh", 2, 9, false, 1, "none", "Mừng Quốc khánh 2/9 :)"),
-            Self::new("Trung thu", 15, 8, true, 1, "none", "Trung thu ăn bánh chưa :)))"),
-            Self::new("Giáng sinh", 24, 12, false, 2, "noel", "Giáng sinh vui vẻ :)))"),
+            Self::new("Tết Nguyên Đán", 1, 1, true, 5, "Chúc mừng năm mới :)))"),
+            Self::new("Tết Dương lịch", 1, 1, false, 1, "Năm mới vui vẻ nha :)))"),
+            Self::new("Giỗ Tổ Hùng Vương", 10, 3, true, 1, "Hôm nay Giỗ Tổ Hùng Vương đó :)"),
+            Self::new("Ngày Thống nhất", 30, 4, false, 1, "30/4 rồi, nghỉ lễ chưa :)))"),
+            Self::new("Quốc tế Lao động", 1, 5, false, 1, "1/5 nghỉ ngơi chút đi :)))"),
+            Self::new("Quốc khánh", 2, 9, false, 1, "Mừng Quốc khánh 2/9 :)"),
+            Self::new("Trung thu", 15, 8, true, 1, "Trung thu ăn bánh chưa :)))"),
+            Self::new("Giáng sinh", 24, 12, false, 2, "Giáng sinh vui vẻ :)))"),
         ]
     }
 
-    /// Ngày có thật (âm lịch tối đa 30 ngày), tên không rỗng, mũ biết được; cắt bớt chữ quá dài, kẹp số
-    /// ngày kéo dài. Sai hẳn thì bỏ.
+    /// Ngày có thật (âm lịch tối đa 30 ngày), tên không rỗng; cắt bớt chữ quá dài, kẹp số ngày kéo dài.
+    /// Sai hẳn thì bỏ.
     fn sanitized(self) -> Option<Self> {
         let name: String = self.name.trim().chars().take(OCCASION_NAME_MAX_LEN).collect();
         let max_day = if self.lunar {
@@ -146,8 +137,7 @@ impl Occasion {
         };
         let valid = !name.is_empty()
             && (1..=12).contains(&self.month)
-            && (1..=max_day).contains(&self.day)
-            && HATS.contains(&self.hat.as_str());
+            && (1..=max_day).contains(&self.day);
         valid.then(|| Self {
             name,
             message: self.message.trim().chars().take(OCCASION_MESSAGE_MAX_LEN).collect(),
@@ -179,7 +169,7 @@ pub struct Settings {
     pub weather: bool,
     /// Pet nói câu cho vui (chào nhau, thời tiết).
     pub chatter: bool,
-    /// Lịch sự kiện: đúng dịp thì cả nhóm đội mũ, một con nói câu của dịp đó.
+    /// Lịch sự kiện: đúng dịp thì một con nói câu của dịp đó.
     pub events: bool,
     /// Các dịp trong lịch sự kiện (mặc định: ngày lễ Việt Nam, `Occasion::presets`).
     pub occasions: Vec<Occasion>,
@@ -505,28 +495,38 @@ mod tests {
             .occasions
             .pop()
         };
-        let birthday = Occasion::new(" Sinh nhật ", 29, 2, false, 0, "party", "Chúc mừng sinh nhật :)))");
+        let birthday = Occasion::new(" Sinh nhật ", 29, 2, false, 0, "Chúc mừng sinh nhật :)))");
         let saved = one(birthday).unwrap();
         assert_eq!(saved.name, "Sinh nhật");
         assert_eq!(saved.days, 1);
-        // Ngày không có thật, tên rỗng, mũ lạ thì bỏ.
-        assert_eq!(one(Occasion::new("A", 31, 4, false, 1, "none", "")), None);
-        assert_eq!(one(Occasion::new("A", 31, 1, true, 1, "none", "")), None);
-        assert_eq!(one(Occasion::new("A", 1, 13, false, 1, "none", "")), None);
-        assert_eq!(one(Occasion::new("  ", 1, 1, false, 1, "none", "")), None);
-        assert_eq!(one(Occasion::new("A", 1, 1, false, 1, "crown", "")), None);
+        // Ngày không có thật, tên rỗng thì bỏ.
+        assert_eq!(one(Occasion::new("A", 31, 4, false, 1, "")), None);
+        assert_eq!(one(Occasion::new("A", 31, 1, true, 1, "")), None);
+        assert_eq!(one(Occasion::new("A", 1, 13, false, 1, "")), None);
+        assert_eq!(one(Occasion::new("  ", 1, 1, false, 1, "")), None);
         // Âm lịch có ngày 30; kéo dài quá thì kẹp lại; chữ dài thì cắt.
-        let long = one(Occasion::new(&"x".repeat(60), 30, 12, true, 99, "tet", &"y".repeat(200))).unwrap();
+        let long = one(Occasion::new(&"x".repeat(60), 30, 12, true, 99, &"y".repeat(200))).unwrap();
         assert_eq!(long.days, 10);
         assert_eq!(long.name.chars().count(), OCCASION_NAME_MAX_LEN);
         assert_eq!(long.message.chars().count(), OCCASION_MESSAGE_MAX_LEN);
         // Tối đa 30 dịp.
         let many = Settings {
-            occasions: (0..40).map(|i| Occasion::new(&format!("D{i}"), 1, 1, false, 1, "none", "")).collect(),
+            occasions: (0..40).map(|i| Occasion::new(&format!("D{i}"), 1, 1, false, 1, "")).collect(),
             ..Settings::default()
         }
         .sanitized();
         assert_eq!(many.occasions.len(), MAX_OCCASIONS);
+    }
+
+    #[test]
+    fn file_cu_con_mu_trong_lich_su_kien_van_doc_duoc_va_khong_ghi_lai() {
+        let settings: Settings = serde_json::from_str(
+            r#"{ "occasions": [{ "name": "Tết", "day": 1, "month": 1, "lunar": true, "hat": "tet" }] }"#,
+        )
+        .unwrap();
+        let settings = settings.sanitized();
+        assert_eq!(settings.occasions.len(), 1);
+        assert!(!serde_json::to_string(&settings).unwrap().contains(r#""hat""#));
     }
 
     #[test]

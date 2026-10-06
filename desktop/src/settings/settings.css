@@ -813,7 +813,7 @@ h2 {
   gap: 8px;
 }
 
-/* Nhóm nút chọn một trong vài giá trị (loại lịch, mũ). */
+/* Nhóm nút chọn một trong vài giá trị (loại lịch). */
 .segments {
   display: flex;
   flex-wrap: wrap;

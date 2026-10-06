@@ -191,7 +191,7 @@ Không làm phiền lúc làm việc:
 - Speech bubble ngắn. Câu nói cho vui (chào nhau, kêu trời mưa) cả nhóm 15 phút mới được một câu
   (`chatGap`), tối đa 4 câu mỗi giờ; đang gõ phím (Phase 5) thì không nói
 - Mỗi thứ có công tắc tắt trong tab **Thế giới** của Cài đặt
-- Chỉ dùng animation có sẵn hoặc vẽ bằng code (mũ, bubble, hạt mưa, con ma). Không sinh animation mới
+- Chỉ dùng animation có sẵn hoặc vẽ bằng code (bubble, hạt mưa, con ma). Không sinh animation mới
 
 Nội dung:
 
@@ -228,12 +228,10 @@ Nội dung:
 - Chưa chọn thành phố: thời tiết giả lập theo mùa, đổi mỗi 3 tiếng; cùng ngày, cùng khung giờ thì luôn ra
   cùng một kiểu nên mở lại app không bị đổi
 - Lịch sự kiện (chỉnh trong tab **Thế giới**): mỗi dịp có tên, ngày/tháng dương hoặc âm lịch, kéo dài
-  1–10 ngày, mũ (không, sinh nhật, Noel, Tết) và một câu nói. Mặc định có Tết Nguyên Đán, Tết Dương lịch,
-  Giỗ Tổ Hùng Vương, 30/4, 1/5, 2/9, Trung thu, Giáng sinh; bật tắt, sửa, xoá từng dịp, thêm dịp riêng
-  (sinh nhật, ngày kỷ niệm), tối đa 30 dịp. Đúng dịp thì cả nhóm đội mũ (ảnh tạo bằng imagegen trong
-  `assets/items/`, đặt lên đỉnh đầu đo ở từng frame: bỏ qua tai, râu, ăng-ten, lá mảnh; nhân vật có tai
-  hay lá to thì chỉnh riêng trong `hats.ts`; bị nhấc lên hay đang rơi thì tạm cất mũ), một con nói câu
-  của dịp đó mỗi ngày một lần
+  1–10 ngày và một câu nói. Mặc định có Tết Nguyên Đán, Tết Dương lịch, Giỗ Tổ Hùng Vương, 30/4, 1/5, 2/9,
+  Trung thu, Giáng sinh; bật tắt, sửa, xoá từng dịp, thêm dịp riêng (sinh nhật, ngày kỷ niệm), tối đa 30
+  dịp. Đúng dịp thì một con nói câu của dịp đó mỗi ngày một lần. Không làm: đội mũ theo dịp (đặt mũ lên
+  đầu bằng đo tự động lệch ở nhiều nhân vật, nhìn xấu)
 - Sự kiện hiếm: 2:00–2:30 sáng, có con còn thức thì một con ma bay ngang qua, mỗi đêm một lần; con nào
   nó bay qua thì giật mình, con đầu tiên kêu "Ma... ma kìa :((("
 
@@ -241,7 +239,7 @@ Nội dung:
 |---|---|---|
 | 4a | Pet chơi với nhau, ngày/đêm, giới hạn câu nói cho vui | Xong (test sim) |
 | 4b | Thời tiết thật/giả lập quanh pet, chọn thành phố, giờ theo thành phố, báo mất mạng, bấm đúp xem giờ/ngày/âm lịch/thời tiết | Xong phần code (test sim, `cargo test`); đang chạy thử bản dev |
-| 4c | Lịch sự kiện chỉnh được trong Cài đặt (mũ, câu chúc), con ma lúc 2 giờ sáng | Xong phần code (test sim, `cargo test`); đang chạy thử bản dev |
+| 4c | Lịch sự kiện chỉnh được trong Cài đặt (câu chúc), con ma lúc 2 giờ sáng | Xong phần code (test sim, `cargo test`); đang chạy thử bản dev |
 
 **Xong khi:** đổi thành phố thì thời tiết quanh pet đổi theo trong vài giây; rút mạng thì pet báo một lần
 "Không có mạng :))", không có lỗi nào khác hiện ra; chưa chọn thành phố thì vẫn có thời tiết giả lập; để
