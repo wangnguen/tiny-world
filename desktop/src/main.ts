@@ -376,6 +376,8 @@ async function start(): Promise<void> {
           .idleMs()
           .then((idle) => idle !== null && idle < PRESENT_MS)
           .catch(() => false),
+      report: (state) =>
+        api.reportPreview(state).catch((e: unknown) => console.warn("Không báo được trạng thái xem thử:", errorMessage(e))),
     },
     container,
     settings,
@@ -553,11 +555,18 @@ async function start(): Promise<void> {
     stopListening();
     wake();
   });
-  // Mục Xem thử trong Cài đặt: cả nhóm dậy để thấy hiệu ứng.
-  await api.onEffectPreview((effect) => {
+  // Mục Xem thử trong Cài đặt: cả nhóm dậy để thấy hiệu ứng. Thôi xem thử thì lúc nào cũng được.
+  await api.onWeatherPreview((preview) => {
+    const stop = preview.sky === null && preview.temperature === null;
+    if (!stop && (hidden || paused)) return;
+    if (!stop) world.wakeAll();
+    ambience.previewWeather(preview);
+    wake();
+  });
+  await api.onGhostPreview(() => {
     if (hidden || paused) return;
     world.wakeAll();
-    ambience.preview(effect, performance.now());
+    ambience.previewGhost(performance.now());
     wake();
   });
   await api.onQuitRequested(async () => {

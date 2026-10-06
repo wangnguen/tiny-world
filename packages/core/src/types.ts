@@ -83,11 +83,33 @@ export const OCCASION_MESSAGE_MAX = 80;
 export const OCCASION_DAYS_MAX = 10;
 
 /**
- * Xem thử một hiệu ứng (mục Xem thử trong Cài đặt), khớp `PREVIEWS` trong commands.rs: thời tiết đó quanh pet
- * `PREVIEW_SECONDS` giây, con ma bay qua ngay, `stop` thôi xem thử thời tiết.
+ * Thời tiết quanh pet, khớp `Sky` trong preview.rs. Trời không mây: ban ngày là `sunny` (mùa xuân thì
+ * `petals`), ban đêm là `clear` (sao), xem `daySky` trong packages/sim.
  */
-export type EffectPreview = "rain" | "storm" | "snow" | "fog" | "petals" | "ghost" | "stop";
+export type Sky = "sunny" | "clear" | "cloudy" | "fog" | "rain" | "snow" | "storm" | "petals";
+
+/**
+ * Xem thử thời tiết, nhiệt độ (mục Xem thử trong Cài đặt), khớp `WeatherPreview` trong preview.rs: `null` là
+ * theo trời thật, cả hai `null` là thôi xem thử. Xem thử kéo dài `PREVIEW_SECONDS` giây.
+ */
+export interface WeatherPreview {
+  sky: Sky | null;
+  /** °C. */
+  temperature: number | null;
+}
+
+/** Overlay đang xem thử gì (nút đang bật trong Cài đặt), khớp `PreviewState` trong preview.rs. */
+export interface PreviewState extends WeatherPreview {
+  /** Hết xem thử thời tiết, nhiệt độ lúc này (ms từ 1970); `null` là không xem thử. */
+  until: number | null;
+  /** Con ma đang bay. */
+  ghost: boolean;
+}
+
 export const PREVIEW_SECONDS = 30;
+/** Nút Nóng, Lạnh trong mục Xem thử (°C). */
+export const PREVIEW_HOT = 36;
+export const PREVIEW_COLD = 8;
 
 /** Cài đặt người dùng (command `get_settings` / `set_settings`), khớp `Settings` trong settings.rs. */
 export interface Settings {

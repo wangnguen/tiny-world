@@ -27,5 +27,10 @@ pub const REMINDER: &str = "reminder";
 pub const CHAT_TARGET: &str = "chat-target";
 /// Không có payload (chat.rs), chỉ gửi cho overlay: cửa sổ chat vừa đóng, pet đang chat lại đi lại như thường.
 pub const CHAT_CLOSED: &str = "chat-closed";
-/// `EffectPreview`, chỉ gửi cho overlay: người dùng bấm xem thử một hiệu ứng trong Cài đặt (thời tiết, con ma).
-pub const EFFECT_PREVIEW: &str = "effect-preview";
+/// `WeatherPreview` (preview.rs), chỉ gửi cho overlay: người dùng bấm xem thử thời tiết, nhiệt độ trong
+/// Cài đặt (cả hai `null` là thôi xem thử).
+pub const WEATHER_PREVIEW: &str = "weather-preview";
+/// Không có payload, chỉ gửi cho overlay: người dùng bấm xem thử con ma trong Cài đặt.
+pub const GHOST_PREVIEW: &str = "ghost-preview";
+/// `PreviewState` (preview.rs), chỉ gửi cho cửa sổ Cài đặt: overlay vừa đổi thứ đang xem thử.
+pub const PREVIEW_CHANGED: &str = "preview-changed";

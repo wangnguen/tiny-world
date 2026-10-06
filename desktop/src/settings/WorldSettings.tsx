@@ -4,15 +4,19 @@ import {
   OCCASION_DAYS_MAX,
   OCCASION_MESSAGE_MAX,
   OCCASION_NAME_MAX,
+  PREVIEW_COLD,
+  PREVIEW_HOT,
   PREVIEW_SECONDS,
   errorMessage,
   isAppError,
   type City,
   type CityResult,
-  type EffectPreview,
   type Occasion,
+  type PreviewState,
   type Settings,
+  type Sky,
   type WeatherFailure,
+  type WeatherPreview,
   type WeatherReport,
 } from "@tinyworld/core";
 import {
@@ -27,6 +31,7 @@ import {
   wallClock,
 } from "@tinyworld/sim";
 import { api } from "../api";
+import { skyIconSvg } from "../skyIcons";
 import { CalendarIcon, PinIcon, PlayIcon, SparkIcon } from "./icons";
 import { Toggle } from "./Toggle";
 
@@ -96,19 +101,88 @@ export function WorldSettings({ settings, onChange }: Props) {
   );
 }
 
-const PREVIEWS: { effect: EffectPreview; label: string }[] = [
-  { effect: "rain", label: "Mưa" },
-  { effect: "storm", label: "Giông" },
-  { effect: "snow", label: "Tuyết" },
-  { effect: "fog", label: "Sương mù" },
-  { effect: "petals", label: "Hoa rơi" },
-  { effect: "ghost", label: "Con ma" },
+const PREVIEW_SKIES: { sky: Sky; label: string }[] = [
+  { sky: "sunny", label: "Nắng" },
+  { sky: "clear", label: "Trời quang" },
+  { sky: "cloudy", label: "Nhiều mây" },
+  { sky: "rain", label: "Mưa" },
+  { sky: "storm", label: "Giông" },
+  { sky: "snow", label: "Tuyết" },
+  { sky: "fog", label: "Sương mù" },
+  { sky: "petals", label: "Hoa rơi" },
 ];
+const PREVIEW_TEMPERATURES: { temperature: number; label: string; warmth: "hot" | "cold" }[] = [
+  { temperature: PREVIEW_HOT, label: `Nóng ${PREVIEW_HOT}°C`, warmth: "hot" },
+  { temperature: PREVIEW_COLD, label: `Lạnh ${PREVIEW_COLD}°C`, warmth: "cold" },
+];
+const NO_PREVIEW: PreviewState = { sky: null, temperature: null, until: null, ghost: false };
+/** Đếm ngược xem thử mỗi chừng này ms. */
+const COUNTDOWN_MS = 500;
 
-/** Mục "Xem thử": bấm là pet gặp ngay hiệu ứng đó, kể cả khi đang tắt ở trên hay trời đang quang. */
+/** Hình thời tiết nhỏ trên nút (bộ icon chung với nhãn nhiệt độ cạnh pet; chuỗi SVG cố định). */
+function SkyIcon({ sky }: { sky: Sky }) {
+  return <span className="sky-icon" dangerouslySetInnerHTML={{ __html: skyIconSvg(sky) }} />;
+}
+
+/**
+ * Mục "Xem thử": bấm là pet gặp ngay thời tiết, nhiệt độ đó trong `PREVIEW_SECONDS` giây (một kiểu thời tiết và
+ * một mức nhiệt cùng lúc), bấm lại để tắt; con ma bay qua một lượt. Nút đang bật sáng lên, kèm đếm ngược, theo
+ * đúng thứ overlay đang vẽ (overlay báo lại qua Rust, mở lại Cài đặt vẫn đúng).
+ */
 function EffectPreviews() {
-  const preview = (effect: EffectPreview) =>
-    api.previewEffect(effect).catch((e: unknown) => console.warn("Không xem thử được:", errorMessage(e)));
+  const [state, setState] = useState<PreviewState>(NO_PREVIEW);
+  const [now, setNow] = useState(() => Date.now());
+  const [problem, setProblem] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const unlisten = api.onPreviewChanged((next) => {
+      setState(next);
+      setNow(Date.now());
+    });
+    api
+      .getPreview()
+      .then((next) => {
+        if (!alive) return;
+        setState(next);
+        setNow(Date.now());
+      })
+      .catch((e: unknown) => console.warn("Không đọc được trạng thái xem thử:", errorMessage(e)));
+    return () => {
+      alive = false;
+      unlisten.then((stop) => stop()).catch(() => {});
+    };
+  }, []);
+
+  useEffect(() => {
+    if (state.until === null) return;
+    const timer = window.setInterval(() => setNow(Date.now()), COUNTDOWN_MS);
+    return () => window.clearInterval(timer);
+  }, [state.until]);
+
+  const left = state.until === null ? 0 : Math.max(0, Math.ceil((state.until - now) / 1000));
+  const sky = left > 0 ? state.sky : null;
+  const temperature = left > 0 ? state.temperature : null;
+  const active = sky !== null || temperature !== null;
+
+  const send = (next: WeatherPreview) => {
+    setProblem(null);
+    api.previewWeather(next).catch((e: unknown) => setProblem(errorMessage(e)));
+  };
+  const flyGhost = () => {
+    setProblem(null);
+    api.previewGhost().catch((e: unknown) => setProblem(errorMessage(e)));
+  };
+
+  const names = [
+    PREVIEW_SKIES.find((p) => p.sky === sky)?.label,
+    PREVIEW_TEMPERATURES.find((p) => p.temperature === temperature)?.label ??
+      (temperature === null ? undefined : `${temperature}°C`),
+  ].filter((name) => name !== undefined);
+  let status = "Chưa xem thử gì.";
+  if (active) status = `Đang xem: ${names.join(" · ")} · còn ${left} giây`;
+  else if (state.ghost) status = "Con ma đang bay qua...";
+
   return (
     <section className="field">
       <h2 className="field__label">
@@ -116,19 +190,69 @@ function EffectPreviews() {
         Xem thử
       </h2>
       <p className="hint">
-        Bấm để pet gặp ngay hiệu ứng đó trong {PREVIEW_SECONDS} giây, kể cả khi đang tắt ở trên. Con ma bay qua
-        một lượt.
+        Bấm để pet gặp ngay trong {PREVIEW_SECONDS} giây, kể cả khi đang tắt ở trên; bấm lại để tắt. Bật được
+        một kiểu thời tiết và một mức nhiệt cùng lúc.
       </p>
-      <div className="previews">
-        {PREVIEWS.map(({ effect, label }) => (
-          <button key={effect} type="button" className="button" onClick={() => preview(effect)}>
-            {label}
+      <div className="preview-row">
+        <span className="preview-row__label">Thời tiết</span>
+        <div className="segments" role="group" aria-label="Thời tiết">
+          {PREVIEW_SKIES.map((p) => (
+            <button
+              key={p.sky}
+              type="button"
+              className={`segment segment--icon${sky === p.sky ? " segment--active" : ""}`}
+              aria-pressed={sky === p.sky}
+              onClick={() => send({ sky: sky === p.sky ? null : p.sky, temperature })}
+            >
+              <SkyIcon sky={p.sky} />
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="preview-row">
+        <span className="preview-row__label">Nhiệt độ</span>
+        <div className="segments" role="group" aria-label="Nhiệt độ">
+          {PREVIEW_TEMPERATURES.map((p) => (
+            <button
+              key={p.temperature}
+              type="button"
+              className={`segment segment--${p.warmth}${temperature === p.temperature ? " segment--active" : ""}`}
+              aria-pressed={temperature === p.temperature}
+              onClick={() => send({ sky, temperature: temperature === p.temperature ? null : p.temperature })}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="preview-row">
+        <span className="preview-row__label">Sự kiện</span>
+        <div className="segments" role="group" aria-label="Sự kiện">
+          <button
+            type="button"
+            className={`segment${state.ghost ? " segment--active" : ""}`}
+            aria-pressed={state.ghost}
+            disabled={state.ghost}
+            onClick={flyGhost}
+          >
+            Con ma
           </button>
-        ))}
-        <button type="button" className="button button--quiet" onClick={() => preview("stop")}>
+        </div>
+      </div>
+      <div className={`preview-status${active || state.ghost ? " preview-status--on" : ""}`} role="status">
+        <span className="preview-status__text">{status}</span>
+        <button
+          type="button"
+          className="button button--quiet"
+          disabled={!active}
+          onClick={() => send({ sky: null, temperature: null })}
+        >
           Dừng
         </button>
+        {active && <span className="preview-status__bar" style={{ width: `${(left / PREVIEW_SECONDS) * 100}%` }} />}
       </div>
+      {problem && <p className="hint hint--error">{problem}</p>}
     </section>
   );
 }

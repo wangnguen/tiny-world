@@ -13,6 +13,7 @@ mod events;
 mod fullscreen;
 mod gemini;
 mod overlay;
+mod preview;
 mod settings;
 mod storage;
 mod tray;

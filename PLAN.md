@@ -208,6 +208,10 @@ Nội dung:
   pet thở ra hơi nước từ miệng, thở cách nhau 3,4 giây lúc đứng, 1,4 giây lúc chạy. Miệng là mép mặt phía
   trước ở hàng `mouthY` trong pet.json (đo ở frame đầu `idle`, lệch theo đỉnh đầu từng frame); pack không ghi
   thì đoán chỗ nhô ra trước nhất của phần mặt. Nhãn nhiệt độ (`temperatureTag`) đứng sau lưng con đầu tiên
+- Mục Xem thử trong Cài đặt (preview.rs): `preview_weather` (một kiểu thời tiết, một mức nhiệt, 30 giây) và
+  `preview_ghost` gửi sang overlay; pet đang ẩn, tạm dừng thì lệnh báo lỗi. Overlay báo lại thứ đang xem thử
+  (`report_preview`), Rust giữ bản mới nhất (`get_preview`) và gửi `preview-changed` sang Cài đặt, nên nút
+  đang bật sáng lên, đếm ngược đúng như thứ đang vẽ, mở lại Cài đặt vẫn đúng
 - Bấm đúp vào một con: con đó nói giờ, thứ, ngày dương lịch, ngày âm lịch, và thời tiết ở thành phố đã
   chọn (`nowText`), ví dụ `15:04 · Thứ Năm 01/10`, `Âm lịch 21/8`, `Hà Nội: mưa, 27°C`. Âm lịch tính
   trên máy (thuật toán Hồ Ngọc Đức, múi giờ +7), không gọi mạng

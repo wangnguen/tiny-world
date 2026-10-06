@@ -1,6 +1,7 @@
 use crate::activity::{self, Activity};
 use crate::chat::Chat;
 use crate::cursor::CursorInterest;
+use crate::preview::{self, Preview};
 use crate::settings::SettingsStore;
 use crate::storage::Storage;
 use crate::weather::{self, Weather};
@@ -29,6 +30,7 @@ pub fn run() {
             app.manage(Windows::default());
             app.manage(CursorInterest::default());
             app.manage(Chat::default());
+            app.manage(Preview::default());
             overlay::setup(app.handle())?;
             overlay::watch(app.handle().clone());
             tray::setup(app.handle())?;
@@ -55,7 +57,10 @@ pub fn run() {
             commands::get_stats,
             commands::clear_stats,
             commands::idle_ms,
-            commands::preview_effect,
+            preview::preview_weather,
+            preview::preview_ghost,
+            preview::report_preview,
+            preview::get_preview,
             commands::open_chat,
             commands::chat_suggestions,
             commands::chat_target,

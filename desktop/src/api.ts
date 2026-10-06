@@ -6,7 +6,8 @@ import {
   type ChatTarget,
   type CityResult,
   type CursorInfo,
-  type EffectPreview,
+  type PreviewState,
+  type WeatherPreview,
   type Rect,
   type ScreenChange,
   type Reminder,
@@ -59,8 +60,17 @@ export const api = {
   clearStats: () => invoke<void>("clear_stats"),
   /** Số ms từ lần có phím hay chuột cuối cùng (ở bất kỳ app nào); `null` nếu không đọc được. */
   idleMs: () => invoke<number | null>("idle_ms"),
-  /** Mục Xem thử trong Cài đặt: pet gặp ngay hiệu ứng `effect` (overlay nhận qua `onEffectPreview`). */
-  previewEffect: (effect: EffectPreview) => invoke<void>("preview_effect", { effect }),
+  /**
+   * Mục Xem thử trong Cài đặt: pet gặp ngay thời tiết, nhiệt độ `preview` (overlay nhận qua
+   * `onWeatherPreview`); cả hai `null` là thôi xem thử. Pet đang ẩn, tạm dừng thì lỗi.
+   */
+  previewWeather: (preview: WeatherPreview) => invoke<void>("preview_weather", { preview }),
+  /** Mục Xem thử: con ma bay qua ngay (overlay nhận qua `onGhostPreview`). */
+  previewGhost: () => invoke<void>("preview_ghost"),
+  /** Overlay báo đang xem thử gì, Rust gửi sang Cài đặt (`onPreviewChanged`). */
+  reportPreview: (state: PreviewState) => invoke<void>("report_preview", { state }),
+  /** Cài đặt vừa mở: đang xem thử gì. */
+  getPreview: () => invoke<PreviewState>("get_preview"),
   /**
    * Mở cửa sổ chat với `pet` cạnh pet (`box`: khung của pet, CSS pixel của overlay). Trả về phía của cửa sổ so
    * với pet: -1 bên trái, 1 bên phải.
@@ -108,7 +118,12 @@ export const api = {
     listen<ChatTarget>(EVENTS.chatTarget, (event) => callback(event.payload)),
   /** Cửa sổ chat vừa đóng. */
   onChatClosed: (callback: () => void) => listen(EVENTS.chatClosed, () => callback()),
-  /** Người dùng bấm xem thử một hiệu ứng trong Cài đặt. */
-  onEffectPreview: (callback: (effect: EffectPreview) => void) =>
-    listen<EffectPreview>(EVENTS.effectPreview, (event) => callback(event.payload)),
+  /** Người dùng bấm xem thử thời tiết, nhiệt độ trong Cài đặt (cả hai `null` là thôi xem thử). */
+  onWeatherPreview: (callback: (preview: WeatherPreview) => void) =>
+    listen<WeatherPreview>(EVENTS.weatherPreview, (event) => callback(event.payload)),
+  /** Người dùng bấm xem thử con ma trong Cài đặt. */
+  onGhostPreview: (callback: () => void) => listen(EVENTS.ghostPreview, () => callback()),
+  /** Overlay vừa đổi thứ đang xem thử (cửa sổ Cài đặt nghe). */
+  onPreviewChanged: (callback: (state: PreviewState) => void) =>
+    listen<PreviewState>(EVENTS.previewChanged, (event) => callback(event.payload)),
 };

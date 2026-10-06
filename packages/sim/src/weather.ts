@@ -1,10 +1,8 @@
+import type { Sky } from "@tinyworld/core";
 import { Rng } from "./rng";
 
-/**
- * Thời tiết quanh pet. Trời không mây: ban ngày là `sunny` (mùa xuân thì `petals`), ban đêm là `clear` (sao),
- * xem `daySky`.
- */
-export type Sky = "sunny" | "clear" | "cloudy" | "fog" | "rain" | "snow" | "storm" | "petals";
+/** Thời tiết quanh pet (khai báo ở packages/core để Cài đặt và Rust dùng chung). */
+export type { Sky };
 
 /** Từ nhiệt độ này trở lên là nóng (hơi nóng bốc lên quanh pet), °C. */
 export const HOT_FROM = 33;

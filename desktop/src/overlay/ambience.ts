@@ -2,7 +2,8 @@ import {
   PREVIEW_SECONDS,
   type City,
   type Point,
-  type EffectPreview,
+  type PreviewState,
+  type WeatherPreview,
   type Reminder,
   type Settings,
   type WeatherFailure,
@@ -84,6 +85,8 @@ export interface AmbienceHost {
   wake(): void;
   /** Người dùng đang ngồi máy (vừa có phím hay chuột ở app bất kỳ). */
   present(): Promise<boolean>;
+  /** Đang xem thử gì (gửi sang Cài đặt để nút đang bật sáng lên). */
+  report(state: PreviewState): void;
 }
 
 /** Câu bắt buộc phải nói (không qua giới hạn câu nói cho vui); `key`: đánh dấu đã nói hôm nay. */
@@ -125,9 +128,14 @@ export class Ambience {
   private scared = new Set<Pet>();
   /** Đang hỏi Rust người dùng có ngồi máy không, để gọi con ma. */
   private ghostPending = false;
-  /** Thời tiết đang xem thử (mục Xem thử trong Cài đặt), thay thời tiết thật; `null` là không xem thử. */
-  private previewSky: Sky | null = null;
+  /**
+   * Thời tiết, nhiệt độ đang xem thử (mục Xem thử trong Cài đặt), thay trời thật tới lúc `until` (ms từ 1970);
+   * `null` là không xem thử.
+   */
+  private preview: (WeatherPreview & { until: number }) | null = null;
   private previewTimer = 0;
+  /** Lần báo Cài đặt gần nhất con ma có đang bay không. */
+  private ghostReported = false;
   /** Vừa chọn thành phố mới: lấy được thời tiết ở đó thì một con báo luôn, để biết là đã chạy. */
   private announce = false;
 
@@ -142,6 +150,8 @@ export class Ambience {
     host.world.chatter = settings.chatter;
     this.refresh();
     window.setInterval(() => this.refresh(), REFRESH_MS);
+    // Overlay vừa mở (hay tải lại): không xem thử gì, Cài đặt bỏ sáng nút cũ.
+    this.reportPreview();
   }
 
   /** Con ma đang bay: vòng lặp phải chạy tiếp kể cả khi cả nhóm đã ngủ. */
@@ -229,7 +239,7 @@ export class Ambience {
   act(now: number): void {
     const residents = this.host.residents();
     if (this.sky === "storm" && residents.some((r) => r.effect.animating)) {
-      const previewing = this.previewSky === "storm";
+      const previewing = this.preview?.sky === "storm";
       if (this.nextThunder === 0) this.nextThunder = now + (previewing ? PREVIEW_FIRST_THUNDER_MS : gap(THUNDER_GAP));
       else if (now >= this.nextThunder) {
         this.nextThunder = now + gap(previewing ? PREVIEW_THUNDER_GAP : THUNDER_GAP);
@@ -243,6 +253,10 @@ export class Ambience {
     }
 
     const ghost = this.ghost.update(now, ghostTargets(residents));
+    if ((ghost !== null) !== this.ghostReported) {
+      this.ghostReported = ghost !== null;
+      this.reportPreview();
+    }
     if (ghost === null) this.scared.clear();
     else {
       for (const { pet, view } of residents) {
@@ -281,32 +295,51 @@ export class Ambience {
   }
 
   /**
-   * Mục Xem thử trong Cài đặt: thời tiết `effect` quanh pet `PREVIEW_SECONDS` giây (bỏ qua công tắc và thời
-   * tiết thật; một con nói câu của thời tiết đó; giông thì sấm ngay), con ma bay qua ngay (không tính vào
-   * lượt mỗi đêm), `stop` thì về thời tiết như cũ.
+   * Mục Xem thử trong Cài đặt: thời tiết, nhiệt độ `next` quanh pet `PREVIEW_SECONDS` giây (bỏ qua công tắc và
+   * trời thật; một con nói ngay câu của thứ vừa bật; giông thì sấm ngay), cả hai `null` thì về trời thật. Mỗi
+   * lần bấm tính lại từ đầu `PREVIEW_SECONDS` giây.
    */
-  preview(effect: EffectPreview, now: number): void {
-    if (effect === "ghost") {
-      if (!this.ghost.flying && this.host.residents().length > 0) this.ghost.fly(this.host.world.bounds, now);
-      this.host.wake();
-      return;
-    }
+  previewWeather(next: WeatherPreview): void {
     window.clearTimeout(this.previewTimer);
-    this.previewSky = effect === "stop" ? null : effect;
-    if (this.previewSky) {
+    const before = this.preview;
+    const active = next.sky !== null || next.temperature !== null;
+    this.preview = active ? { ...next, until: Date.now() + PREVIEW_SECONDS * 1000 } : null;
+    if (active) {
       this.previewTimer = window.setTimeout(() => {
-        this.previewSky = null;
-        this.refresh();
+        this.preview = null;
+        this.refresh(true);
+        this.reportPreview();
       }, PREVIEW_SECONDS * 1000);
     }
-    this.refresh();
-    if (this.previewSky) {
-      // Câu của thời tiết đó nói luôn, không chờ tới lượt câu nói cho vui.
-      this.skyLine = null;
-      this.notices.push({ text: skyLine(this.previewSky, this.temperature, this.warmth) });
-      this.nextThunder = 0;
+    this.refresh(true);
+    if (next.sky === "storm" && before?.sky !== "storm") this.nextThunder = 0;
+    // Câu của thứ vừa bật nói luôn (thay câu đang nói), không chờ tới lượt câu nói cho vui.
+    let line: string | null = null;
+    if (next.sky && next.sky !== before?.sky) line = skyLine(next.sky, this.temperature, this.warmth);
+    else if (next.temperature !== null && next.temperature !== before?.temperature && this.warmth) {
+      line = warmthLine(this.warmth, next.temperature);
     }
+    const speaker = pickAwake(this.host.residents());
+    if (line && speaker) speaker.pet.say(line, NOTICE_SECONDS);
+    this.reportPreview();
     this.host.wake();
+  }
+
+  /** Mục Xem thử: con ma bay qua ngay (không tính vào lượt mỗi đêm). */
+  previewGhost(now: number): void {
+    if (!this.ghost.flying && this.host.residents().length > 0) this.ghost.fly(this.host.world.bounds, now);
+    this.host.wake();
+  }
+
+  /** Báo Cài đặt đang xem thử gì. */
+  private reportPreview(): void {
+    const preview = this.preview;
+    this.host.report({
+      sky: preview?.sky ?? null,
+      temperature: preview?.temperature ?? null,
+      until: preview?.until ?? null,
+      ghost: this.ghost.flying,
+    });
   }
 
   /** Rust nhắc (activity.rs): nhắc nghỉ, uống nước, nhắc khuya, spam Ctrl+S. Không qua giới hạn câu nói cho vui. */
@@ -325,9 +358,10 @@ export class Ambience {
 
   /**
    * Tính lại thời tiết, ban đêm, câu của dịp lễ và con ma theo giờ hiện tại; có gì đổi thì chạy lại
-   * vòng lặp vẽ (cả nhóm đang ngủ mà không có gì đổi thì để yên).
+   * vòng lặp vẽ (cả nhóm đang ngủ mà không có gì đổi thì để yên). `quiet`: trời đổi vì bật, tắt xem thử,
+   * không nói câu thời tiết cho vui.
    */
-  private refresh(): void {
+  private refresh(quiet = false): void {
     let changed = false;
     const { world } = this.host;
     const now = new Date();
@@ -336,13 +370,15 @@ export class Ambience {
     const hour = wall.getHours();
     world.night = report ? !report.isDay : hour >= NIGHT_FROM || hour < NIGHT_UNTIL;
 
-    const sky = this.previewSky ?? this.skyAt(wall, report);
-    const temperature = report ? report.temperature : null;
+    // Đang xem thử thì thay trời thật, kể cả khi tắt hiệu ứng thời tiết.
+    const preview = this.preview;
+    const sky = preview?.sky ?? this.skyAt(wall, report);
+    const temperature = preview?.temperature ?? (report ? report.temperature : null);
     const warmth = warmthOf(temperature);
-    const shown = this.settings.weather ? warmth : null;
+    const shown = this.settings.weather || preview?.temperature != null ? warmth : null;
     // Câu nói: trời đổi từ kiểu này sang kiểu khác thì nói câu của trời mới (kèm nhiệt độ); trời không đổi mà
-    // chuyển nóng, lạnh thì kêu nóng, lạnh. Lúc mới mở app hay mới có thời tiết thì không nói.
-    const known = this.sky !== undefined && this.sky !== null;
+    // chuyển nóng, lạnh thì kêu nóng, lạnh. Lúc mới mở app, mới có thời tiết, hay đang xem thử thì không nói.
+    const known = this.sky !== undefined && this.sky !== null && !quiet && !preview;
     if (known && sky && sky !== this.sky) this.skyLine = skyLine(sky, temperature, warmth);
     else if (known && sky === this.sky && shown && warmth !== this.warmth && temperature !== null) {
       this.skyLine = warmthLine(shown, temperature);
@@ -360,8 +396,9 @@ export class Ambience {
     this.temperature = temperature;
     this.warmth = warmth;
     // Hình trên nhãn nhiệt độ theo trời thật, kể cả khi tắt hiệu ứng thời tiết.
-    const icon = this.previewSky ?? (report ? daySky(skyOf(report.code), wall.getMonth(), report.isDay) : null);
-    if (this.tag.set(icon, this.settings.temperatureTag ? temperature : null, warmth)) changed = true;
+    const icon = preview?.sky ?? (report ? daySky(skyOf(report.code), wall.getMonth(), report.isDay) : null);
+    const tagged = preview?.temperature ?? (this.settings.temperatureTag ? temperature : null);
+    if (this.tag.set(icon, tagged, warmth)) changed = true;
 
     const day = dayKey(wall);
     const active = this.settings.events ? activeOccasions(this.settings.occasions, wall) : [];
