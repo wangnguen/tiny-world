@@ -93,6 +93,9 @@ export type Goal =
 /** State pet đang tỉnh, đứng trên mặt đất hoặc mép cửa sổ và không bận việc gì: phản ứng được với cửa sổ. */
 const CALM: ReadonlySet<PetState> = new Set(["idle", "walk", "run", "perch", "land"]);
 
+/** State đứng yên ngay được (`Pet.hold`): đang rảnh, đang ngủ hay đang choáng trên mặt đất hoặc mép cửa sổ. */
+const HOLDABLE: ReadonlySet<PetState> = new Set([...CALM, "sleep", "dizzy"]);
+
 /** Đang sang màn hình bên cạnh qua mép `dir`. */
 interface Crossing {
   dir: Facing;
@@ -243,6 +246,11 @@ export class Pet {
    * đi theo con khác. `null` là không chat.
    */
   listening: Facing | null = null;
+  /**
+   * Còn biến mất chừng này giây (bị Long quật bay, `vanish`): đứng nguyên như lúc biến mất, không làm gì,
+   * con khác không thấy; hết giờ thì hiện lại đúng chỗ cũ và làm tiếp việc đang dở. 0 là đang hiện.
+   */
+  vanished = 0;
   private readonly brain = new StateMachine<PetState, Pet>(STATES, "idle");
 
   constructor(
@@ -302,6 +310,45 @@ export class Pet {
     this.planned = seconds;
   }
 
+  /**
+   * Đứng yên `seconds` giây quay về phía `facing`, nếu đang rảnh trên mặt đất hoặc mép cửa sổ (đang ngủ,
+   * đang choáng thì dậy luôn). Đang bị kéo, rơi, leo, nhảy, chat, sang màn hình khác hay đang biến mất thì
+   * thôi, trả về `false`: ép đứng yên lúc đó thì pet đứng khựng giữa không trung.
+   */
+  hold(facing: Facing, seconds: number): boolean {
+    if (!HOLDABLE.has(this.state) || this.crossing || this.listening !== null || this.vanished > 0) return false;
+    this.pause(facing, seconds);
+    return true;
+  }
+
+  /**
+   * Tốc biến tới đứng cạnh `other` (đang đứng trên mặt đất hoặc mép cửa sổ): cùng chỗ đứng với nó, điểm
+   * chân ở `x` (kẹp trong chỗ đứng), quay mặt về phía nó rồi đứng yên `seconds` giây. Đang rơi, leo, nhảy
+   * cũng được, đứng hẳn lên chỗ mới chứ không lơ lửng. Không gọi lúc đang bị kéo.
+   */
+  blinkTo(other: Pet, x: number, seconds: number): void {
+    this.pause(this.facing, seconds);
+    this.vx = 0;
+    this.vy = 0;
+    this.crossing = null;
+    this.skipLedge = null;
+    const mount = other.grounded ? other.mount : null;
+    this.mount = mount ? { id: mount.id, dx: 0, dy: mount.dy } : null;
+    const ground = groundOf(this);
+    // Cửa sổ vừa đóng thì đứng xuống mặt đất.
+    if (!ground.ledge) this.mount = null;
+    // Mép hẹp hơn chỗ đứng: đứng giữa mép, bước sau sẽ rơi (`mountHolds`) như mọi lúc khác.
+    this.x = ground.to < ground.from ? (ground.from + ground.to) / 2 : clamp(x, ground.from, ground.to);
+    this.y = ground.y;
+    syncMount(this);
+    if (Math.abs(other.x - this.x) > 1) this.facing = other.x > this.x ? 1 : -1;
+  }
+
+  /** Biến mất `seconds` giây (`vanished`); câu đang nói để dành tới lúc hiện lại. */
+  vanish(seconds: number): void {
+    this.vanished = Math.max(this.vanished, seconds);
+  }
+
   /** Đang đứng trên mặt đất hoặc mép cửa sổ: không bị kéo, không đang rơi, leo hay bay. */
   get grounded(): boolean {
     const { state } = this;
@@ -349,7 +396,7 @@ export class Pet {
    */
   windowMoved(id: number, from: Rect, to: Rect): void {
     // Đang vắt qua mép sang màn hình khác: đi nốt, không quay đầu giữa chừng.
-    if (this.mount?.id === id || !CALM.has(this.state) || this.crossing) return;
+    if (this.mount?.id === id || !CALM.has(this.state) || this.crossing || this.vanished > 0) return;
     if (Math.abs(from.width - to.width) >= 1 || Math.abs(from.height - to.height) >= 1) return;
     const after = gap(this, to);
     if (after >= TUNING.fleeRange || after >= gap(this, from)) return;
@@ -358,7 +405,7 @@ export class Pet {
 
   /** Cửa sổ `id` (khung cuối cùng `rect`) vừa bị đóng: ở gần thì quay về phía đó nhảy cẫng lên ăn mừng. */
   windowClosed(id: number, rect: Rect): void {
-    if (this.mount?.id === id || !CALM.has(this.state)) return;
+    if (this.mount?.id === id || !CALM.has(this.state) || this.vanished > 0) return;
     if (this.sinceCheer < TUNING.cheerCooldown || gap(this, rect) > TUNING.cheerRange) return;
     if (!this.env.rng.chance(TUNING.cheerChance)) return;
     this.sinceCheer = 0;
@@ -373,7 +420,7 @@ export class Pet {
    * Không tính là người dùng đụng vào, nên không làm cả nhóm tỉnh ngủ lâu hơn.
    */
   startle(): void {
-    if (!CALM.has(this.state) || !this.grounded || this.crossing) return;
+    if (!CALM.has(this.state) || !this.grounded || this.crossing || this.vanished > 0) return;
     this.hops = 0;
     this.brain.go(this, "react");
   }
@@ -435,6 +482,11 @@ export class Pet {
     this.sinceCheer += dt;
     this.sinceTurn += dt;
     this.sinceMeet += dt;
+    // Đang biến mất: đứng nguyên như lúc biến mất (câu đang nói để dành), hết giờ thì làm tiếp.
+    if (this.vanished > 0) {
+      this.vanished = Math.max(0, this.vanished - dt);
+      return;
+    }
     if (this.speech && (this.speech.left -= dt) <= 0) this.speech = null;
     if (this.crossing) {
       // Chỉ tính giờ chờ overlay sang từ lúc giữa thân qua mép: đi bộ từ đầu mặt đất ra tới đó mất hơn một giây.
@@ -702,7 +754,9 @@ function nextActivity(pet: Pet): PetState | undefined {
   // Con khác đang đi lại thì con này hay đứng yên hơn: cả nhóm ít khi cùng chạy nhảy một lúc, đỡ rối mắt
   // và vòng lặp vẽ được nghỉ nhiều hơn. Chỉ đổi xác suất, không bốc thêm số ngẫu nhiên, nên một con thì
   // sống y như trước.
-  const movers = pet.env.pets.filter((other) => other !== pet && MOVING.has(other.state)).length;
+  const movers = pet.env.pets.filter(
+    (other) => other !== pet && other.vanished === 0 && MOVING.has(other.state),
+  ).length;
   const keep = Math.max(0, 1 - TUNING.groupCalm * movers);
   // Chỉ bốc số ngẫu nhiên khi có chỗ để nhảy / leo, để không có cửa sổ thì pet sống y như Phase 1.
   const jumps = jumpTargets(pet);
@@ -804,6 +858,8 @@ function neighbors(pet: Pet, other: Pet, reach: number): boolean {
 /** `pet` đang đi vừa tới sát `other` ở phía trước, cả hai đều rảnh: dừng lại chào được. */
 function meetable(pet: Pet, other: Pet): boolean {
   if (other.sinceMeet < TUNING.meetCooldown || other.crossing || other.goal || other.listening !== null) return false;
+  // Con đang biến mất thì không thấy để mà chào.
+  if (other.vanished > 0) return false;
   if (other.state !== "idle" && other.state !== "walk" && other.state !== "run") return false;
   return (other.x - pet.x) * pet.facing > 0 && neighbors(pet, other, TUNING.meetReach);
 }

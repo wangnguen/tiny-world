@@ -1,48 +1,70 @@
-import { mkdir, stat } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+// Tách sprite sheet effect của Long (aura, biến hình, quật đuôi) ở assets/sprite-sources/long/ thành từng
+// frame WebP trong assets/effects/ cho overlay (desktop/src/overlay/aura.ts, longAction.ts). Mỗi sheet có
+// đúng 4 frame bằng nhau xếp ngang, nền trong suốt; mỗi frame được thu nhỏ về cao `HEIGHT`.
+// Usage: node scripts/prepare-aura.mjs [--check]
+import assert from "node:assert/strict";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
-const SOURCE = "assets/sprite-sources/long/aura.png";
-const OUTPUT = "assets/effects/long-aura";
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const sourceDir = join(root, "assets/sprite-sources/long");
+const outDir = join(root, "assets/effects");
 const FRAMES = 4;
-const ACTIONS = [
-  ["assets/sprite-sources/long/transform.png", "assets/effects/long-actions/transform"],
-  ["assets/sprite-sources/long/tail-swipe.png", "assets/effects/long-actions/tail-swipe"],
+/**
+ * Cao mỗi frame (px). Cinematic vẽ cao gấp đôi Long, aura gấp 1,8 lần; Long cao 192 CSS px ở cỡ 200%,
+ * nên 384 đủ nét ở mọi cỡ, mà ảnh giải nén nhẹ hơn khoảng 3,5 lần so với sheet nguồn (cao 724).
+ */
+const HEIGHT = 384;
+/** Sheet nguồn và thư mục frame của nó (trong assets/effects/). */
+export const SHEETS = [
+  { source: "aura.png", output: "long-aura" },
+  { source: "transform.png", output: "long-actions/transform" },
+  { source: "tail-swipe.png", output: "long-actions/tail-swipe" },
 ];
 
-/**
- * Tách sprite sheet aura của Long thành từng frame WebP để overlay chỉ cần nạp
- * frame hiện tại. Sheet nguồn phải có đúng bốn cột bằng nhau và giữ alpha.
- */
-export async function prepareAura(source = SOURCE, output = OUTPUT) {
-  const image = sharp(source, { animated: false });
-  const { width, height, hasAlpha } = await image.metadata();
-  if (!width || !height || width % FRAMES !== 0) {
-    throw new Error(`${source}: aura phải là sprite sheet ${FRAMES} cột có bề ngang chia hết cho ${FRAMES}.`);
-  }
-  if (!hasAlpha) throw new Error(`${source}: aura phải có nền trong suốt (alpha).`);
-
+/** Các frame WebP lossless của sheet `source`, từ trái sang phải. */
+export async function prepareSheet(source) {
+  const file = join(sourceDir, source);
+  const { width, height, hasAlpha } = await sharp(file).metadata();
+  assert.ok(width % FRAMES === 0, `${file}: phải là ${FRAMES} frame xếp ngang, bề ngang chia hết cho ${FRAMES}`);
+  assert.ok(hasAlpha, `${file}: phải có nền trong suốt (alpha)`);
   const frameWidth = width / FRAMES;
-  await mkdir(output, { recursive: true });
-  await Promise.all(
-    Array.from({ length: FRAMES }, (_, index) =>
-      image
-        .clone()
-        .extract({ left: index * frameWidth, top: 0, width: frameWidth, height })
-        .webp({ lossless: true })
-        .toFile(resolve(output, `frame-${index}.webp`)),
+  return Promise.all(
+    Array.from({ length: FRAMES }, (_, i) =>
+      sharp(file)
+        .extract({ left: i * frameWidth, top: 0, width: frameWidth, height })
+        .resize({ height: HEIGHT, kernel: "lanczos3" })
+        .webp({ lossless: true, effort: 6 })
+        .toBuffer(),
     ),
   );
 }
 
-/** Tách hai sheet cinematic (biến hình và quật đuôi) của Long. */
-export async function prepareLongActions() {
-  for (const [source, output] of ACTIONS) await prepareAura(source, output);
+async function main() {
+  const check = process.argv.includes("--check");
+  let count = 0;
+  for (const { source, output } of SHEETS) {
+    const frames = await prepareSheet(source);
+    const dir = join(outDir, output);
+    for (const [i, webp] of frames.entries()) {
+      const out = join(dir, `frame-${i}.webp`);
+      if (check) {
+        assert.ok(existsSync(out), `${out}: chưa tạo, chạy node scripts/prepare-aura.mjs`);
+        const [want, have] = await Promise.all([
+          sharp(webp).ensureAlpha().raw().toBuffer(),
+          sharp(readFileSync(out)).ensureAlpha().raw().toBuffer(),
+        ]);
+        assert.ok(want.equals(have), `${out}: khác ảnh nguồn, chạy lại node scripts/prepare-aura.mjs`);
+      } else {
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(out, webp);
+      }
+      count++;
+    }
+  }
+  console.log(check ? `effects: ${count} frame khớp ảnh nguồn` : `effects: đã ghi ${count} frame vào assets/effects/`);
 }
 
-if (import.meta.main) {
-  await stat(SOURCE);
-  await prepareAura();
-  await Promise.all(ACTIONS.map(([source]) => stat(source)));
-  await prepareLongActions();
-}
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) await main();

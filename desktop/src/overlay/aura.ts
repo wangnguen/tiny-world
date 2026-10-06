@@ -1,33 +1,25 @@
 import type { Point } from "@tinyworld/core";
+import { FRAME_ASPECT, FrameSet } from "./effectFrames";
 
 /** Aura chạy chậm hơn sprite một chút để vẫn sáng rõ nhưng không tốn CPU. */
-export const AURA_FPS = 10;
+const AURA_FPS = 10;
 const AURA_FRAME_MS = 1000 / AURA_FPS;
 const AURA_MIN_MS = 5_000;
 const AURA_MAX_MS = 7_000;
-const FRAME_ASPECT = 543 / 724;
 
-const urls = import.meta.glob<string>("../../../assets/effects/long-aura/frame-*.webp", {
-  eager: true,
-  query: "?url",
-  import: "default",
-});
-
-function loadFrames(): HTMLImageElement[] {
-  return Object.entries(urls)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, url]) => {
-      const image = new Image();
-      image.src = url;
-      return image;
-    });
-}
+const FRAMES = new FrameSet(
+  import.meta.glob<string>("../../../assets/effects/long-aura/frame-*.webp", {
+    eager: true,
+    query: "?url",
+    import: "default",
+  }),
+);
 
 /** Aura riêng của Long; không liên quan tới dữ liệu hoặc trạng thái thời tiết. */
 export class AuraEffect {
   readonly element: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
-  private readonly frames = loadFrames();
+  private frames = FRAMES.acquire();
   private until = 0;
   private shown = false;
   private width = 0;
@@ -53,6 +45,14 @@ export class AuraEffect {
     this.lastFrame = -1;
   }
 
+  /** Long bị bỏ khỏi màn hình: thả ảnh aura. */
+  dispose(): void {
+    if (this.frames.length === 0) return;
+    this.frames = [];
+    this.until = 0;
+    FRAMES.release();
+  }
+
   update(foot: Point, petWidth: number, petHeight: number, now: number, visible: boolean): void {
     const active = now < this.until;
     const show = active && visible;
@@ -60,7 +60,7 @@ export class AuraEffect {
       this.shown = show;
       this.element.hidden = !show;
     }
-    if (!show) return;
+    if (!show || this.frames.length === 0) return;
 
     const height = Math.round(petHeight * 1.8);
     // Long có thể dùng frame không vuông sau khi biến hình; giữ aura ít nhất phủ rộng thân.

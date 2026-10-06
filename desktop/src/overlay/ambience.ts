@@ -54,7 +54,8 @@ export interface Resident {
   pet: Pet;
   view: PetView;
   effect: WeatherEffect;
-  aura: AuraEffect;
+  /** Aura sau lưng, chỉ Long có. */
+  aura: AuraEffect | null;
 }
 
 export interface AmbienceHost {
@@ -121,7 +122,8 @@ export class Ambience {
   /** Vòng lặp phải vẽ lại trong vòng chừng này ms (hiệu ứng thời tiết, con ma); `Infinity` nếu không cần. */
   get frameMs(): number {
     if (this.ghost.flying) return 0;
-    return this.host.residents().some((r) => r.effect.animating || r.aura.animating) ? 1000 / EFFECT_FPS : Number.POSITIVE_INFINITY;
+    const animating = this.host.residents().some((r) => r.effect.animating || r.aura?.animating);
+    return animating ? 1000 / EFFECT_FPS : Number.POSITIVE_INFINITY;
   }
 
   setSettings(next: Settings): void {
@@ -175,9 +177,9 @@ export class Ambience {
   place(now: number): void {
     for (const { pet, view, effect, aura } of this.host.residents()) {
       const visible = pet.state !== "sleep" && !view.spriteHidden;
-      aura.update(view.foot ?? pet, view.width, view.height, now, visible);
+      aura?.update(view.foot ?? pet, view.width, view.height, now, visible);
       // Aura của Long thay thế thời tiết quanh chính Long; pet khác vẫn theo thời tiết chung.
-      effect.update(view.foot ?? pet, view.width, view.height, now, visible && !aura.animating);
+      effect.update(view.foot ?? pet, view.width, view.height, now, visible && !aura?.animating);
     }
   }
 
@@ -201,7 +203,8 @@ export class Ambience {
     if (ghostX === null) this.scared.clear();
     else {
       for (const { pet, view } of residents) {
-        if (this.scared.has(pet) || pet.state === "sleep" || Math.abs(pet.x - ghostX) > view.width / 2) continue;
+        if (this.scared.has(pet) || pet.state === "sleep" || pet.vanished > 0) continue;
+        if (Math.abs(pet.x - ghostX) > view.width / 2) continue;
         if (this.scared.size === 0) pet.say(GHOST_LINE);
         this.scared.add(pet);
         pet.startle();
@@ -333,9 +336,9 @@ function sameCity(a: City | null, b: City | null): boolean {
   return a?.latitude === b?.latitude && a?.longitude === b?.longitude;
 }
 
-/** Một con đang thức bất kỳ, `null` nếu cả nhóm ngủ. */
+/** Một con đang thức (và đang hiện) bất kỳ, `null` nếu cả nhóm ngủ. */
 function pickAwake(residents: readonly Resident[]): Resident | null {
-  const awake = residents.filter((r) => r.pet.state !== "sleep");
+  const awake = residents.filter((r) => r.pet.state !== "sleep" && r.pet.vanished === 0);
   return awake.length ? awake[Math.floor(Math.random() * awake.length)] : null;
 }
 

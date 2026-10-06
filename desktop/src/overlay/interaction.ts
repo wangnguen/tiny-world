@@ -29,7 +29,8 @@ interface Press {
   offset: Point;
   dragging: boolean;
   samples: Sample[];
-  aura: boolean;
+  /** Giữ Shift lúc bấm: dùng kỹ năng riêng của nhân vật (`onSkill`). */
+  skill: boolean;
 }
 
 export interface InteractionHooks {
@@ -41,8 +42,11 @@ export interface InteractionHooks {
   onDragOutside?(point: Point): void;
   /** Bấm đúp vào `pet` (lần click thứ hai vẫn làm pet nhảy như click thường). */
   onDoubleClick?(pet: Pet): void;
-  /** Shift + click trái vào một pet, không kéo: dành cho kỹ năng riêng của nhân vật. */
-  onAura?(pet: Pet): void;
+  /**
+   * Shift + click trái vào `pet`, không kéo: kỹ năng riêng của nhân vật. Trả về `false` nếu con đó không có
+   * kỹ năng riêng, khi đó tính như click thường.
+   */
+  onSkill?(pet: Pet): boolean;
 }
 
 /**
@@ -110,7 +114,7 @@ export class PetInteraction {
       offset: { x: foot.x - point.x, y: foot.y - point.y },
       dragging: false,
       samples: [{ ...point, t: event.timeStamp }],
-      aura: event.shiftKey,
+      skill: event.shiftKey,
     };
     this.hooks.onHold(true);
   };
@@ -141,9 +145,8 @@ export class PetInteraction {
       pet.release(...throwVelocity(press.samples, event.timeStamp));
       return;
     }
-    if (press.aura) {
+    if (press.skill && this.hooks.onSkill?.(pet)) {
       this.lastClick = null;
-      this.hooks.onAura?.(pet);
       return;
     }
     pet.poke();
