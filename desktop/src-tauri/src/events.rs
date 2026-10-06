@@ -27,3 +27,5 @@ pub const REMINDER: &str = "reminder";
 pub const CHAT_TARGET: &str = "chat-target";
 /// Không có payload (chat.rs), chỉ gửi cho overlay: cửa sổ chat vừa đóng, pet đang chat lại đi lại như thường.
 pub const CHAT_CLOSED: &str = "chat-closed";
+/// `EffectPreview`, chỉ gửi cho overlay: người dùng bấm xem thử một hiệu ứng trong Cài đặt (thời tiết, con ma).
+pub const EFFECT_PREVIEW: &str = "effect-preview";

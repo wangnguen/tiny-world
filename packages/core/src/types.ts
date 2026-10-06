@@ -82,6 +82,13 @@ export const OCCASION_NAME_MAX = 40;
 export const OCCASION_MESSAGE_MAX = 80;
 export const OCCASION_DAYS_MAX = 10;
 
+/**
+ * Xem thử một hiệu ứng (mục Xem thử trong Cài đặt), khớp `PREVIEWS` trong commands.rs: thời tiết đó quanh pet
+ * `PREVIEW_SECONDS` giây, con ma bay qua ngay, `stop` thôi xem thử thời tiết.
+ */
+export type EffectPreview = "rain" | "storm" | "snow" | "fog" | "petals" | "ghost" | "stop";
+export const PREVIEW_SECONDS = 30;
+
 /** Cài đặt người dùng (command `get_settings` / `set_settings`), khớp `Settings` trong settings.rs. */
 export interface Settings {
   /** Cỡ nhân vật so với cỡ gốc của sprite pack, 0.5–2. */

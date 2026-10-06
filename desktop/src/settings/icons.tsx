@@ -76,6 +76,16 @@ export function SparkIcon() {
   );
 }
 
+/** Mục Xem thử (cho pet gặp ngay một hiệu ứng). */
+export function PlayIcon() {
+  return (
+    <svg className="icon icon--play" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M10.5 8.8v6.4l5-3.2z" />
+    </svg>
+  );
+}
+
 /** Mục Lịch sự kiện. */
 export function CalendarIcon() {
   return (

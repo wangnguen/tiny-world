@@ -1,4 +1,12 @@
-import type { City, Reminder, Settings, WeatherFailure, WeatherReport } from "@tinyworld/core";
+import {
+  PREVIEW_SECONDS,
+  type City,
+  type EffectPreview,
+  type Reminder,
+  type Settings,
+  type WeatherFailure,
+  type WeatherReport,
+} from "@tinyworld/core";
 import {
   GHOST_LINE,
   SAVE_SPAM_LINE,
@@ -32,6 +40,9 @@ const NIGHT_FROM = 19;
 const NIGHT_UNTIL = 6;
 /** Hai tiếng sấm cách nhau ngẫu nhiên trong khoảng này (ms). */
 const THUNDER_GAP: [number, number] = [15_000, 45_000];
+/** Xem thử giông: tiếng sấm đầu tiên sau chừng này ms, các tiếng sau cách nhau chừng này (ms). */
+const PREVIEW_FIRST_THUNDER_MS = 1_500;
+const PREVIEW_THUNDER_GAP: [number, number] = [5_000, 9_000];
 /** Con ma chỉ bay trong khoảng 2:00–2:30 (giờ ở thành phố đã chọn), mỗi đêm một lần. */
 const GHOST_HOUR = 2;
 const GHOST_MINUTES = 30;
@@ -101,6 +112,9 @@ export class Ambience {
   private scared = new Set<Pet>();
   /** Đang hỏi Rust người dùng có ngồi máy không, để gọi con ma. */
   private ghostPending = false;
+  /** Thời tiết đang xem thử (mục Xem thử trong Cài đặt), thay thời tiết thật; `null` là không xem thử. */
+  private previewSky: Sky | null = null;
+  private previewTimer = 0;
   /** Vừa chọn thành phố mới: lấy được thời tiết ở đó thì một con báo luôn, để biết là đã chạy. */
   private announce = false;
 
@@ -188,9 +202,10 @@ export class Ambience {
   act(now: number): void {
     const residents = this.host.residents();
     if (this.sky === "storm" && residents.some((r) => r.effect.animating)) {
-      if (this.nextThunder === 0) this.nextThunder = now + gap(THUNDER_GAP);
+      const previewing = this.previewSky === "storm";
+      if (this.nextThunder === 0) this.nextThunder = now + (previewing ? PREVIEW_FIRST_THUNDER_MS : gap(THUNDER_GAP));
       else if (now >= this.nextThunder) {
-        this.nextThunder = now + gap(THUNDER_GAP);
+        this.nextThunder = now + gap(previewing ? PREVIEW_THUNDER_GAP : THUNDER_GAP);
         for (const { pet, effect } of residents) {
           effect.flash(now);
           pet.startle();
@@ -236,6 +251,40 @@ export class Ambience {
     }
   }
 
+  /**
+   * Mục Xem thử trong Cài đặt: thời tiết `effect` quanh pet `PREVIEW_SECONDS` giây (bỏ qua công tắc và thời
+   * tiết thật; một con nói câu của thời tiết đó; giông thì sấm ngay), con ma bay qua ngay (không tính vào
+   * lượt mỗi đêm), `stop` thì về thời tiết như cũ.
+   */
+  preview(effect: EffectPreview, now: number): void {
+    if (effect === "ghost") {
+      const residents = this.host.residents();
+      if (!this.ghost.flying && residents.length > 0) {
+        const height = Math.max(...residents.map((r) => r.view.height));
+        this.ghost.fly(this.host.world.bounds, height * GHOST_HEIGHT, now);
+      }
+      this.host.wake();
+      return;
+    }
+    window.clearTimeout(this.previewTimer);
+    this.previewSky = effect === "stop" ? null : effect;
+    if (this.previewSky) {
+      this.previewTimer = window.setTimeout(() => {
+        this.previewSky = null;
+        this.refresh();
+      }, PREVIEW_SECONDS * 1000);
+    }
+    this.refresh();
+    if (this.previewSky) {
+      // Câu của thời tiết đó nói luôn, không chờ tới lượt câu nói cho vui.
+      this.skyLine = null;
+      const line = SKY_LINES[this.previewSky];
+      if (line) this.notices.push({ text: line });
+      this.nextThunder = 0;
+    }
+    this.host.wake();
+  }
+
   /** Rust nhắc (activity.rs): nhắc nghỉ, uống nước, nhắc khuya, spam Ctrl+S. Không qua giới hạn câu nói cho vui. */
   remind(reminder: Reminder): void {
     if (reminder.kind === "saveSpam") {
@@ -263,7 +312,7 @@ export class Ambience {
     const hour = wall.getHours();
     world.night = report ? !report.isDay : hour >= NIGHT_FROM || hour < NIGHT_UNTIL;
 
-    const sky = this.skyAt(wall, report);
+    const sky = this.previewSky ?? this.skyAt(wall, report);
     if (sky !== this.sky) {
       const first = this.sky === undefined;
       this.sky = sky;

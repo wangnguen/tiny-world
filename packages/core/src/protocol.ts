@@ -26,4 +26,6 @@ export const EVENTS = {
   chatTarget: "chat-target",
   /** Không có payload, chỉ gửi cho overlay: cửa sổ chat vừa đóng. */
   chatClosed: "chat-closed",
+  /** `EffectPreview`, chỉ gửi cho overlay: người dùng bấm xem thử một hiệu ứng trong Cài đặt. */
+  effectPreview: "effect-preview",
 } as const;

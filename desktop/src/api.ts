@@ -6,6 +6,7 @@ import {
   type ChatTarget,
   type CityResult,
   type CursorInfo,
+  type EffectPreview,
   type Rect,
   type ScreenChange,
   type Reminder,
@@ -58,6 +59,8 @@ export const api = {
   clearStats: () => invoke<void>("clear_stats"),
   /** Số ms từ lần có phím hay chuột cuối cùng (ở bất kỳ app nào); `null` nếu không đọc được. */
   idleMs: () => invoke<number | null>("idle_ms"),
+  /** Mục Xem thử trong Cài đặt: pet gặp ngay hiệu ứng `effect` (overlay nhận qua `onEffectPreview`). */
+  previewEffect: (effect: EffectPreview) => invoke<void>("preview_effect", { effect }),
   /**
    * Mở cửa sổ chat với `pet` cạnh pet (`box`: khung của pet, CSS pixel của overlay). Trả về phía của cửa sổ so
    * với pet: -1 bên trái, 1 bên phải.
@@ -105,4 +108,7 @@ export const api = {
     listen<ChatTarget>(EVENTS.chatTarget, (event) => callback(event.payload)),
   /** Cửa sổ chat vừa đóng. */
   onChatClosed: (callback: () => void) => listen(EVENTS.chatClosed, () => callback()),
+  /** Người dùng bấm xem thử một hiệu ứng trong Cài đặt. */
+  onEffectPreview: (callback: (effect: EffectPreview) => void) =>
+    listen<EffectPreview>(EVENTS.effectPreview, (event) => callback(event.payload)),
 };

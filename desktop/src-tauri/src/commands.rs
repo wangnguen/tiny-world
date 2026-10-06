@@ -165,6 +165,19 @@ pub fn clear_stats(activity: State<'_, Activity>) -> AppResult<()> {
     activity.clear()
 }
 
+/// Hiệu ứng xem thử được, khớp `EffectPreview` trong packages/core.
+const PREVIEWS: [&str; 7] = ["rain", "storm", "snow", "fog", "petals", "ghost", "stop"];
+
+/// Mục Xem thử trong Cài đặt: bảo overlay cho pet gặp ngay hiệu ứng `effect`.
+#[tauri::command]
+pub fn preview_effect(app: AppHandle, effect: String) -> AppResult<()> {
+    if !PREVIEWS.contains(&effect.as_str()) {
+        return Err(AppError::bad_request("Không có hiệu ứng này."));
+    }
+    app.emit_to(overlay::LABEL, events::EFFECT_PREVIEW, effect)?;
+    Ok(())
+}
+
 /// Số ms từ lần có phím hay chuột cuối cùng: overlay biết người dùng có đang ngồi máy không (con ma).
 #[tauri::command]
 pub fn idle_ms() -> Option<u64> {

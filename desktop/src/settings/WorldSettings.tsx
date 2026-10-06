@@ -4,10 +4,12 @@ import {
   OCCASION_DAYS_MAX,
   OCCASION_MESSAGE_MAX,
   OCCASION_NAME_MAX,
+  PREVIEW_SECONDS,
   errorMessage,
   isAppError,
   type City,
   type CityResult,
+  type EffectPreview,
   type Occasion,
   type Settings,
   type WeatherFailure,
@@ -24,7 +26,7 @@ import {
   wallClock,
 } from "@tinyworld/sim";
 import { api } from "../api";
-import { CalendarIcon, PinIcon, SparkIcon } from "./icons";
+import { CalendarIcon, PinIcon, PlayIcon, SparkIcon } from "./icons";
 import { Toggle } from "./Toggle";
 
 /** Gõ xong chừng này ms mới tìm, để không gọi Open-Meteo mỗi lần gõ một chữ. */
@@ -76,6 +78,7 @@ export function WorldSettings({ settings, onChange }: Props) {
           />
         </div>
       </section>
+      <EffectPreviews />
       <OccasionList
         occasions={settings.occasions}
         timezone={settings.city?.timezone ?? null}
@@ -83,6 +86,43 @@ export function WorldSettings({ settings, onChange }: Props) {
         onChange={(occasions) => onChange({ occasions })}
       />
     </>
+  );
+}
+
+const PREVIEWS: { effect: EffectPreview; label: string }[] = [
+  { effect: "rain", label: "Mưa" },
+  { effect: "storm", label: "Giông" },
+  { effect: "snow", label: "Tuyết" },
+  { effect: "fog", label: "Sương mù" },
+  { effect: "petals", label: "Hoa rơi" },
+  { effect: "ghost", label: "Con ma" },
+];
+
+/** Mục "Xem thử": bấm là pet gặp ngay hiệu ứng đó, kể cả khi đang tắt ở trên hay trời đang quang. */
+function EffectPreviews() {
+  const preview = (effect: EffectPreview) =>
+    api.previewEffect(effect).catch((e: unknown) => console.warn("Không xem thử được:", errorMessage(e)));
+  return (
+    <section className="field">
+      <h2 className="field__label">
+        <PlayIcon />
+        Xem thử
+      </h2>
+      <p className="hint">
+        Bấm để pet gặp ngay hiệu ứng đó trong {PREVIEW_SECONDS} giây, kể cả khi đang tắt ở trên. Con ma bay qua
+        một lượt.
+      </p>
+      <div className="previews">
+        {PREVIEWS.map(({ effect, label }) => (
+          <button key={effect} type="button" className="button" onClick={() => preview(effect)}>
+            {label}
+          </button>
+        ))}
+        <button type="button" className="button button--quiet" onClick={() => preview("stop")}>
+          Dừng
+        </button>
+      </div>
+    </section>
   );
 }
 

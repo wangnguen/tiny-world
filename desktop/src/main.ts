@@ -553,6 +553,13 @@ async function start(): Promise<void> {
     stopListening();
     wake();
   });
+  // Mục Xem thử trong Cài đặt: cả nhóm dậy để thấy hiệu ứng.
+  await api.onEffectPreview((effect) => {
+    if (hidden || paused) return;
+    world.wakeAll();
+    ambience.preview(effect, performance.now());
+    wake();
+  });
   await api.onQuitRequested(async () => {
     await autosave.flush();
     await api.quit();

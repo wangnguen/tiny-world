@@ -53,7 +53,7 @@ tray:
 |---|---|
 | **Tạm dừng** | Pet đứng yên, chuột đi xuyên qua pet; bấm lần nữa để pet sống tiếp |
 | **Ẩn / hiện pet** | Ẩn hẳn pet (app dừng vòng lặp, không tốn CPU) |
-| **Cài đặt…** | Tab **Pet**: chọn 1–3 nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chat với pet (mặc định tắt), chạy cùng Windows. Tab **Thế giới**: thành phố (thời tiết thật, giờ ở đó), bật tắt thời tiết quanh pet, câu nói cho vui, lịch sự kiện, con ma lúc 2 giờ sáng; sửa lịch sự kiện. Tab **Sức khoẻ** (mặc định tắt hết): giờ ngồi máy hôm nay và 7 ngày, nhắc nghỉ, nhắc uống nước, nhắc đi ngủ, spam Ctrl+S. Đổi là áp dụng ngay. Dưới tiêu đề là version đang chạy |
+| **Cài đặt…** | Tab **Pet**: chọn 1–3 nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chat với pet (mặc định tắt), chạy cùng Windows. Tab **Thế giới**: thành phố (thời tiết thật, giờ ở đó), bật tắt thời tiết quanh pet, câu nói cho vui, lịch sự kiện, con ma lúc 2 giờ sáng; mục Xem thử cho pet gặp ngay mưa, giông, tuyết, sương mù, hoa rơi (30 giây) hoặc con ma; sửa lịch sự kiện. Tab **Sức khoẻ** (mặc định tắt hết): giờ ngồi máy hôm nay và 7 ngày, nhắc nghỉ, nhắc uống nước, nhắc đi ngủ, spam Ctrl+S. Đổi là áp dụng ngay. Dưới tiêu đề là version đang chạy |
 | **Thoát** | Lưu trạng thái pet rồi thoát |
 | **Mở DevTools** | Chỉ khi chạy dev (overlay để chuột đi xuyên nên không bấm F12 được) |
 

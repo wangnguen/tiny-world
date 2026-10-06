@@ -554,6 +554,17 @@ h2 {
   stroke: #b48cff;
 }
 
+.icon--play {
+  stroke: #7fd8be;
+}
+
+/* Mục Xem thử: một hàng nút, hẹp thì xuống dòng. */
+.previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* Dòng chữ nhỏ giải thích dưới tiêu đề mục. */
 .hint {
   margin: 0;
