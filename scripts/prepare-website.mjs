@@ -7,8 +7,8 @@
 //   chỉ bỏ phần khai báo kiểu TypeScript
 // - website/img/, website/favicon.ico: logo, favicon, ảnh xem trước khi chia sẻ link
 // Chạy lại sau khi sửa chữ, khung trang, sprite hay các module trên: pnpm prepare:website
-// Link đầy đủ cho máy tìm kiếm, mạng xã hội ghi theo SITE_URL, mặc định https://tinyworld.pages.dev; đổi tên miền
-// thì đặt SITE_URL, đặt rỗng thì chỉ dùng link tương đối.
+// Link đầy đủ cho máy tìm kiếm, mạng xã hội ghi theo SITE_URL, mặc định là trang thật https://tinyworld-1bw.pages.dev;
+// đổi tên miền thì đặt SITE_URL, đặt rỗng thì chỉ dùng link tương đối.
 import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -18,7 +18,7 @@ import ts from "typescript";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PACKS = join(ROOT, "assets/sprites");
 const SITE = join(ROOT, "website");
-const SITE_URL = (process.env.SITE_URL ?? "https://tinyworld.pages.dev").replace(/\/+$/, "");
+const SITE_URL = (process.env.SITE_URL ?? "https://tinyworld-1bw.pages.dev").replace(/\/+$/, "");
 const REPO = "https://github.com/wangnguen/tiny-world";
 
 /** Các trang: tiếng Việt ở gốc, tiếng Anh ở /en/. */
