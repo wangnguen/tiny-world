@@ -9,7 +9,7 @@
 
 use crate::error::{AppError, AppResult};
 use crate::events;
-use crate::gemini::{Gemini, GeminiError};
+use crate::gemini::{FollowUp, Gemini, GeminiError};
 use crate::i18n::{self, Lang};
 use crate::overlay::{self, Overlay, ScreenInfo};
 use crate::settings::SettingsStore;
@@ -62,6 +62,15 @@ pub struct ChatTarget {
     pub pet: String,
     /// Tên ngắn để hiện, ví dụ "Momo".
     pub name: String,
+}
+
+/// Câu trả lời cho khung chat, khớp `ChatReply` trong packages/core.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatReply {
+    pub text: String,
+    /// Câu hỏi tiếp Gemini gợi ý, khung chat vẽ thành nút dưới câu trả lời.
+    pub follow_ups: Vec<FollowUp>,
 }
 
 /// Vì sao chưa cho gửi.
@@ -244,7 +253,7 @@ impl Chat {
     }
 
     /// Gửi `prompt` (đã kèm tính cách pet, giờ, vài lượt chat gần nhất) và chờ câu trả lời.
-    pub async fn send(&self, prompt: &str) -> AppResult<String> {
+    pub async fn send(&self, prompt: &str) -> AppResult<ChatReply> {
         let lang = i18n::current();
         let prompt = prompt.trim();
         if prompt.is_empty() {
@@ -267,7 +276,10 @@ impl Chat {
         let mut limiter = self.limiter.lock().unwrap_or_else(|e| e.into_inner());
         limiter.finish(Instant::now(), outcome);
         match result {
-            Ok(reply) => Ok(reply.text),
+            Ok(reply) => Ok(ChatReply {
+                text: reply.text,
+                follow_ups: reply.follow_ups,
+            }),
             Err(GeminiError::Offline) => Err(AppError::offline(lang.t("errors.chatOffline"))),
             Err(GeminiError::Timeout) => Err(AppError::unavailable(lang.t("errors.chatTimeout"))),
             Err(e) => {

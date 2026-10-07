@@ -171,6 +171,19 @@ export interface ChatTarget {
   name: string;
 }
 
+/** Câu hỏi tiếp Gemini gợi ý, khớp `FollowUp` trong gemini.rs: nút ghi `label`, bấm thì gửi `query`. */
+export interface FollowUp {
+  label: string;
+  query: string;
+}
+
+/** Câu trả lời của pet, khớp `ChatReply` trong chat.rs. */
+export interface ChatReply {
+  text: string;
+  /** Câu hỏi tiếp gợi ý, thường rỗng. */
+  followUps: FollowUp[];
+}
+
 /** Khoảng chọn được của `Settings.breakMinutes`, khớp `BREAK_MINUTES` trong settings.rs. */
 export const BREAK_MINUTES = { min: 15, max: 120 } as const;
 /** Khoảng chọn được của `Settings.waterMinutes`, khớp `WATER_MINUTES` trong settings.rs. */

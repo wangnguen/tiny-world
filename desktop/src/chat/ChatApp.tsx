@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { errorMessage, fill, isAppError, messages, type ChatTarget, type Lang } from "@tinyworld/core";
+import { Fragment, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { errorMessage, fill, isAppError, messages, type ChatTarget, type FollowUp, type Lang } from "@tinyworld/core";
 import { api } from "../api";
 import { LangContext, guessLang, useMessages } from "../i18n";
 import { loadThumbnail } from "../overlay/sprites";
@@ -17,6 +17,8 @@ interface Entry {
   id: number;
   kind: Turn["from"] | "note";
   text: string;
+  /** Câu hỏi tiếp Gemini gợi ý (chỉ câu của pet), hiện thành nút khi đây là lượt chat mới nhất. */
+  followUps?: FollowUp[];
 }
 
 /**
@@ -95,8 +97,8 @@ export function ChatApp() {
     end.current?.scrollIntoView({ block: "end" });
   }, [entries, sending]);
 
-  const add = (kind: Entry["kind"], text: string) =>
-    setEntries((list) => [...list, { id: nextId.current++, kind, text }]);
+  const add = (kind: Entry["kind"], text: string, followUps?: FollowUp[]) =>
+    setEntries((list) => [...list, { id: nextId.current++, kind, text, followUps }]);
 
   const send = async (text: string) => {
     const message = text.trim().slice(0, MESSAGE_MAX);
@@ -108,7 +110,8 @@ export function ChatApp() {
     setInput("");
     setSending(true);
     try {
-      add("pet", await api.sendChat(prompt));
+      const reply = await api.sendChat(prompt);
+      add("pet", reply.text, reply.followUps);
     } catch (e) {
       if (isAppError(e) && e.code === "BUSY") {
         // Chưa gửi đi: trả lại câu vào ô nhập để gửi lại sau.
@@ -130,6 +133,8 @@ export function ChatApp() {
   };
 
   const name = target?.name ?? "pet";
+  /** Lượt chat mới nhất (không tính ghi chú): là câu của pet có câu hỏi tiếp thì hiện nút dưới nó. */
+  const lastTurn = entries.filter((entry) => entry.kind !== "note").at(-1);
   return (
     <LangContext.Provider value={lang}>
       <main className="chat">
@@ -160,7 +165,25 @@ export function ChatApp() {
                 {entry.text}
               </p>
             ) : (
-              <Message key={entry.id} entry={entry} name={name} />
+              <Fragment key={entry.id}>
+                <Message entry={entry} name={name} />
+                {entry === lastTurn && entry.followUps && entry.followUps.length > 0 && (
+                  <div className="chat__followups">
+                    {entry.followUps.map((followUp) => (
+                      <button
+                        key={followUp.label}
+                        type="button"
+                        className="chip"
+                        title={followUp.query}
+                        disabled={!target || sending}
+                        onClick={() => void send(followUp.query)}
+                      >
+                        {followUp.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Fragment>
             ),
           )}
           {sending && (

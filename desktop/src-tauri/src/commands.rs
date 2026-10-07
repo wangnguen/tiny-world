@@ -2,7 +2,7 @@
 
 use crate::activity::{self, Activity, StatsView};
 use crate::autostart;
-use crate::chat::{self, Chat, ChatTarget};
+use crate::chat::{self, Chat, ChatReply, ChatTarget};
 use crate::cursor::CursorInterest;
 use crate::error::{AppError, AppResult};
 use crate::overlay::{self, Overlay, Rect, ScreenInfo};
@@ -144,9 +144,13 @@ pub fn chat_target(chat: State<'_, Chat>) -> Option<ChatTarget> {
     chat.target()
 }
 
-/// Gửi câu hỏi (đã kèm tính cách pet, giờ, vài lượt chat gần nhất), trả về câu trả lời.
+/// Gửi câu hỏi (đã kèm tính cách pet, giờ, vài lượt chat gần nhất), trả về câu trả lời và câu hỏi tiếp gợi ý.
 #[tauri::command]
-pub async fn send_chat(chat: State<'_, Chat>, store: State<'_, SettingsStore>, prompt: String) -> AppResult<String> {
+pub async fn send_chat(
+    chat: State<'_, Chat>,
+    store: State<'_, SettingsStore>,
+    prompt: String,
+) -> AppResult<ChatReply> {
     if !store.get().chat {
         return Err(chat::chat_off());
     }
