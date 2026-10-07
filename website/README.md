@@ -34,8 +34,8 @@ với app.
    npx wrangler pages dev website
    ```
 
-Link đầy đủ (canonical, `og:url`, ảnh xem trước khi chia sẻ) ghi theo `https://tinyworld.pages.dev`. Đổi tên
-miền thì dựng với `SITE_URL`:
+Link đầy đủ (canonical, `og:url`, ảnh xem trước khi chia sẻ) ghi theo trang thật `https://tinyworld-1bw.pages.dev`.
+Đổi tên miền thì dựng với `SITE_URL`:
 
 ```bash
 SITE_URL=https://ten-mien-khac.vn pnpm prepare:website
