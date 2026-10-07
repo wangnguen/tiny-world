@@ -1,0 +1,6 @@
+# File do scripts/prepare-website.mjs sinh ra luôn xuống dòng kiểu LF. Giữ LF cả lúc git checkout trên Windows
+# (core.autocrlf), để dựng lại trang mà nội dung không đổi thì git không báo file bị sửa.
+website/index.html text eol=lf
+website/en/index.html text eol=lf
+website/js/gen/** text eol=lf
+website/pets/pets.json text eol=lf
