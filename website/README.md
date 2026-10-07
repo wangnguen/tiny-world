@@ -34,10 +34,11 @@ với app.
    npx wrangler pages dev website
    ```
 
-Có tên miền thì dựng với `SITE_URL` để trang ghi link đầy đủ (canonical, `og:url`, ảnh xem trước khi chia sẻ):
+Link đầy đủ (canonical, `og:url`, ảnh xem trước khi chia sẻ) ghi theo `https://tinyworld.pages.dev`. Đổi tên
+miền thì dựng với `SITE_URL`:
 
 ```bash
-SITE_URL=https://tinyworld.pages.dev pnpm prepare:website
+SITE_URL=https://ten-mien-khac.vn pnpm prepare:website
 ```
 
 Workflow Build của app bỏ qua các push chỉ sửa `website/`, nên sửa trang không build lại `.exe`.
