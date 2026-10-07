@@ -199,6 +199,12 @@ trỏ "Chạy cùng Windows" sang bản vừa cài.
   thật trong máy (đặt `TINYWORLD_INSTALL_UPDATE` để thử cả luồng).
 - Kiểm tra hỏi/tải với GitHub thật: `cargo test -- --ignored github_that` trong `desktop/src-tauri`.
 
+## Trang giới thiệu
+
+[`website/`](website/) là trang giới thiệu tĩnh (tiếng Việt ở `/`, tiếng Anh ở `/en/`): pet thật của app sống
+trên một màn hình thu nhỏ, demo thời tiết, bảng nhân vật, nút tải bản mới nhất.
+Sửa chữ và dựng lại (`pnpm prepare:website`): [website/README.md](website/README.md).
+
 ## Kiến trúc
 
 ```

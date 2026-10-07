@@ -10,6 +10,7 @@
     "test": "pnpm test:sprites && pnpm test:overlay && pnpm -r test",
     "test:sprites": "node --test scripts/prepare-sprites.test.mjs && node scripts/prepare-sprites.mjs --check && node scripts/prepare-aura.mjs --check",
     "prepare:aura": "node scripts/prepare-aura.mjs",
+    "prepare:website": "node scripts/prepare-website.mjs",
     "test:overlay": "node --test scripts/interaction.test.mjs scripts/longCombo.test.mjs scripts/ghost.test.mjs scripts/chat.test.mjs"
   },
   "devDependencies": {
