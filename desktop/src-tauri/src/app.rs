@@ -7,7 +7,7 @@ use crate::settings::SettingsStore;
 use crate::storage::Storage;
 use crate::weather::{self, Weather};
 use crate::window_list::{self, Windows};
-use crate::{commands, cursor, events, fullscreen, overlay, tray};
+use crate::{commands, cursor, events, fullscreen, i18n, overlay, tray};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -24,6 +24,7 @@ pub fn run() {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
             let settings = SettingsStore::load(&data_dir);
+            i18n::set(settings.get().lang);
             app.manage(Activity::load(&data_dir, &settings.get()));
             app.manage(settings);
             app.manage(Weather::load(&data_dir));

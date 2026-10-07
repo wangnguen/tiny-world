@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { errorMessage, type UpdateInfo, type UpdateProgress } from "@tinyworld/core";
+import { errorMessage, fill, type UpdateInfo, type UpdateProgress } from "@tinyworld/core";
 import { api } from "../api";
+import { useLang, useMessages } from "../i18n";
 
 /** Câu kết quả của nút Kiểm tra bản mới hiện chừng này ms rồi ẩn. */
 const CHECK_MESSAGE_MS = 5_000;
@@ -12,8 +13,10 @@ export interface Update {
   info: UpdateInfo | null;
   phase: Phase;
   progress: UpdateProgress | null;
-  /** Câu báo nhỏ: đang dùng bản mới nhất, lỗi khi hỏi hay tải. */
+  /** Câu báo lỗi khi hỏi hay tải. */
   message: string | null;
+  /** Vừa bấm Kiểm tra bản mới và đang dùng bản mới nhất. */
+  upToDate: boolean;
   check: () => void;
   install: () => void;
 }
@@ -24,6 +27,7 @@ export function useUpdate(): Update {
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState<UpdateProgress | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [upToDate, setUpToDate] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -40,19 +44,23 @@ export function useUpdate(): Update {
 
   // Câu kết quả cạnh nút Kiểm tra bản mới tự ẩn; câu lỗi trong thẻ bản mới thì giữ tới lần bấm sau.
   useEffect(() => {
-    if (!message || phase !== "idle" || info) return;
-    const timer = window.setTimeout(() => setMessage(null), CHECK_MESSAGE_MS);
+    if (!(message || upToDate) || phase !== "idle" || info) return;
+    const timer = window.setTimeout(() => {
+      setMessage(null);
+      setUpToDate(false);
+    }, CHECK_MESSAGE_MS);
     return () => window.clearTimeout(timer);
-  }, [message, phase, info]);
+  }, [message, upToDate, phase, info]);
 
   const check = () => {
     setPhase("checking");
     setMessage(null);
+    setUpToDate(false);
     api
       .checkUpdate()
       .then((next) => {
         setInfo(next);
-        if (!next) setMessage("Đang dùng bản mới nhất.");
+        setUpToDate(!next);
       })
       .catch((e: unknown) => setMessage(errorMessage(e)))
       .finally(() => setPhase("idle"));
@@ -72,36 +80,38 @@ export function useUpdate(): Update {
       });
   };
 
-  return { info, phase, progress, message, check, install };
+  return { info, phase, progress, message, upToDate, check, install };
 }
 
-const megabytes = (bytes: number) =>
-  `${(bytes / 1024 / 1024).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} MB`;
+const megabytes = (bytes: number, locale: string) =>
+  `${(bytes / 1024 / 1024).toLocaleString(locale, { maximumFractionDigits: 1 })} MB`;
 
 /** Thẻ "Có bản mới" ngay dưới đầu trang: cập nhật ngay (tải, cài đè, tự mở lại) hoặc xem có gì mới. */
 export function UpdateCard({ update }: { update: Update }) {
   const { info, phase, progress, message, install } = update;
+  const m = useMessages();
+  const locale = useLang() === "vi" ? "vi-VN" : "en-US";
   if (!info) return null;
   const percent = progress && progress.total > 0 ? Math.floor((progress.received / progress.total) * 100) : 0;
   const openPage = () =>
     api.openLink(info.page).catch((e: unknown) => console.warn("Không mở được trang bản mới:", errorMessage(e)));
 
-  let detail = `Đang dùng ${info.current} · bộ cài ${megabytes(info.size)}. Cài xong pet tự mở lại.`;
-  if (phase === "downloading") detail = `Đang tải bản mới... ${percent}%`;
-  else if (phase === "restarting") detail = "Đang cài bản mới, pet sẽ tự mở lại sau ít giây...";
+  let detail = fill(m.update.detail, { current: info.current, size: megabytes(info.size, locale) });
+  if (phase === "downloading") detail = fill(m.update.downloading, { percent });
+  else if (phase === "restarting") detail = m.update.restarting;
 
   return (
     <section className="update" aria-live="polite">
       <div className="update__text">
-        <strong>Có bản mới {info.version}</strong>
+        <strong>{fill(m.update.available, { version: info.version })}</strong>
         <small>{detail}</small>
       </div>
       <div className="update__actions">
         <button type="button" className="button button--quiet" onClick={openPage}>
-          Xem có gì mới
+          {m.update.whatsNew}
         </button>
         <button type="button" className="button button--primary" disabled={phase !== "idle"} onClick={install}>
-          Cập nhật ngay
+          {m.update.install}
         </button>
       </div>
       {message && <p className="update__message">{message}</p>}
@@ -115,12 +125,14 @@ export function UpdateCard({ update }: { update: Update }) {
  * Đã có thẻ bản mới thì ẩn (thẻ lo hết).
  */
 export function UpdateCheck({ update }: { update: Update }) {
-  const { info, phase, message, check } = update;
+  const { info, phase, message, upToDate, check } = update;
+  const m = useMessages();
   if (info) return null;
-  if (message && phase === "idle") return <p className="hero__check hero__check--message">{message}</p>;
+  const said = message ?? (upToDate ? m.update.latest : null);
+  if (said && phase === "idle") return <p className="hero__check hero__check--message">{said}</p>;
   return (
     <button type="button" className="hero__check" disabled={phase !== "idle"} onClick={check}>
-      {phase === "checking" ? "Đang kiểm tra..." : "Kiểm tra bản mới"}
+      {phase === "checking" ? m.update.checking : m.update.check}
     </button>
   );
 }

@@ -20,6 +20,7 @@ pnpm build:desktop
 ## Cấu trúc và quy ước
 
 - `packages/core/`: types, protocol và đọc/kiểm tra manifest sprite.
+- `packages/core/src/i18n/vi.json`, `en.json`: mọi chữ người dùng thấy (Cài đặt, chat, câu pet nói, menu khay, câu báo lỗi của Rust). Thêm hay sửa câu thì sửa cả hai file; không viết chữ hiện cho người dùng thẳng trong code.
 - `packages/sim/`: FSM, vật lý/movement, terrain, weather và test Vitest; giữ phần này không phụ thuộc DOM/Tauri.
 - `desktop/src/overlay/`: render/click interaction; `desktop/src/settings/` và `desktop/src/chat/` là React.
 - `desktop/src-tauri/`: tích hợp Windows, overlay, tray, cursor, storage và commands. Không thay đổi hành vi Windows mà không kiểm tra trên Windows.

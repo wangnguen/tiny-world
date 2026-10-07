@@ -1,0 +1,1872 @@
+[
+ {
+  "id": "a-momo",
+  "name": "Momo",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 28,
+   "y": 82,
+   "width": 137,
+   "height": 98
+  },
+  "mouth": {
+   "x": 164,
+   "y": 127
+  },
+  "reach": 67,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "b-bong",
+  "name": "Bông",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 32,
+   "y": 29,
+   "width": 128,
+   "height": 151
+  },
+  "mouth": {
+   "x": 159,
+   "y": 120
+  },
+  "reach": 60,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "b-kitsu",
+  "name": "Kitsu",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 19,
+   "y": 44,
+   "width": 154,
+   "height": 136
+  },
+  "mouth": {
+   "x": 172,
+   "y": 116
+  },
+  "reach": 75,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-bap",
+  "name": "Bắp",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 41,
+   "y": 39,
+   "width": 110,
+   "height": 141
+  },
+  "mouth": {
+   "x": 144,
+   "y": 117
+  },
+  "reach": 55,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-bep",
+  "name": "Bẹp",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 37,
+   "y": 66,
+   "width": 119,
+   "height": 114
+  },
+  "mouth": {
+   "x": 155,
+   "y": 114
+  },
+  "reach": 65,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-bip",
+  "name": "Bíp",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 43,
+   "y": 24,
+   "width": 106,
+   "height": 156
+  },
+  "mouth": {
+   "x": 136,
+   "y": 112
+  },
+  "reach": 54,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-boggo",
+  "name": "Boggo",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 36,
+   "y": 52,
+   "width": 120,
+   "height": 128
+  },
+  "mouth": {
+   "x": 149,
+   "y": 100
+  },
+  "reach": 61,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-byte",
+  "name": "Byte",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 41,
+   "y": 60,
+   "width": 111,
+   "height": 120
+  },
+  "mouth": {
+   "x": 141,
+   "y": 118
+  },
+  "reach": 57,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-cuc",
+  "name": "Cục",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 41,
+   "y": 47,
+   "width": 110,
+   "height": 133
+  },
+  "mouth": {
+   "x": 150,
+   "y": 107
+  },
+  "reach": 56,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-dua",
+  "name": "Dứa",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 50,
+   "y": 31,
+   "width": 93,
+   "height": 149
+  },
+  "mouth": {
+   "x": 136,
+   "y": 120
+  },
+  "reach": 53,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-frobu",
+  "name": "Frobu",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 41,
+   "y": 50,
+   "width": 111,
+   "height": 130
+  },
+  "mouth": {
+   "x": 148,
+   "y": 110
+  },
+  "reach": 60,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-gloop",
+  "name": "Gloop",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 36,
+   "y": 55,
+   "width": 121,
+   "height": 125
+  },
+  "mouth": {
+   "x": 156,
+   "y": 100
+  },
+  "reach": 62,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-long",
+  "name": "Long",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 11,
+   "y": 47,
+   "width": 171,
+   "height": 133
+  },
+  "mouth": {
+   "x": 179,
+   "y": 127
+  },
+  "reach": 66,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-lumi",
+  "name": "Lumi",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 44,
+   "y": 41,
+   "width": 104,
+   "height": 139
+  },
+  "mouth": {
+   "x": 129,
+   "y": 128
+  },
+  "reach": 55,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-mam",
+  "name": "Mầm",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 45,
+   "y": 27,
+   "width": 102,
+   "height": 153
+  },
+  "mouth": {
+   "x": 146,
+   "y": 110
+  },
+  "reach": 52,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-may",
+  "name": "Mây",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 34,
+   "y": 41,
+   "width": 125,
+   "height": 139
+  },
+  "mouth": {
+   "x": 149,
+   "y": 106
+  },
+  "reach": 64,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-muc",
+  "name": "Mực",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 33,
+   "y": 45,
+   "width": 126,
+   "height": 135
+  },
+  "mouth": {
+   "x": 157,
+   "y": 107
+  },
+  "reach": 65,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-nam",
+  "name": "Nấm",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 35,
+   "y": 43,
+   "width": 123,
+   "height": 137
+  },
+  "mouth": {
+   "x": 143,
+   "y": 130
+  },
+  "reach": 55,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-patch",
+  "name": "Patch",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 29,
+   "y": 59,
+   "width": 135,
+   "height": 121
+  },
+  "mouth": {
+   "x": 161,
+   "y": 116
+  },
+  "reach": 70,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-reu",
+  "name": "Rêu",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 22,
+   "y": 47,
+   "width": 148,
+   "height": 133
+  },
+  "mouth": {
+   "x": 169,
+   "y": 115
+  },
+  "reach": 71,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-su",
+  "name": "Su",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 46,
+   "y": 34,
+   "width": 101,
+   "height": 146
+  },
+  "mouth": {
+   "x": 139,
+   "y": 115
+  },
+  "reach": 55,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ {
+  "id": "c-tan",
+  "name": "Tàn",
+  "frame": {
+   "width": 192,
+   "height": 192
+  },
+  "anchor": {
+   "x": 96,
+   "y": 180
+  },
+  "body": {
+   "x": 42,
+   "y": 30,
+   "width": 109,
+   "height": 150
+  },
+  "mouth": {
+   "x": 140,
+   "y": 116
+  },
+  "reach": 52,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "run": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "sleep": {
+    "frames": 4,
+    "fps": 3,
+    "loop": true
+   },
+   "react": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "fall": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "dragged": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "land": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dizzy": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "climb": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "perch": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ }
+]

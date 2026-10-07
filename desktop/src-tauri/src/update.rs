@@ -10,7 +10,7 @@
 
 use crate::app;
 use crate::error::{AppError, AppResult};
-use crate::events;
+use crate::{events, i18n};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -138,7 +138,7 @@ struct AssetBody {
 /// Đọc bản phát hành mới nhất từ GitHub; `None` nếu không mới hơn `current` hay không có bộ cài dùng được.
 fn parse_release(body: &str, current: &str) -> AppResult<Option<Release>> {
     let body: ReleaseBody = serde_json::from_str(body)
-        .map_err(|e| AppError::internal(format!("GitHub trả về dữ liệu lạ: {e}")))?;
+        .map_err(|e| AppError::internal(i18n::tf("errors.updateOdd", &[("error", &e)])))?;
     let (Some(latest), Some(now)) = (parse_version(&body.tag_name), parse_version(current)) else {
         return Ok(None);
     };
@@ -165,17 +165,17 @@ fn client(timeout: Duration) -> AppResult<reqwest::Client> {
         .timeout(timeout)
         .user_agent(concat!("TinyWorld/", env!("CARGO_PKG_VERSION")))
         .build()
-        .map_err(|e| AppError::internal(format!("Không tạo được HTTP client: {e}")))
+        .map_err(|e| AppError::internal(i18n::tf("errors.httpClient", &[("error", &e)])))
 }
 
 fn network_error(e: reqwest::Error) -> AppError {
     if e.is_connect() || e.is_timeout() {
-        AppError::offline("Mất mạng hoặc GitHub không trả lời.")
+        AppError::offline(i18n::t("errors.updateOffline"))
     } else if matches!(e.status().map(|s| s.as_u16()), Some(403 | 429)) {
         // Không có token thì GitHub cho mỗi IP 60 lượt hỏi một giờ (mạng công ty dùng chung IP dễ hết).
-        AppError::unavailable("GitHub đang tạm chặn vì hỏi nhiều quá, lát nữa thử lại nhé.")
+        AppError::unavailable(i18n::t("errors.updateLimited"))
     } else {
-        AppError::internal(format!("Lỗi khi hỏi bản mới: {e}"))
+        AppError::internal(i18n::tf("errors.updateFailed", &[("error", &e)]))
     }
 }
 
@@ -261,16 +261,14 @@ pub async fn check_update(app: AppHandle) -> AppResult<Option<UpdateInfo>> {
 #[tauri::command]
 pub async fn install_update(app: AppHandle) -> AppResult<()> {
     if cfg!(debug_assertions) && std::env::var_os("TINYWORLD_INSTALL_UPDATE").is_none() {
-        return Err(AppError::bad_request(
-            "Bản dev không tự cài bản mới (đặt TINYWORLD_INSTALL_UPDATE để thử).",
-        ));
+        return Err(AppError::bad_request(i18n::t("errors.updateDev")));
     }
     let release = lock(&app.state::<Updater>().latest)
         .clone()
-        .ok_or_else(|| AppError::bad_request("Chưa có bản mới để cập nhật."))?;
+        .ok_or_else(|| AppError::bad_request(i18n::t("errors.updateNone")))?;
     let updater = app.state::<Updater>();
     if updater.installing.swap(true, Ordering::SeqCst) {
-        return Err(AppError::busy("Đang tải bản mới rồi."));
+        return Err(AppError::busy(i18n::t("errors.updateBusy")));
     }
     let path = match download(&app, &release).await {
         Ok(path) => path,
@@ -304,7 +302,7 @@ async fn download_to(
     mut progress: impl FnMut(UpdateProgress),
 ) -> AppResult<PathBuf> {
     if !release.setup_url.starts_with(DOWNLOAD_PREFIX) {
-        return Err(AppError::bad_request("Link tải bản mới không hợp lệ."));
+        return Err(AppError::bad_request(i18n::t("errors.updateBadLink")));
     }
     let mut response = client(DOWNLOAD_TIMEOUT)?
         .get(&release.setup_url)
@@ -318,7 +316,7 @@ async fn download_to(
     while let Some(chunk) = response.chunk().await.map_err(network_error)? {
         data.extend_from_slice(&chunk);
         if data.len() as u64 > total {
-            return Err(AppError::internal("Bộ cài tải về to hơn GitHub báo."));
+            return Err(AppError::internal(i18n::t("errors.updateTooBig")));
         }
         let percent = data.len() as u64 * 100 / total;
         if percent >= reported + PROGRESS_STEP || data.len() as u64 == total {
@@ -327,15 +325,15 @@ async fn download_to(
         }
     }
     if data.len() as u64 != total {
-        return Err(AppError::offline("Tải bản mới bị đứt giữa chừng, thử lại nhé."));
+        return Err(AppError::offline(i18n::t("errors.updateCut")));
     }
     // Bộ cài của lần cập nhật trước (đã chạy xong) không cần nữa.
     let _ = std::fs::remove_dir_all(dir);
     std::fs::create_dir_all(dir)
-        .map_err(|e| AppError::internal(format!("Không tạo được thư mục tải: {e}")))?;
+        .map_err(|e| AppError::internal(i18n::tf("errors.updateFolder", &[("error", &e)])))?;
     let path = dir.join(installer_name(&release.setup_name, &release.version));
     std::fs::write(&path, &data)
-        .map_err(|e| AppError::internal(format!("Không lưu được bộ cài: {e}")))?;
+        .map_err(|e| AppError::internal(i18n::tf("errors.updateSave", &[("error", &e)])))?;
     Ok(path)
 }
 

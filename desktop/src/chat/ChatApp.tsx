@@ -1,19 +1,11 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { errorMessage, isAppError, type ChatTarget } from "@tinyworld/core";
+import { Fragment, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { errorMessage, fill, isAppError, messages, type ChatTarget, type FollowUp, type Lang } from "@tinyworld/core";
 import { api } from "../api";
+import { LangContext, guessLang, useMessages } from "../i18n";
 import { loadThumbnail } from "../overlay/sprites";
 import { ChatScene, HILL_FOOT } from "./ChatScene";
 import { parseReply, type Inline } from "./markdown";
-import {
-  MESSAGE_MAX,
-  SUGGESTION_POOL,
-  buildPrompt,
-  dayKey,
-  dayText,
-  personaOf,
-  pickSuggestions,
-  type Turn,
-} from "./prompt";
+import { MESSAGE_MAX, buildPrompt, dayKey, dayText, personaOf, pickSuggestions, type Turn } from "./prompt";
 
 /** Chiều cao frame của pet ở đầu khung chat (CSS pixel); frame có chừa khoảng trống quanh nhân vật. */
 const AVATAR_HEIGHT = 76;
@@ -25,6 +17,8 @@ interface Entry {
   id: number;
   kind: Turn["from"] | "note";
   text: string;
+  /** Câu hỏi tiếp Gemini gợi ý (chỉ câu của pet), hiện thành nút khi đây là lượt chat mới nhất. */
+  followUps?: FollowUp[];
 }
 
 /**
@@ -36,8 +30,12 @@ export function ChatApp() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  /** Ngôn ngữ theo Cài đặt (đổi trong lúc đang mở thì đổi theo); chưa đọc được thì đoán theo Windows. */
+  const [lang, setLang] = useState<Lang>(guessLang);
+  const m = messages(lang);
   /** Gợi ý lúc chưa hỏi gì (bấm là gửi luôn): câu Gemini viết cho hôm nay nếu có, không thì câu có sẵn. */
-  const [suggestions, setSuggestions] = useState(() => pickSuggestions(SUGGESTION_POOL));
+  const [suggestions, setSuggestions] = useState(() => pickSuggestions(m.prompt.suggestions));
+  /** Câu gợi ý Gemini viết cho hôm nay, theo ngôn ngữ đang dùng; rỗng là chưa có. */
   const written = useRef<string[]>([]);
   const nextId = useRef(1);
   const end = useRef<HTMLDivElement>(null);
@@ -48,56 +46,79 @@ export function ChatApp() {
       .chatTarget()
       .then((t) => t && setTarget(t))
       .catch((e: unknown) => console.warn("Không biết đang chat với ai:", errorMessage(e)));
-    // Mỗi ngày Rust chỉ hỏi Gemini một lần, mở lại khung chat thì lấy lại danh sách đã có.
+    api
+      .getSettings()
+      .then((settings) => setLang(settings.lang))
+      .catch((e: unknown) => console.warn("Không đọc được cài đặt:", errorMessage(e)));
+    const unlisten = [
+      api.onChatTarget((next) => {
+        setTarget((current) => {
+          if (current?.pet !== next.pet) {
+            setEntries([]);
+            setSuggestions((shown) => (written.current.length > 0 ? pickSuggestions(written.current) : shown));
+          }
+          return next;
+        });
+        box.current?.focus();
+      }),
+      api.onSettingsChanged((settings) => setLang(settings.lang)),
+    ];
+    return () => {
+      for (const promise of unlisten) promise.then((stop) => stop()).catch(() => {});
+    };
+  }, []);
+
+  // Câu gợi ý theo ngôn ngữ: Rust chỉ hỏi Gemini mỗi ngày một lần cho mỗi ngôn ngữ, mở lại khung chat thì lấy
+  // lại danh sách đã có; chưa có thì dùng câu có sẵn.
+  useEffect(() => {
+    const text = messages(lang);
+    let alive = true;
+    written.current = [];
+    setSuggestions(pickSuggestions(text.prompt.suggestions));
     const now = new Date();
     api
-      .chatSuggestions(dayKey(now), dayText(now))
+      .chatSuggestions(dayKey(now), dayText(now, text))
       .then((list) => {
-        if (list.length < 2) return;
+        if (!alive || list.length < 2) return;
         written.current = list;
         setSuggestions(pickSuggestions(list));
       })
       .catch((e: unknown) => console.warn("Không lấy được câu gợi ý:", errorMessage(e)));
-    const unlisten = api.onChatTarget((next) => {
-      setTarget((current) => {
-        if (current?.pet !== next.pet) {
-          setEntries([]);
-          setSuggestions(pickSuggestions(written.current.length > 0 ? written.current : SUGGESTION_POOL));
-        }
-        return next;
-      });
-      box.current?.focus();
-    });
     return () => {
-      unlisten.then((stop) => stop()).catch(() => {});
+      alive = false;
     };
-  }, []);
+  }, [lang]);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [entries, sending]);
 
-  const add = (kind: Entry["kind"], text: string) =>
-    setEntries((list) => [...list, { id: nextId.current++, kind, text }]);
+  const add = (kind: Entry["kind"], text: string, followUps?: FollowUp[]) =>
+    setEntries((list) => [...list, { id: nextId.current++, kind, text, followUps }]);
 
   const send = async (text: string) => {
     const message = text.trim().slice(0, MESSAGE_MAX);
     if (!target || sending || !message) return;
     const history = entries.flatMap((e): Turn[] => (e.kind === "note" ? [] : [{ from: e.kind, text: e.text }]));
-    const prompt = buildPrompt(personaOf(target.pet, target.name), history, message, new Date());
+    const prompt = buildPrompt(personaOf(target.pet, target.name, m), history, message, new Date(), m);
     const id = nextId.current++;
     setEntries((list) => [...list, { id, kind: "user", text: message }]);
     setInput("");
     setSending(true);
     try {
-      add("pet", await api.sendChat(prompt));
+      const reply = await api.sendChat(prompt);
+      add("pet", reply.text, reply.followUps);
     } catch (e) {
       if (isAppError(e) && e.code === "BUSY") {
         // Chưa gửi đi: trả lại câu vào ô nhập để gửi lại sau.
         setEntries((list) => list.filter((entry) => entry.id !== id));
         setInput(message);
       }
-      add("note", isAppError(e) && e.code === "OFFLINE" ? "Mất mạng" : errorMessage(e));
+      add("note", isAppError(e) && e.code === "OFFLINE" ? m.chat.offline : errorMessage(e));
     } finally {
       setSending(false);
       box.current?.focus();
@@ -112,82 +133,106 @@ export function ChatApp() {
   };
 
   const name = target?.name ?? "pet";
+  /** Lượt chat mới nhất (không tính ghi chú): là câu của pet có câu hỏi tiếp thì hiện nút dưới nó. */
+  const lastTurn = entries.filter((entry) => entry.kind !== "note").at(-1);
   return (
-    <main className="chat">
-      <header className="chat__head">
-        <ChatScene />
-        <strong className="chat__title">{name}</strong>
-        {target && <Avatar pet={target.pet} />}
-      </header>
-      <section className="chat__list" aria-live="polite">
-        {entries.length === 0 && (
-          <div className="chat__empty">
-            <div className="chat__hello">
-              <strong>Hỏi {name} gì cũng được</strong>
-              <span>Tỉ giá, tin tức, đổi đơn vị, viết giúp một câu...</span>
+    <LangContext.Provider value={lang}>
+      <main className="chat">
+        <header className="chat__head">
+          <ChatScene />
+          <strong className="chat__title">{name}</strong>
+          {target && <Avatar pet={target.pet} />}
+        </header>
+        <section className="chat__list" aria-live="polite">
+          {entries.length === 0 && (
+            <div className="chat__empty">
+              <div className="chat__hello">
+                <strong>{fill(m.chat.anything, { name })}</strong>
+                <span>{m.chat.examples}</span>
+              </div>
+              <div className="chat__suggestions">
+                {suggestions.map((s) => (
+                  <button key={s} type="button" className="chip" disabled={!target || sending} onClick={() => void send(s)}>
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="chat__suggestions">
-              {suggestions.map((s) => (
-                <button key={s} type="button" className="chip" disabled={!target || sending} onClick={() => void send(s)}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {entries.map((entry) =>
-          entry.kind === "note" ? (
-            <p key={entry.id} className="note">
-              {entry.text}
+          )}
+          {entries.map((entry) =>
+            entry.kind === "note" ? (
+              <p key={entry.id} className="note">
+                {entry.text}
+              </p>
+            ) : (
+              <Fragment key={entry.id}>
+                <Message entry={entry} name={name} />
+                {entry === lastTurn && entry.followUps && entry.followUps.length > 0 && (
+                  <div className="chat__followups">
+                    {entry.followUps.map((followUp) => (
+                      <button
+                        key={followUp.label}
+                        type="button"
+                        className="chip"
+                        title={followUp.query}
+                        disabled={!target || sending}
+                        onClick={() => void send(followUp.query)}
+                      >
+                        {followUp.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Fragment>
+            ),
+          )}
+          {sending && (
+            <p className="typing">
+              <span className="typing__name">{name}</span> {m.chat.thinking}
+              <span className="typing__dots" aria-hidden="true" />
             </p>
-          ) : (
-            <Message key={entry.id} entry={entry} name={name} />
-          ),
-        )}
-        {sending && (
-          <p className="typing">
-            <span className="typing__name">{name}</span> đang nghĩ<span className="typing__dots" aria-hidden="true" />
-          </p>
-        )}
-        <div ref={end} />
-      </section>
-      <form
-        className="composer"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void send(input);
-        }}
-      >
-        <textarea
-          ref={box}
-          className="composer__input"
-          rows={1}
-          autoFocus
-          maxLength={MESSAGE_MAX}
-          placeholder={`Nhắn cho ${name}...`}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={onKeyDown}
-        />
-        <button
-          type="submit"
-          className="composer__send"
-          aria-label="Gửi"
-          title="Gửi (Enter)"
-          disabled={!target || sending || !input.trim()}
+          )}
+          <div ref={end} />
+        </section>
+        <form
+          className="composer"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void send(input);
+          }}
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 12l16-8-6 16-2.5-6.5z" />
-            <path d="M11.5 13.5L20 4" />
-          </svg>
-        </button>
-      </form>
-    </main>
+          <textarea
+            ref={box}
+            className="composer__input"
+            rows={1}
+            autoFocus
+            maxLength={MESSAGE_MAX}
+            placeholder={fill(m.chat.placeholder, { name })}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={onKeyDown}
+          />
+          <button
+            type="submit"
+            className="composer__send"
+            aria-label={m.chat.send}
+            title={m.chat.sendTitle}
+            disabled={!target || sending || !input.trim()}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 12l16-8-6 16-2.5-6.5z" />
+              <path d="M11.5 13.5L20 4" />
+            </svg>
+          </button>
+        </form>
+      </main>
+    </LangContext.Provider>
   );
 }
 
 /** Một câu trong đoạn chat; câu của pet có tên pet phía trên và nút Chép. */
 function Message({ entry, name }: { entry: Entry; name: string }) {
+  const m = useMessages();
   const [copied, setCopied] = useState(false);
   if (entry.kind === "user") return <div className="msg msg--user">{entry.text}</div>;
   const copy = () => {
@@ -204,7 +249,7 @@ function Message({ entry, name }: { entry: Entry; name: string }) {
       <span className="msg__name">{name}</span>
       <Reply text={entry.text} />
       <button type="button" className="msg__copy" onClick={copy}>
-        {copied ? "Đã chép" : "Chép"}
+        {copied ? m.chat.copied : m.chat.copy}
       </button>
     </div>
   );

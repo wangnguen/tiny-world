@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NO_NETWORK, nowText } from "./lines";
+import { noNetwork, nowText, setLang, weatherLine } from "./lines";
 import { toLunar } from "./lunar";
 
 const lunar = (y: number, m: number, d: number) => toLunar(new Date(y, m - 1, d, 12));
@@ -42,7 +42,7 @@ describe("bấm đúp: giờ, ngày, thời tiết", () => {
     const date = new Date(2026, 1, 17, 8, 30);
     expect(nowText(date, toLunar(date), null)).toBe("08:30 · Thứ Ba 17/02\nÂm lịch 1/1");
     expect(nowText(date, toLunar(date), { place: "Huế", sky: null })).toContain("Huế: chưa có thời tiết");
-    expect(nowText(date, toLunar(date), { place: "Huế", sky: null, problem: NO_NETWORK })).toBe(
+    expect(nowText(date, toLunar(date), { place: "Huế", sky: null, problem: noNetwork() })).toBe(
       "08:30 · Thứ Ba 17/02\nÂm lịch 1/1\nKhông có mạng :))",
     );
   });
@@ -50,5 +50,18 @@ describe("bấm đúp: giờ, ngày, thời tiết", () => {
   it("tháng nhuận ghi rõ", () => {
     const date = new Date(2025, 6, 25, 8, 30);
     expect(nowText(date, toLunar(date), null)).toContain("Âm lịch 1/6 nhuận");
+  });
+
+  it("tiếng Anh: tên thứ, tháng và thời tiết bằng tiếng Anh", () => {
+    setLang("en");
+    try {
+      const date = new Date(2026, 9, 1, 15, 4);
+      expect(nowText(date, toLunar(date), { place: "Hanoi", sky: "rain", temperature: 26.6 })).toBe(
+        "15:04 · Thursday, Oct 1\nLunar date 8/21\nHanoi: rainy, 27°C",
+      );
+      expect(weatherLine({ place: "Hue", sky: null, problem: noNetwork() })).toBe("No internet :))");
+    } finally {
+      setLang("vi");
+    }
   });
 });

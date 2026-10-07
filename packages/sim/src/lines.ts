@@ -1,75 +1,79 @@
 /**
- * Mọi câu pet nói (speech bubble), gom một chỗ để dễ sửa câu chữ. Giọng thân mật, dùng ":)))" thay emoji.
+ * Mọi câu pet nói (speech bubble), theo ngôn ngữ đang dùng. Câu chữ nằm ở mục `pet` (và `calendar`,
+ * `occasions`) trong `packages/core/src/i18n/vi.json`, `en.json`: giọng thân mật, dùng ":)))" thay emoji.
+ * Mỗi cửa sổ (overlay, Cài đặt) gọi `setLang` khi đọc cài đặt và mỗi lần ngôn ngữ đổi.
  */
+import { fill, messages, type Lang, type Occasion } from "@tinyworld/core";
 import type { LunarDate } from "./lunar";
 import type { Sky, Warmth } from "./weather";
 
-/** Câu chào khi gặp nhau (chọn ngẫu nhiên một câu). */
-export const GREETINGS = ["Chào :)))", "Xin chào :)))", "Ơ, cậu đây rồi!", ":))))?", "Đi đâu đấy :)?"];
+let lang: Lang = "vi";
 
-/** Trời vừa chuyển sang kiểu thời tiết này: một con nói một câu (theo giới hạn tần suất). [câu, mặt cười] */
-const SKY_TALK: Record<Sky, [string, string]> = {
-  sunny: ["Nắng đẹp ghê", ":)))"],
-  clear: ["Trời quang, sao đẹp ghê", ":)))"],
-  cloudy: ["Trời nhiều mây quá", ":)"],
-  rain: ["Mưa rồi", ":("],
-  storm: ["Sấm to quá", ":((("],
-  snow: ["Tuyết rơi kìa", ":)))"],
-  fog: ["Sương mù dày ghê", ":)"],
-  petals: ["Hoa rơi đẹp quá", ":)))"],
-};
+/** Đổi ngôn ngữ của mọi câu pet nói từ giờ trở đi. */
+export function setLang(next: Lang): void {
+  lang = next;
+}
+
+export function currentLang(): Lang {
+  return lang;
+}
+
+const text = () => messages(lang);
+
+/** Câu chào khi gặp nhau (chọn ngẫu nhiên một câu; hai ngôn ngữ cùng số câu nên cùng seed ra cùng lượt). */
+export function greetings(): readonly string[] {
+  return text().pet.greetings;
+}
 
 const degrees = (temperature: number) => `${Math.round(temperature)}°C`;
 
 /** Câu khi trời vừa đổi, kèm nhiệt độ nếu biết, ví dụ "Mưa rồi, 24°C :(". Nắng mà nóng thì kêu nóng. */
 export function skyLine(sky: Sky, temperature: number | null, warmth: Warmth | null): string {
-  const [text, mood] = sky === "sunny" && warmth === "hot" ? ["Nắng to quá", ":((("] : SKY_TALK[sky];
-  return temperature === null ? `${text} ${mood}` : `${text}, ${degrees(temperature)} ${mood}`;
+  const pet = text().pet;
+  const [line, mood] = sky === "sunny" && warmth === "hot" ? pet.sunnyHot : pet.sky[sky];
+  if (temperature === null) return fill(pet.skyAlone, { text: line, mood });
+  return fill(pet.skyWithTemperature, { text: line, temperature: degrees(temperature), mood });
 }
 
 /** Câu khi trời vừa chuyển nóng hay lạnh (thời tiết không đổi), ví dụ "Nóng quá, 36°C :(((". */
 export function warmthLine(warmth: Warmth, temperature: number): string {
-  return warmth === "hot" ? `Nóng quá, ${degrees(temperature)} :(((` : `Lạnh ghê, ${degrees(temperature)} :(((`;
+  return fill(text().pet[warmth], { temperature: degrees(temperature) });
 }
 
 /** Không lấy được thời tiết: mất mạng, hoặc máy chủ thời tiết lỗi. */
-export const NO_NETWORK = "Không có mạng :))";
-export const NO_WEATHER = "Không có thời tiết :))";
+export const noNetwork = () => text().pet.noNetwork;
+export const noWeather = () => text().pet.noWeather;
 
 /** Con ma bay qua lúc 2 giờ sáng: con đầu tiên bị giật mình nói câu này. */
-export const GHOST_LINE = "Ma... ma kìa :(((";
+export const ghostLine = () => text().pet.ghost;
 
 /** Nhắc nghỉ sau `minutes` phút ngồi liền. */
-export const breakLine = (minutes: number) => `Ngồi liền ${minutes} phút rồi, đứng dậy nghỉ mắt chút đi :)))`;
+export const breakLine = (minutes: number) => fill(text().pet.break, { minutes });
 /** Nhắc uống nước sau một lúc ngồi máy. */
-export const WATER_LINE = "Uống ngụm nước đi nè :)))";
+export const waterLine = () => text().pet.water;
 /** Nhắc đi ngủ lúc khuya, `time` ví dụ "23:40". */
-export const bedtimeLine = (time: string) => `${time} rồi, đi ngủ thôi :(((`;
+export const bedtimeLine = (time: string) => fill(text().pet.bedtime, { time });
 /** Bấm Ctrl+S dồn dập. */
-export const SAVE_SPAM_LINE = "Lưu rồi mà :((((";
+export const saveSpamLine = () => text().pet.saveSpam;
 
 /** Click chuột phải vào pet mà chưa bật chat. */
-export const CHAT_OFF_LINE = "Bật Chat với pet trong Cài đặt rồi nói chuyện nhé :)))";
+export const chatOffLine = () => text().pet.chatOff;
 
 /** GitHub có bản mới (update.rs): một con báo, mỗi bản một lần. */
-export const updateLine = (version: string) => `Có bản mới ${version} rồi, vào Cài đặt cập nhật nhé :)))`;
+export const updateLine = (version: string) => fill(text().pet.update, { version });
 
-/** Thời tiết khi bấm đúp vào pet (trời nắng mùa xuân thì là `petals`). */
-export const SKY_NAMES: Record<Sky, string> = {
-  sunny: "trời nắng",
-  clear: "trời quang",
-  cloudy: "nhiều mây",
-  fog: "sương mù",
-  rain: "mưa",
-  snow: "tuyết",
-  storm: "có sấm",
-  petals: "trời nắng",
-};
+/** Thời tiết khi bấm đúp vào pet, ví dụ "mưa" (trời nắng mùa xuân thì là `petals`, vẫn là "trời nắng"). */
+export const skyName = (sky: Sky) => text().pet.skyNames[sky];
 
-/** Đã chọn thành phố mà chưa lấy được thời tiết lần nào (hoặc kết quả đã quá cũ). */
-export const WEATHER_UNKNOWN = "chưa có thời tiết";
-
-export const WEEKDAYS = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+/**
+ * Tên dịp và câu nói của dịp: dịp có sẵn chưa sửa thì theo ngôn ngữ `inLang` (mặc định ngôn ngữ đang dùng),
+ * còn lại như người dùng ghi.
+ */
+export function occasionText(occasion: Occasion, inLang: Lang = lang): { name: string; message: string } {
+  const presets: Record<string, { name: string; message: string } | undefined> = messages(inLang).occasions;
+  const preset = occasion.preset ? presets[occasion.preset] : undefined;
+  return preset ?? { name: occasion.name, message: occasion.message };
+}
 
 /** Thời tiết ở thành phố đã chọn để nói khi bấm đúp; `sky` null là chưa có thời tiết. */
 export interface PlaceWeather {
@@ -77,7 +81,7 @@ export interface PlaceWeather {
   place: string;
   sky: Sky | null;
   temperature?: number;
-  /** Lần lấy thời tiết gần nhất bị lỗi: nói câu này (`NO_NETWORK`, `NO_WEATHER`) thay cho thời tiết. */
+  /** Lần lấy thời tiết gần nhất bị lỗi: nói câu này (`noNetwork()`, `noWeather()`) thay cho thời tiết. */
   problem?: string;
 }
 
@@ -85,10 +89,11 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 /** Một dòng thời tiết, ví dụ "Hà Nội: mưa, 27°C"; lấy không được thì là câu báo lỗi (`problem`). */
 export function weatherLine(weather: PlaceWeather): string {
+  const pet = text().pet;
   if (weather.sky && weather.temperature !== undefined) {
-    return `${weather.place}: ${SKY_NAMES[weather.sky]}, ${degrees(weather.temperature)}`;
+    return fill(pet.place, { place: weather.place, sky: pet.skyNames[weather.sky], temperature: degrees(weather.temperature) });
   }
-  return weather.problem ?? `${weather.place}: ${WEATHER_UNKNOWN}`;
+  return weather.problem ?? `${weather.place}: ${pet.weatherUnknown}`;
 }
 
 /**
@@ -96,9 +101,18 @@ export function weatherLine(weather: PlaceWeather): string {
  * Ví dụ "15:42 · Thứ Tư 01/10", "Âm lịch 21/8", "Hà Nội: mưa, 27°C", mỗi phần một dòng.
  */
 export function nowText(date: Date, lunar: LunarDate, weather: PlaceWeather | null): string {
+  const { pet, calendar } = text();
   const lines = [
-    `${pad(date.getHours())}:${pad(date.getMinutes())} · ${WEEKDAYS[date.getDay()]} ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`,
-    `Âm lịch ${lunar.day}/${lunar.month}${lunar.leap ? " nhuận" : ""}`,
+    fill(pet.clock, {
+      hh: pad(date.getHours()),
+      min: pad(date.getMinutes()),
+      weekday: calendar.weekdays[date.getDay()],
+      dd: pad(date.getDate()),
+      mm: pad(date.getMonth() + 1),
+      day: date.getDate(),
+      shortMonth: calendar.shortMonths[date.getMonth()],
+    }),
+    fill(pet.lunar, { day: lunar.day, month: lunar.month, leap: lunar.leap ? pet.leap : "" }),
   ];
   if (weather) lines.push(weatherLine(weather));
   return lines.join("\n");

@@ -1,0 +1,298 @@
+<!doctype html>
+<!-- Sinh từ website/i18n/page.html bằng scripts/prepare-website.mjs, không sửa tay. -->
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TinyWorld · Pet nhỏ sống trên desktop Windows</title>
+    <meta name="description" content="Vài bé pet tí hon đi dạo trên taskbar, leo lên mép cửa sổ, ngủ khi bạn bận, nhắc bạn nghỉ ngơi. Miễn phí cho Windows 10 và 11." />
+    <meta name="theme-color" content="#0b1424" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="alternate" hreflang="vi" href="/" />
+    <link rel="alternate" hreflang="en" href="/en/" />
+    <link rel="alternate" hreflang="x-default" href="/" />
+    <meta property="og:image" content="/img/og.png" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/img/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TinyWorld" />
+    <meta property="og:title" content="TinyWorld · Pet nhỏ sống trên desktop Windows" />
+    <meta property="og:description" content="Pet tí hon sống ngay trên desktop của bạn: leo cửa sổ, ngủ trên taskbar, thời tiết thật quanh pet. Miễn phí cho Windows." />
+    <meta property="og:locale" content="vi_VN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="modulepreload" href="/js/desk.js" />
+    <script type="module" src="/js/main.js"></script>
+  </head>
+  <body>
+    <svg class="symbols" aria-hidden="true">
+      <symbol id="i-window" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5" /><path d="M3 9h18M6.5 6.8h.1M9 6.8h.1" /></symbol>
+      <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8.5 11V5.8a1.6 1.6 0 0 1 3.2 0V10M11.7 9.5V4.6a1.6 1.6 0 0 1 3.2 0V10M14.9 10V6.2a1.6 1.6 0 0 1 3.1 0v7.3c0 4-2.6 6.9-6.3 6.9-2.5 0-4.1-1.1-5.4-3l-2.4-3.7a1.5 1.5 0 0 1 2.4-1.8l2 2.1V8.3a1.6 1.6 0 0 1 3.2 0" /></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z" /><path d="M16 4.5h3l-3 3.5h3M13 2.5h1.8l-1.8 2h1.8" /></symbol>
+      <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 15.5h10a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.6-.9A4 4 0 0 0 7 15.5z" /><path d="M8.5 18.5l-.8 2M12 18.5l-.8 2M15.5 18.5l-.8 2" /></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 19.5s-7.5-4.4-7.5-9.6A4.1 4.1 0 0 1 12 7.6a4.1 4.1 0 0 1 7.5 2.3c0 5.2-7.5 9.6-7.5 9.6z" /><path d="M7.5 12h2.2l1.2-2 2 4 1.2-2H16.5" /></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z" /><path d="M8.5 10.5h.1M12 10.5h.1M15.5 10.5h.1" /></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="2.5" /><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4M9 14l2 2 4-4" /></symbol>
+      <symbol id="i-group" viewBox="0 0 24 24"><circle cx="8" cy="9" r="3" /><circle cx="16.5" cy="10" r="2.5" /><path d="M2.8 19c.6-3 2.6-4.8 5.2-4.8s4.6 1.8 5.2 4.8M13.6 15.4c.8-.6 1.8-.9 2.9-.9 2.2 0 3.8 1.5 4.3 4.5" /></symbol>
+      <symbol id="i-quiet" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path d="M16 9.5l4.5 5M20.5 9.5 16 14.5" /></symbol>
+      <symbol id="i-cursor" viewBox="0 0 24 24"><path d="M6 3.5l12 7.5-5.2 1.3 3 5.6-2.4 1.3-3-5.6L6.6 17z" /></symbol>
+      <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8.5 5.5-14 15-14 0 9.5-5.5 15-14 15" /><path d="M5 19c3-4 6-6.5 10-8.5" /></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5M12 14.5v2.5" /></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.2 3.5 8.5s-1.1 6.1-3.5 8.5M12 3.5C9.6 5.9 8.5 8.7 8.5 12s1.1 6.1 3.5 8.5" /></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.1-5" /><path d="M17.5 3.5V7.5h-4" /></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14" /></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-2.8 17.5c.4.1.6-.2.6-.4v-1.6c-2.5.5-3-1.1-3-1.1-.4-1-1-1.3-1-1.3-.8-.6.1-.6.1-.6.9.1 1.4.9 1.4.9.8 1.4 2.1 1 2.6.8.1-.6.3-1 .6-1.2-2-.2-4.1-1-4.1-4.4 0-1 .4-1.8.9-2.4-.1-.2-.4-1.1.1-2.4 0 0 .8-.2 2.5.9a8.6 8.6 0 0 1 4.6 0c1.7-1.1 2.5-.9 2.5-.9.5 1.3.2 2.2.1 2.4.6.6.9 1.4.9 2.4 0 3.5-2.1 4.2-4.1 4.4.3.3.6.8.6 1.6v2.4c0 .2.2.5.6.4A9 9 0 0 0 12 3z" /></symbol>
+    </svg>
+
+    <div class="suggest" data-suggest hidden>
+      <span>Prefer English?</span>
+      <a class="suggest__go" href="/en/" data-lang-link="en">Switch to English</a>
+      <button class="suggest__close" type="button" data-suggest-close aria-label="Đóng">×</button>
+    </div>
+
+    <header class="nav">
+      <div class="nav__inner">
+        <a class="brand" href="#top">
+          <img src="/img/logo.png" alt="" width="34" height="34" />
+          <span>TinyWorld</span>
+        </a>
+        <nav class="nav__links" aria-label="TinyWorld">
+          <a href="#tinh-nang">Tính năng</a>
+          <a href="#thoi-tiet">Thời tiết</a>
+          <a href="#nhan-vat">Nhân vật</a>
+        </nav>
+        <a class="nav__lang" href="/en/" hreflang="en" lang="en" data-lang-link="en">
+          <svg class="icon"><use href="#i-globe" /></svg>English
+        </a>
+        <a class="btn btn--small" href="#tai-ve">Tải về</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="sky" aria-hidden="true" data-stars></div>
+        <div class="hero__text">
+          <p class="eyebrow">TinyWorld · cho Windows 10 và 11</p>
+          <h1>Pet tí hon sống ngay trên desktop của bạn</h1>
+          <p class="lede">Vài bé pet đi dạo trên taskbar, leo lên mép cửa sổ, ngồi vắt vẻo ở góc, tối đến thì nằm ngủ cạnh nhau. Bạn cứ làm việc, pet tự sống bên cạnh: không cần chăm, không làm phiền.</p>
+          <div class="actions">
+            <a class="btn btn--primary" href="#tai-ve">
+              <svg class="icon"><use href="#i-download" /></svg>Tải về miễn phí
+            </a>
+            <a class="btn btn--ghost" href="#nhan-vat">Gặp 22 nhân vật</a>
+          </div>
+        </div>
+
+        <div class="desk" id="desk" data-desk>
+          <div class="desk__screen" role="group" aria-label="Màn hình thu nhỏ có pet đang sống, bấm và kéo được">
+            <div class="desk__world" data-world>
+              <svg class="desk__wallpaper" viewBox="0 0 440 150" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+                <defs>
+                  <radialGradient id="lantern-glow">
+                    <stop offset="0" stop-color="#ffbf66" stop-opacity="0.75" />
+                    <stop offset="0.45" stop-color="#ffb05a" stop-opacity="0.25" />
+                    <stop offset="1" stop-color="#ffb05a" stop-opacity="0" />
+                  </radialGradient>
+                  <radialGradient id="window-glow">
+                    <stop offset="0" stop-color="#ffc46b" stop-opacity="0.6" />
+                    <stop offset="1" stop-color="#ffc46b" stop-opacity="0" />
+                  </radialGradient>
+                  <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#315c66" />
+                    <stop offset="0.5" stop-color="#1f3a4f" />
+                    <stop offset="1" stop-color="#13213a" />
+                  </linearGradient>
+                </defs>
+                <g fill="#25375f">
+                  <circle cx="196" cy="130" r="13" />
+                  <circle cx="214" cy="126" r="11" />
+                  <path d="M290 150v-24l10-9 10 9v24z" />
+                  <circle cx="314" cy="130" r="8" />
+                </g>
+                <g fill="#2f4575">
+                  <path d="M232 150V102l9-18 9 18v48z" />
+                  <path d="M240.2 84V73h1.6v11zM237.5 76.5h7v1.6h-7z" />
+                  <path d="M252 150v-34l16-14 16 14v34z" />
+                </g>
+                <g fill="url(#window-glow)">
+                  <circle cx="241" cy="110" r="9" />
+                  <circle cx="269" cy="127" r="11" />
+                  <circle cx="299" cy="132" r="7" />
+                </g>
+                <g fill="#ffc768">
+                  <rect x="239" y="106" width="4" height="7" rx="2" />
+                  <rect x="262" y="124" width="5" height="6" rx="1" />
+                  <rect x="272" y="124" width="5" height="6" rx="1" opacity="0.8" />
+                  <rect x="297" y="130" width="4" height="5" rx="1" />
+                </g>
+                <path d="M120 150C200 146 262 124 320 118S402 110 440 112V150Z" fill="url(#hill)" />
+                <path d="M120 150C200 146 262 124 320 118S402 110 440 112" fill="none" stroke="#86c8a4" stroke-opacity="0.75" stroke-width="1.6" />
+                <g fill="none" stroke="#6fb28f" stroke-width="1.3" stroke-linecap="round">
+                  <path d="M296 121l2-6 1 6 2-5 1 5" />
+                  <path d="M340 116l2-5 1 5 2-4" />
+                  <path d="M408 111l2-5 1 5 2-4 1 4" />
+                </g>
+                <circle cx="318" cy="108" r="44" fill="url(#lantern-glow)" />
+                <path d="M312 94q6-9 12 0" fill="none" stroke="#3b2d24" stroke-width="1.8" />
+                <rect x="310.5" y="93" width="15" height="4" rx="1.5" fill="#3b2d24" />
+                <rect x="311.5" y="97" width="13" height="16" rx="2" fill="#ffcd72" stroke="#4a3424" stroke-width="1.6" />
+                <path d="M318 97v16" stroke="#d8923c" stroke-width="0.9" />
+                <ellipse cx="318" cy="106" rx="2" ry="3.4" fill="#fff3c6" />
+                <rect x="309.5" y="113" width="17" height="4" rx="1.2" fill="#3b2d24" />
+              </svg>
+              <div class="desk__moon" aria-hidden="true"></div>
+
+              <section class="win" data-win="notes" aria-label="Ghi chú">
+                <div class="win__bar" data-win-bar>
+                  <span class="win__title"><span class="win__app win__app--notes" aria-hidden="true"></span>Ghi chú</span>
+                  <span class="win__buttons">
+                    <button type="button" data-win-act="min" aria-label="Thu nhỏ"><span class="glyph glyph--min"></span></button>
+                    <button type="button" tabindex="-1" aria-label="Phóng to"><span class="glyph glyph--max"></span></button>
+                    <button type="button" class="win__close" data-win-act="close" aria-label="Đóng"><span class="glyph glyph--close"></span></button>
+                  </span>
+                </div>
+                <div class="win__body win__body--notes"><strong>Việc hôm nay</strong><p>☑ Cài TinyWorld</p><p>☐ Họp nhóm lúc 10:00</p><p>☐ Gửi báo cáo tuần</p><p>☐ Uống nước :)))</p></div>
+              </section>
+
+              <section class="win win--music" data-win="music" aria-label="Nhạc">
+                <div class="win__bar" data-win-bar>
+                  <span class="win__title"><span class="win__app win__app--music" aria-hidden="true"></span>Nhạc</span>
+                  <span class="win__buttons">
+                    <button type="button" data-win-act="min" aria-label="Thu nhỏ"><span class="glyph glyph--min"></span></button>
+                    <button type="button" tabindex="-1" aria-label="Phóng to"><span class="glyph glyph--max"></span></button>
+                    <button type="button" class="win__close" data-win-act="close" aria-label="Đóng"><span class="glyph glyph--close"></span></button>
+                  </span>
+                </div>
+                <div class="win__body win__body--music">
+                  <div class="album" aria-hidden="true"><span>♪</span></div>
+                  <div class="track">
+                    <strong>Lofi đêm khuya</strong>
+                    <span>TinyWorld Radio</span>
+                    <div class="track__bar"><span></span></div>
+                    <div class="track__controls" aria-hidden="true"><span>⏮</span><span class="track__play">⏸</span><span>⏭</span></div>
+                  </div>
+                </div>
+              </section>
+
+              <div class="desk__pets" data-pets></div>
+
+              <div class="taskbar">
+                <div class="taskbar__apps">
+                  <span class="tb tb--start" title="Bắt đầu" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                  <span class="tb tb--search" title="Tìm kiếm" aria-hidden="true"></span>
+                  <span class="tb tb--files" title="Thư mục" aria-hidden="true"></span>
+                  <span class="tb tb--browser" title="Trình duyệt" aria-hidden="true"></span>
+                  <button type="button" class="tb tb--notes" data-open="notes" aria-label="Ghi chú"></button>
+                  <button type="button" class="tb tb--music" data-open="music" aria-label="Nhạc"></button>
+                </div>
+                <div class="taskbar__tray">
+                  <img class="tray__pet" src="/img/favicon-32.png" alt="TinyWorld ở khay hệ thống" title="TinyWorld ở khay hệ thống" width="18" height="18" />
+                  <span class="tray__icons" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M3 9.5a13 13 0 0 1 18 0M6 12.8a8.6 8.6 0 0 1 12 0M9 16a4.2 4.2 0 0 1 6 0" /><circle cx="12" cy="19" r="1" /></svg>
+                    <svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" /></svg>
+                  </span>
+                  <span class="clock" data-clock><span data-clock-time>--:--</span><span data-clock-date></span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="hint">Thử đi: bấm vào pet, kéo lên rồi thả, vung chuột để ném, bấm đúp để xem giờ. Kéo thanh tiêu đề cửa sổ lúc có pet đứng trên đó, hoặc đóng cửa sổ xem sao.</p>
+      </section>
+
+      <section class="section" id="tinh-nang">
+        <div class="section__head">
+          <h2>Pet làm gì cả ngày?</h2>
+          <p class="lede">Không chỉ số, không nhiệm vụ. Chỉ là vài người bạn nhỏ sống cạnh những cửa sổ bạn đang mở.</p>
+        </div>
+        <ul class="features"><li class="feature feature--window"><span class="feature__icon"><svg class="icon"><use href="#i-window" /></svg></span><h3>Leo trèo trên cửa sổ</h3><p>Pet leo lên cạnh cửa sổ, đi dạo trên mép, ngồi vắt vẻo ở góc rồi nhảy sang cửa sổ khác. Kéo cửa sổ đi thì pet đi theo, thu nhỏ cửa sổ thì pet rơi xuống.</p></li><li class="feature feature--hand"><span class="feature__icon"><svg class="icon"><use href="#i-hand" /></svg></span><h3>Bấm, kéo, ném thoải mái</h3><p>Bấm thì pet nhảy lên, kéo lên rồi thả thì rơi xuống, vung chuột rồi buông thì pet bay theo đà. Thả từ cao quá là choáng, sao bay vòng quanh đầu.</p></li><li class="feature feature--moon"><span class="feature__icon"><svg class="icon"><use href="#i-moon" /></svg></span><h3>Bạn bận thì pet ngủ</h3><p>Ba phút không ai đụng tới, cả nhóm về taskbar nằm ngủ cạnh nhau. Bấm vào đâu trên màn hình là cả nhóm dậy.</p></li><li class="feature feature--cloud"><span class="feature__icon"><svg class="icon"><use href="#i-cloud" /></svg></span><h3>Thời tiết thật quanh pet</h3><p>Chọn thành phố của bạn: mưa, tuyết, nắng, sấm hay sương mù đều hiện ngay quanh pet. Nóng thì hơi nóng bốc lên, lạnh thì pet thở ra khói.</p></li><li class="feature feature--clock"><span class="feature__icon"><svg class="icon"><use href="#i-clock" /></svg></span><h3>Bấm đúp để xem giờ</h3><p>Pet đọc giờ, thứ, ngày dương lịch, ngày âm lịch và thời tiết ở thành phố bạn chọn.</p></li><li class="feature feature--heart"><span class="feature__icon"><svg class="icon"><use href="#i-heart" /></svg></span><h3>Nhắc bạn giữ sức khoẻ</h3><p>Ngồi liền lâu quá thì nhắc nghỉ mắt, tới giờ thì nhắc uống nước, khuya rồi thì nhắc đi ngủ. Mặc định tắt, cần thì bật.</p></li><li class="feature feature--chat"><span class="feature__icon"><svg class="icon"><use href="#i-chat" /></svg></span><h3>Hỏi nhanh, đáp gọn</h3><p>Bấm chuột phải vào pet để hỏi tỉ giá, giá vàng, đổi đơn vị hay nhờ viết lời chúc, khỏi phải mở trình duyệt. Không cần tài khoản.</p></li><li class="feature feature--calendar"><span class="feature__icon"><svg class="icon"><use href="#i-calendar" /></svg></span><h3>Nhớ các dịp quan trọng</h3><p>Tết, Trung thu, Giáng sinh... tới dịp là pet chúc một câu. Thêm sinh nhật, ngày kỷ niệm của riêng bạn, dương lịch hay âm lịch đều được.</p></li><li class="feature feature--group"><span class="feature__icon"><svg class="icon"><use href="#i-group" /></svg></span><h3>Tối đa ba con một lúc</h3><p>Gặp nhau thì dừng lại chào, có lúc rủ nhau đi một đoạn, tới giờ ngủ thì nằm cạnh nhau.</p></li></ul>
+        <p class="secret">Psst... thử thức tới 2 giờ sáng xem có gì bay qua màn hình nhé :)))</p>
+      </section>
+
+      <section class="section section--split" id="thoi-tiet">
+        <div class="section__head">
+          <h2>Mưa nắng ngay cạnh pet</h2>
+          <p class="lede">Chọn thành phố trong Cài đặt là thời tiết thật hiện quanh từng con, vừa với dáng của nó. Trời đổi thì pet báo một câu. Bấm thử:</p>
+          <div class="chips" role="group" aria-label="Thời tiết" data-sky-chips><button type="button" class="chip" data-sky="sunny" aria-pressed="false"><span class="chip__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.2" fill="#ffb703" stroke="#e07b00"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="#e07b00" stroke-width="1.4" stroke-linecap="round"/></svg></span>Nắng</button><button type="button" class="chip" data-sky="clear" aria-pressed="false"><span class="chip__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5a5.5 5.5 0 1 0 3 9.6 4.6 4.6 0 0 1-3-9.6z" fill="#ffd36b" stroke="#c98a00"/></svg></span>Trời quang</button><button type="button" class="chip" data-sky="cloudy" aria-pressed="false"><span class="chip__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 12.5h7.2a2.8 2.8 0 0 0 .3-5.6 3.8 3.8 0 0 0-7.3-.6A3.1 3.1 0 0 0 4.5 12.5z" fill="#e8eef9" stroke="#6b7fa8" stroke-width="1.1"/></svg></span>Nhiều mây</button><button type="button" class="chip" data-sky="rain" aria-pressed="false"><span class="chip__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 10h7.2a2.6 2.6 0 0 0 .3-5.2 3.6 3.6 0 0 0-6.9-.5A2.9 2.9 0 0 0 4.5 10z" fill="#e8eef9" stroke="#6b7fa8" stroke-width="1.1"/><path d="M5.5 12l-.7 2M8.5 12l-.7 2M11.5 12l-.7 2" stroke="#3b82f6" stroke-width="1.3" stroke-linecap="round"/></svg></span>Mưa</button><button type="button" class="chip" data-sky="storm" aria-pressed="false"><span class="chip__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 10h7.2a2.6 2.6 0 0 0 .3-5.2 3.6 3.6 0 0 0-6.9-.5A2.9 2.9 0 0 0 4.5 10z" fill="#e8eef9" stroke="#6b7fa8" stroke-width="1.1"/><path d="M8.8 10.2 6.8 13h2l-1 2.6 3-3.8h-2l.9-1.6z" fill="#ffcc33" stroke="#c98a00" stroke-width=".6"/></svg></span>Giông</button><button type="button" class="chip" data-sky="snow" aria-pressed="false"><span class="chip__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2.8 5l10.4 6M2.8 11l10.4-6" stroke="#4a90e2" stroke-width="1.4" stroke-linecap="round"/></svg></span>Tuyết</button><button type="button" class="chip" data-sky="fog" aria-pressed="false"><span class="chip__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 5h11M1.5 8h13M3.5 11h9" stroke="#7d8fb3" stroke-width="1.6" stroke-linecap="round"/></svg></span>Sương mù</button><button type="button" class="chip" data-sky="petals" aria-pressed="false"><span class="chip__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><g fill="#ff9ec2" stroke="#d9668f" stroke-width=".7"><circle cx="8" cy="4.6" r="2.3"/><circle cx="11.3" cy="7" r="2.3"/><circle cx="10" cy="10.9" r="2.3"/><circle cx="6" cy="10.9" r="2.3"/><circle cx="4.7" cy="7" r="2.3"/></g><circle cx="8" cy="8" r="1.6" fill="#ffd36b"/></svg></span>Hoa rơi</button></div>
+          <div class="chips" role="group" aria-label="Nhiệt độ" data-warmth-chips><button type="button" class="chip chip--hot" data-warmth="hot" data-temperature="36" aria-pressed="false">Nóng 36°C</button><button type="button" class="chip chip--cold" data-warmth="cold" data-temperature="8" aria-pressed="false">Lạnh 8°C</button></div>
+          <p class="note">Hiệu ứng chỉ vẽ quanh pet, không phủ kín màn hình, không che việc bạn đang làm.</p>
+        </div>
+        <div class="demo" data-demo>
+          <div class="demo__stage" role="img" aria-label="Pet đứng giữa thời tiết đang chọn" data-demo-stage data-sky="rain">
+            <div class="demo__stars" aria-hidden="true"></div>
+            <svg class="demo__hills" viewBox="0 0 420 80" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M0 50C70 30 140 42 210 34S350 20 420 36V80H0Z" fill="#1d3550" />
+              <path d="M0 62C90 52 170 60 240 54S360 46 420 56V80H0Z" fill="#20425a" />
+            </svg>
+            <div class="demo__ground" aria-hidden="true"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="nhan-vat">
+        <div class="section__head">
+          <h2>22 nhân vật, chọn tối đa 3</h2>
+          <p class="lede">Mỗi con được vẽ riêng cho TinyWorld, con nào cũng đủ 12 kiểu chuyển động: đi, chạy, leo, nhảy, ngồi mép, ngủ... Bấm vào một con để thả nó xuống màn hình ở đầu trang.</p>
+        </div>
+        <ul class="roster" data-roster><li><button type="button" class="pet-card" data-pet="a-momo" aria-pressed="false" aria-label="Thả Momo xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/a-momo/idle.webp)"></span></span><span class="pet-card__name">Momo</span><span class="pet-card__about">Axolotl hồng hiền lành, mang san hô, hay tò mò</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="b-bong" aria-pressed="false" aria-label="Thả Bông xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/b-bong/idle.webp)"></span></span><span class="pet-card__name">Bông</span><span class="pet-card__about">Thỏ kem tai hồng quàng khăn xanh, nhanh nhảu</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="b-kitsu" aria-pressed="false" aria-label="Thả Kitsu xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/b-kitsu/idle.webp)"></span></span><span class="pet-card__name">Kitsu</span><span class="pet-card__about">Cáo cam đuôi trắng, lanh lợi</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-bap" aria-pressed="false" aria-label="Thả Bắp xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-bap/idle.webp)"></span></span><span class="pet-card__name">Bắp</span><span class="pet-card__about">Ong vàng tròn chăm chỉ</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-bep" aria-pressed="false" aria-label="Thả Bẹp xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-bep/idle.webp)"></span></span><span class="pet-card__name">Bẹp</span><span class="pet-card__about">Cóc lùn mặt chán đời nhưng tốt bụng</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-bip" aria-pressed="false" aria-label="Thả Bíp xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-bip/idle.webp)"></span></span><span class="pet-card__name">Bíp</span><span class="pet-card__about">Robot xanh mắt LED vàng, thích số liệu chính xác</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-boggo" aria-pressed="false" aria-label="Thả Boggo xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-boggo/idle.webp)"></span></span><span class="pet-card__name">Boggo</span><span class="pet-card__about">Ếch coder mắt lúc nào cũng mệt, ôm ly cà phê</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-byte" aria-pressed="false" aria-label="Thả Byte xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-byte/idle.webp)"></span></span><span class="pet-card__name">Byte</span><span class="pet-card__about">Chim cánh cụt coder đeo kính tròn</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-cuc" aria-pressed="false" aria-label="Thả Cục xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-cuc/idle.webp)"></span></span><span class="pet-card__name">Cục</span><span class="pet-card__about">Golem đá tím có tinh thể trên đầu, ít nói mà chắc</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-dua" aria-pressed="false" aria-label="Thả Dứa xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-dua/idle.webp)"></span></span><span class="pet-card__name">Dứa</span><span class="pet-card__about">Bé dứa vàng vui tính</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-frobu" aria-pressed="false" aria-label="Thả Frobu xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-frobu/idle.webp)"></span></span><span class="pet-card__name">Frobu</span><span class="pet-card__about">Ếch cú đêm mặc hoodie đeo tai nghe</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-gloop" aria-pressed="false" aria-label="Thả Gloop xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-gloop/idle.webp)"></span></span><span class="pet-card__name">Gloop</span><span class="pet-card__about">Ếch nghịch ngợm quàng khăn cam</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-long" aria-pressed="false" aria-label="Thả Long xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-long/idle.webp)"></span></span><span class="pet-card__name">Long</span><span class="pet-card__about">Rồng phương Đông xanh lục, bờm lửa cam, oai vệ mà tốt bụng</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-lumi" aria-pressed="false" aria-label="Thả Lumi xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-lumi/idle.webp)"></span></span><span class="pet-card__name">Lumi</span><span class="pet-card__about">Tinh linh đầu sao vàng, lạc quan</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-mam" aria-pressed="false" aria-label="Thả Mầm xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-mam/idle.webp)"></span></span><span class="pet-card__name">Mầm</span><span class="pet-card__about">Sinh vật rừng màu kem có hai lá trên đầu, dịu dàng</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-may" aria-pressed="false" aria-label="Thả Mây xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-may/idle.webp)"></span></span><span class="pet-card__name">Mây</span><span class="pet-card__about">Tinh linh mây xanh nhạt, bay bổng</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-muc" aria-pressed="false" aria-label="Thả Mực xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-muc/idle.webp)"></span></span><span class="pet-card__name">Mực</span><span class="pet-card__about">Bạch tuộc tím tròn, khéo tay</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-nam" aria-pressed="false" aria-label="Thả Nấm xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-nam/idle.webp)"></span></span><span class="pet-card__name">Nấm</span><span class="pet-card__about">Bé nấm mũ đỏ đốm trắng, chậm rãi</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-patch" aria-pressed="false" aria-label="Thả Patch xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-patch/idle.webp)"></span></span><span class="pet-card__name">Patch</span><span class="pet-card__about">Gấu trúc đỏ coder đeo tai nghe tím</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-reu" aria-pressed="false" aria-label="Thả Rêu xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-reu/idle.webp)"></span></span><span class="pet-card__name">Rêu</span><span class="pet-card__about">Rồng lá xanh ngọc, hiểu biết</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-su" aria-pressed="false" aria-label="Thả Su xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-su/idle.webp)"></span></span><span class="pet-card__name">Su</span><span class="pet-card__about">Phi hành gia nhỏ, mê khám phá</span><span class="pet-card__badge">Trên màn hình</span></button></li><li><button type="button" class="pet-card" data-pet="c-tan" aria-pressed="false" aria-label="Thả Tàn xuống màn hình"><span class="pet-card__stage"><span class="sprite sprite--card" style="background-image:url(/pets/c-tan/idle.webp)"></span></span><span class="pet-card__name">Tàn</span><span class="pet-card__about">Bé lửa cam nhiệt tình</span><span class="pet-card__badge">Trên màn hình</span></button></li></ul>
+        <p class="secret">Giữ Shift khi bấm vào Long thì có bất ngờ :)))</p>
+      </section>
+
+      <section class="section" id="cach-choi">
+        <div class="section__head">
+          <h2>Cách chơi với pet</h2>
+        </div>
+        <dl class="tips"><div class="tip"><dt><kbd>Bấm</kbd></dt><dd>Pet nhảy lên; đang ngủ thì thức dậy, đang leo thì tuột tay</dd></div><div class="tip"><dt><kbd>Bấm đúp</kbd></dt><dd>Pet nói giờ, ngày âm lịch và thời tiết</dd></div><div class="tip"><dt><kbd>Kéo</kbd><span class="tip__join">→</span><kbd>thả</kbd></dt><dd>Rơi xuống mép cửa sổ hoặc taskbar</dd></div><div class="tip"><dt><kbd>Vung</kbd><span class="tip__join">→</span><kbd>buông</kbd></dt><dd>Pet bay theo đà, đập tường thì bật lại</dd></div><div class="tip"><dt><kbd>Chuột phải</kbd></dt><dd>Mở khung chat ngay cạnh pet</dd></div><div class="tip"><dt><kbd>Ctrl</kbd><span class="tip__join">+</span><kbd>bấm</kbd></dt><dd>Bấm xuyên qua pet xuống app bên dưới</dd></div><div class="tip"><dt><kbd>Shift</kbd><span class="tip__join">+</span><kbd>bấm Long</kbd></dt><dd>Bí mật :)))</dd></div><div class="tip"><dt><kbd>Khay hệ thống</kbd></dt><dd>Icon TinyWorld cạnh đồng hồ: tạm dừng, ẩn hiện pet, mở Cài đặt</dd></div></dl>
+      </section>
+
+      <section class="section">
+        <div class="section__head">
+          <h2>Nhẹ nhàng, không làm phiền</h2>
+        </div>
+        <ul class="calm"><li class="calm__item"><span class="calm__icon"><svg class="icon"><use href="#i-quiet" /></svg></span><div><h3>Không chen ngang</h3><p>Không âm thanh, không popup. Mở video hay chơi game toàn màn hình là pet tự ẩn, thoát ra lại hiện.</p></div></li><li class="calm__item"><span class="calm__icon"><svg class="icon"><use href="#i-cursor" /></svg></span><div><h3>Không cướp chuột</h3><p>Chuột đi xuyên qua mọi chỗ trống. Bấm vào pet cũng không làm mất chỗ bạn đang gõ.</p></div></li><li class="calm__item"><span class="calm__icon"><svg class="icon"><use href="#i-leaf" /></svg></span><div><h3>Nhẹ máy</h3><p>Cả nhóm ngủ thì app gần như nghỉ hẳn. Pet chỉ vẽ lại khi có gì thay đổi.</p></div></li><li class="calm__item"><span class="calm__icon"><svg class="icon"><use href="#i-lock" /></svg></span><div><h3>Giữ riêng tư</h3><p>Không đọc tiêu đề hay nội dung cửa sổ, không ghi lại phím bạn gõ. Số liệu giờ ngồi máy chỉ nằm trên máy bạn.</p></div></li><li class="calm__item"><span class="calm__icon"><svg class="icon"><use href="#i-globe" /></svg></span><div><h3>Tiếng Việt và tiếng Anh</h3><p>App tự theo ngôn ngữ của Windows, đổi lúc nào cũng được trong Cài đặt.</p></div></li><li class="calm__item"><span class="calm__icon"><svg class="icon"><use href="#i-refresh" /></svg></span><div><h3>Tự cập nhật</h3><p>Có bản mới thì pet báo, bấm một nút là xong.</p></div></li></ul>
+      </section>
+
+      <section class="section" id="tai-ve">
+        <div class="download">
+          <img class="download__logo" src="/img/logo.png" alt="" width="84" height="84" />
+          <h2>Rước pet về máy</h2>
+          <p class="lede">Miễn phí, cho Windows 10 và 11 (64-bit).</p>
+          <div class="actions actions--center">
+            <a class="btn btn--primary btn--large" href="https://github.com/wangnguen/tiny-world/releases/latest" data-download="setup">
+              <svg class="icon"><use href="#i-download" /></svg>Tải bản cài đặt
+            </a>
+            <a class="btn btn--ghost" href="https://github.com/wangnguen/tiny-world/releases/latest" data-download="portable">Bản chạy thẳng, không cần cài</a>
+          </div>
+          <p class="download__meta" data-download-meta>Bản mới nhất</p>
+          <ol class="steps"><li>Mở file vừa tải về.</li><li>Nếu Windows hiện “Windows protected your PC”: bấm More info rồi Run anyway. App chưa được ký số nên Windows chưa nhận ra, không phải lỗi.</li><li>Pet xuất hiện ở góc phải dưới màn hình. Mọi cài đặt nằm ở icon TinyWorld trên khay hệ thống, cạnh đồng hồ.</li></ol>
+          <p class="download__note">
+            Có bản mới thì app tự báo.
+            <a href="https://github.com/wangnguen/tiny-world/releases">Xem các phiên bản trước</a>
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer__ground" aria-hidden="true">
+        <span class="footer__pet sprite sprite--sleep"></span>
+        <span class="footer__z">z</span>
+      </div>
+      <div class="footer__inner">
+        <span>TinyWorld · làm cho vui :)))</span>
+        <a href="https://github.com/wangnguen/tiny-world"><svg class="icon"><use href="#i-github" /></svg>Mã nguồn trên GitHub</a>
+      </div>
+    </footer>
+
+    <script id="tw-text" type="application/json">{"lang":"vi","desk":{"notesTitle":"Ghi chú","notes":["Việc hôm nay","☑ Cài TinyWorld","☐ Họp nhóm lúc 10:00","☐ Gửi báo cáo tuần","☐ Uống nước :)))"],"musicTitle":"Nhạc","song":"Lofi đêm khuya","artist":"TinyWorld Radio","minimize":"Thu nhỏ","maximize":"Phóng to","close":"Đóng","start":"Bắt đầu","search":"Tìm kiếm","files":"Thư mục","browser":"Trình duyệt","tray":"TinyWorld ở khay hệ thống","petLabel":"{name}: bấm để chọc, kéo để thả, bấm đúp để xem giờ","invite":"Bấm thử tớ đi :)))","dizzy":"Chóng mặt quá :(((","cheer":":)))"},"weather":{"skies":{"sunny":"Nắng","clear":"Trời quang","cloudy":"Nhiều mây","rain":"Mưa","storm":"Giông","snow":"Tuyết","fog":"Sương mù","petals":"Hoa rơi"}},"pets":{"onScreen":"Trên màn hình"},"download":{"meta":"Phiên bản {version} · {size}"}}</script>
+    <script id="tw-app-text" type="application/json">{"pet":{"greetings":["Chào :)))","Xin chào :)))","Ơ, cậu đây rồi!",":))))?","Đi đâu đấy :)?"],"sky":{"sunny":["Nắng đẹp ghê",":)))"],"clear":["Trời quang, sao đẹp ghê",":)))"],"cloudy":["Trời nhiều mây quá",":)"],"rain":["Mưa rồi",":("],"storm":["Sấm to quá",":((("],"snow":["Tuyết rơi kìa",":)))"],"fog":["Sương mù dày ghê",":)"],"petals":["Hoa rơi đẹp quá",":)))"]},"sunnyHot":["Nắng to quá",":((("],"skyWithTemperature":"{text}, {temperature} {mood}","skyAlone":"{text} {mood}","hot":"Nóng quá, {temperature} :(((","cold":"Lạnh ghê, {temperature} :(((","noNetwork":"Không có mạng :))","noWeather":"Không có thời tiết :))","ghost":"Ma... ma kìa :(((","break":"Ngồi liền {minutes} phút rồi, đứng dậy nghỉ mắt chút đi :)))","water":"Uống ngụm nước đi nè :)))","bedtime":"{time} rồi, đi ngủ thôi :(((","saveSpam":"Lưu rồi mà :((((","chatOff":"Bật Chat với pet trong Cài đặt rồi nói chuyện nhé :)))","update":"Có bản mới {version} rồi, vào Cài đặt cập nhật nhé :)))","skyNames":{"sunny":"trời nắng","clear":"trời quang","cloudy":"nhiều mây","fog":"sương mù","rain":"mưa","snow":"tuyết","storm":"có sấm","petals":"trời nắng"},"weatherUnknown":"chưa có thời tiết","place":"{place}: {sky}, {temperature}","clock":"{hh}:{min} · {weekday} {dd}/{mm}","lunar":"Âm lịch {day}/{month}{leap}","leap":" nhuận"},"calendar":{"weekdays":["Chủ nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"],"shortWeekdays":["CN","T2","T3","T4","T5","T6","T7"],"months":["tháng 1","tháng 2","tháng 3","tháng 4","tháng 5","tháng 6","tháng 7","tháng 8","tháng 9","tháng 10","tháng 11","tháng 12"],"shortMonths":["th1","th2","th3","th4","th5","th6","th7","th8","th9","th10","th11","th12"]},"occasions":{"tet":{"name":"Tết Nguyên Đán","message":"Chúc mừng năm mới :)))"},"new-year":{"name":"Tết Dương lịch","message":"Năm mới vui vẻ nha :)))"},"hung-kings":{"name":"Giỗ Tổ Hùng Vương","message":"Hôm nay Giỗ Tổ Hùng Vương đó :)"},"reunification":{"name":"Ngày Thống nhất","message":"30/4 rồi, nghỉ lễ chưa :)))"},"labour":{"name":"Quốc tế Lao động","message":"1/5 nghỉ ngơi chút đi :)))"},"national-day":{"name":"Quốc khánh","message":"Mừng Quốc khánh 2/9 :)"},"mid-autumn":{"name":"Trung thu","message":"Trung thu ăn bánh chưa :)))"},"christmas":{"name":"Giáng sinh","message":"Giáng sinh vui vẻ :)))"}}}</script>
+  </body>
+</html>

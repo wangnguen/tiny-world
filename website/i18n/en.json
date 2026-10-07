@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "title": "TinyWorld · Tiny pets living on your Windows desktop",
+    "description": "A few tiny pets stroll along your taskbar, climb onto window edges, nap while you're busy and remind you to take breaks. Free for Windows 10 and 11.",
+    "ogDescription": "Tiny pets living right on your desktop: climbing windows, napping on the taskbar, real weather around them. Free for Windows."
+  },
+  "nav": {
+    "features": "Features",
+    "weather": "Weather",
+    "pets": "Pets",
+    "download": "Download",
+    "language": "Language",
+    "otherLanguage": "Tiếng Việt",
+    "suggest": "Prefer English?",
+    "suggestAction": "Switch to English",
+    "dismiss": "Close"
+  },
+  "hero": {
+    "eyebrow": "TinyWorld · for Windows 10 and 11",
+    "title": "Tiny pets living right on your desktop",
+    "lede": "A few little pets stroll along your taskbar, climb onto window edges, sit dangling off corners and curl up together at night. You keep working, they keep living next to you: no feeding, no fuss.",
+    "download": "Download for free",
+    "meet": "Meet all 22 pets",
+    "hint": "Try it: click a pet, drag it up and let go, fling it with the mouse, double-click to see the time. Drag a window's title bar while a pet is standing on it, or close the window and see what happens.",
+    "deskLabel": "A tiny desktop with live pets you can click and drag"
+  },
+  "desk": {
+    "notesTitle": "Notes",
+    "notes": ["Today", "☑ Install TinyWorld", "☐ Team meeting at 10:00", "☐ Send weekly report", "☐ Drink water :)))"],
+    "musicTitle": "Music",
+    "song": "Late night lofi",
+    "artist": "TinyWorld Radio",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "close": "Close",
+    "start": "Start",
+    "search": "Search",
+    "files": "Files",
+    "browser": "Browser",
+    "tray": "TinyWorld in the system tray",
+    "petLabel": "{name}: click to poke, drag to drop, double-click for the time",
+    "invite": "Go on, click me :)))",
+    "dizzy": "So dizzy :(((",
+    "cheer": ":)))"
+  },
+  "features": {
+    "title": "What do pets do all day?",
+    "lede": "No stats, no quests. Just a few little friends living next to the windows you have open.",
+    "items": [
+      { "icon": "window", "title": "Climbing your windows", "text": "Pets climb up the side of a window, stroll along the top, sit dangling off a corner, then hop over to another window. Drag the window and they ride along; minimize it and they fall." },
+      { "icon": "hand", "title": "Click, drag, fling", "text": "Click and a pet hops, drag it up and let go and it drops, fling the mouse and it flies with the momentum. Drop it from too high and it gets dizzy, with stars spinning around its head." },
+      { "icon": "moon", "title": "You're busy, they nap", "text": "After three minutes without attention, the whole group heads down to the taskbar and naps side by side. Click anywhere on the screen to wake them." },
+      { "icon": "cloud", "title": "Real weather around them", "text": "Pick your city: rain, snow, sun, thunder or fog shows up right around your pets. Heat haze rises when it's hot, and they breathe little clouds when it's cold." },
+      { "icon": "clock", "title": "Double-click for the time", "text": "A pet tells you the time, the day, the date, the lunar date and the weather in your city." },
+      { "icon": "heart", "title": "Gentle health reminders", "text": "Sat too long? A pet reminds you to rest your eyes, drink some water, and go to bed when it's late. Off by default, turn on what you need." },
+      { "icon": "chat", "title": "Quick questions, short answers", "text": "Right-click a pet to ask about exchange rates, gold prices, unit conversions or get help writing a wish, without opening a browser. No account needed." },
+      { "icon": "calendar", "title": "Remembers special days", "text": "Lunar New Year, Mid-Autumn, Christmas... pets say a wish on the day. Add your own birthdays and anniversaries, on the solar or lunar calendar." },
+      { "icon": "group", "title": "Up to three at once", "text": "When they meet they stop to say hi, sometimes walk together for a bit, and at bedtime they sleep side by side." }
+    ],
+    "secret": "Psst... stay up until 2 a.m. and see what flies across your screen :)))"
+  },
+  "weather": {
+    "title": "Sun and rain right next to your pets",
+    "lede": "Choose a city in Settings and the real weather appears around each pet, shaped to fit it. When the sky changes, a pet says something about it. Try it:",
+    "note": "Effects are only drawn around the pets: they never cover your screen or get in the way of your work.",
+    "skyGroup": "Weather",
+    "warmthGroup": "Temperature",
+    "skies": {
+      "sunny": "Sunny",
+      "clear": "Clear night",
+      "cloudy": "Cloudy",
+      "rain": "Rain",
+      "storm": "Storm",
+      "snow": "Snow",
+      "fog": "Fog",
+      "petals": "Petals"
+    },
+    "hot": "Hot {temperature}°C",
+    "cold": "Cold {temperature}°C",
+    "stageLabel": "A pet standing in the chosen weather"
+  },
+  "pets": {
+    "title": "22 pets, pick up to 3",
+    "lede": "Each one is drawn just for TinyWorld, with all 12 kinds of movement: walking, running, climbing, jumping, sitting on edges, sleeping... Click one to drop it onto the desktop at the top of the page.",
+    "onScreen": "On screen",
+    "drop": "Drop {name} onto the desktop",
+    "long": "Hold Shift when clicking Long for a surprise :)))"
+  },
+  "tips": {
+    "title": "How to play with your pets",
+    "items": [
+      { "keys": ["Click"], "text": "The pet hops; a sleeping pet wakes up, a climbing pet lets go" },
+      { "keys": ["Double-click"], "text": "The pet tells you the time, the lunar date and the weather" },
+      { "keys": ["Drag", "drop"], "then": true, "text": "It falls onto a window edge or the taskbar" },
+      { "keys": ["Fling", "release"], "then": true, "text": "It flies with the momentum and bounces off the walls" },
+      { "keys": ["Right-click"], "text": "Opens a chat right next to the pet" },
+      { "keys": ["Ctrl", "click"], "text": "Clicks through the pet to the app underneath" },
+      { "keys": ["Shift", "click Long"], "text": "A secret :)))" },
+      { "keys": ["System tray"], "text": "The TinyWorld icon next to the clock: pause, show or hide pets, open Settings" }
+    ]
+  },
+  "calm": {
+    "title": "Light and never in the way",
+    "items": [
+      { "icon": "quiet", "title": "No interruptions", "text": "No sounds, no popups. Watch a video or play a game in full screen and the pets hide themselves, then come back when you're done." },
+      { "icon": "cursor", "title": "Never steals your clicks", "text": "Your mouse passes through every empty spot. Clicking a pet doesn't take focus away from what you're typing." },
+      { "icon": "leaf", "title": "Light on your PC", "text": "When the group is asleep the app practically rests. Pets only redraw when something changes." },
+      { "icon": "lock", "title": "Private", "text": "Never reads window titles or contents, never records your keystrokes. Screen time data stays on your computer." },
+      { "icon": "globe", "title": "English and Vietnamese", "text": "The app follows your Windows language, and you can switch anytime in Settings." },
+      { "icon": "refresh", "title": "Updates itself", "text": "When a new version is out a pet tells you, and one click installs it." }
+    ]
+  },
+  "download": {
+    "title": "Bring the pets home",
+    "lede": "Free, for Windows 10 and 11 (64-bit).",
+    "setup": "Download the installer",
+    "portable": "Portable version, no install needed",
+    "meta": "Version {version} · {size}",
+    "metaLoading": "Latest version",
+    "steps": [
+      "Open the file you just downloaded.",
+      "If Windows shows “Windows protected your PC”, click More info, then Run anyway. The app isn't code-signed yet so Windows doesn't recognize it; nothing is wrong.",
+      "Your pets appear in the bottom-right corner of the screen. All settings live in the TinyWorld icon in the system tray, next to the clock."
+    ],
+    "updates": "The app tells you when a new version is out.",
+    "allReleases": "See previous versions"
+  },
+  "footer": {
+    "made": "TinyWorld · made for fun :)))",
+    "source": "Source code on GitHub"
+  }
+}

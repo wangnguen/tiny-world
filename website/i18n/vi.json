@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "title": "TinyWorld · Pet nhỏ sống trên desktop Windows",
+    "description": "Vài bé pet tí hon đi dạo trên taskbar, leo lên mép cửa sổ, ngủ khi bạn bận, nhắc bạn nghỉ ngơi. Miễn phí cho Windows 10 và 11.",
+    "ogDescription": "Pet tí hon sống ngay trên desktop của bạn: leo cửa sổ, ngủ trên taskbar, thời tiết thật quanh pet. Miễn phí cho Windows."
+  },
+  "nav": {
+    "features": "Tính năng",
+    "weather": "Thời tiết",
+    "pets": "Nhân vật",
+    "download": "Tải về",
+    "language": "Ngôn ngữ",
+    "otherLanguage": "English",
+    "suggest": "Đọc bằng tiếng Việt?",
+    "suggestAction": "Chuyển sang tiếng Việt",
+    "dismiss": "Đóng"
+  },
+  "hero": {
+    "eyebrow": "TinyWorld · cho Windows 10 và 11",
+    "title": "Pet tí hon sống ngay trên desktop của bạn",
+    "lede": "Vài bé pet đi dạo trên taskbar, leo lên mép cửa sổ, ngồi vắt vẻo ở góc, tối đến thì nằm ngủ cạnh nhau. Bạn cứ làm việc, pet tự sống bên cạnh: không cần chăm, không làm phiền.",
+    "download": "Tải về miễn phí",
+    "meet": "Gặp 22 nhân vật",
+    "hint": "Thử đi: bấm vào pet, kéo lên rồi thả, vung chuột để ném, bấm đúp để xem giờ. Kéo thanh tiêu đề cửa sổ lúc có pet đứng trên đó, hoặc đóng cửa sổ xem sao.",
+    "deskLabel": "Màn hình thu nhỏ có pet đang sống, bấm và kéo được"
+  },
+  "desk": {
+    "notesTitle": "Ghi chú",
+    "notes": ["Việc hôm nay", "☑ Cài TinyWorld", "☐ Họp nhóm lúc 10:00", "☐ Gửi báo cáo tuần", "☐ Uống nước :)))"],
+    "musicTitle": "Nhạc",
+    "song": "Lofi đêm khuya",
+    "artist": "TinyWorld Radio",
+    "minimize": "Thu nhỏ",
+    "maximize": "Phóng to",
+    "close": "Đóng",
+    "start": "Bắt đầu",
+    "search": "Tìm kiếm",
+    "files": "Thư mục",
+    "browser": "Trình duyệt",
+    "tray": "TinyWorld ở khay hệ thống",
+    "petLabel": "{name}: bấm để chọc, kéo để thả, bấm đúp để xem giờ",
+    "invite": "Bấm thử tớ đi :)))",
+    "dizzy": "Chóng mặt quá :(((",
+    "cheer": ":)))"
+  },
+  "features": {
+    "title": "Pet làm gì cả ngày?",
+    "lede": "Không chỉ số, không nhiệm vụ. Chỉ là vài người bạn nhỏ sống cạnh những cửa sổ bạn đang mở.",
+    "items": [
+      { "icon": "window", "title": "Leo trèo trên cửa sổ", "text": "Pet leo lên cạnh cửa sổ, đi dạo trên mép, ngồi vắt vẻo ở góc rồi nhảy sang cửa sổ khác. Kéo cửa sổ đi thì pet đi theo, thu nhỏ cửa sổ thì pet rơi xuống." },
+      { "icon": "hand", "title": "Bấm, kéo, ném thoải mái", "text": "Bấm thì pet nhảy lên, kéo lên rồi thả thì rơi xuống, vung chuột rồi buông thì pet bay theo đà. Thả từ cao quá là choáng, sao bay vòng quanh đầu." },
+      { "icon": "moon", "title": "Bạn bận thì pet ngủ", "text": "Ba phút không ai đụng tới, cả nhóm về taskbar nằm ngủ cạnh nhau. Bấm vào đâu trên màn hình là cả nhóm dậy." },
+      { "icon": "cloud", "title": "Thời tiết thật quanh pet", "text": "Chọn thành phố của bạn: mưa, tuyết, nắng, sấm hay sương mù đều hiện ngay quanh pet. Nóng thì hơi nóng bốc lên, lạnh thì pet thở ra khói." },
+      { "icon": "clock", "title": "Bấm đúp để xem giờ", "text": "Pet đọc giờ, thứ, ngày dương lịch, ngày âm lịch và thời tiết ở thành phố bạn chọn." },
+      { "icon": "heart", "title": "Nhắc bạn giữ sức khoẻ", "text": "Ngồi liền lâu quá thì nhắc nghỉ mắt, tới giờ thì nhắc uống nước, khuya rồi thì nhắc đi ngủ. Mặc định tắt, cần thì bật." },
+      { "icon": "chat", "title": "Hỏi nhanh, đáp gọn", "text": "Bấm chuột phải vào pet để hỏi tỉ giá, giá vàng, đổi đơn vị hay nhờ viết lời chúc, khỏi phải mở trình duyệt. Không cần tài khoản." },
+      { "icon": "calendar", "title": "Nhớ các dịp quan trọng", "text": "Tết, Trung thu, Giáng sinh... tới dịp là pet chúc một câu. Thêm sinh nhật, ngày kỷ niệm của riêng bạn, dương lịch hay âm lịch đều được." },
+      { "icon": "group", "title": "Tối đa ba con một lúc", "text": "Gặp nhau thì dừng lại chào, có lúc rủ nhau đi một đoạn, tới giờ ngủ thì nằm cạnh nhau." }
+    ],
+    "secret": "Psst... thử thức tới 2 giờ sáng xem có gì bay qua màn hình nhé :)))"
+  },
+  "weather": {
+    "title": "Mưa nắng ngay cạnh pet",
+    "lede": "Chọn thành phố trong Cài đặt là thời tiết thật hiện quanh từng con, vừa với dáng của nó. Trời đổi thì pet báo một câu. Bấm thử:",
+    "note": "Hiệu ứng chỉ vẽ quanh pet, không phủ kín màn hình, không che việc bạn đang làm.",
+    "skyGroup": "Thời tiết",
+    "warmthGroup": "Nhiệt độ",
+    "skies": {
+      "sunny": "Nắng",
+      "clear": "Trời quang",
+      "cloudy": "Nhiều mây",
+      "rain": "Mưa",
+      "storm": "Giông",
+      "snow": "Tuyết",
+      "fog": "Sương mù",
+      "petals": "Hoa rơi"
+    },
+    "hot": "Nóng {temperature}°C",
+    "cold": "Lạnh {temperature}°C",
+    "stageLabel": "Pet đứng giữa thời tiết đang chọn"
+  },
+  "pets": {
+    "title": "22 nhân vật, chọn tối đa 3",
+    "lede": "Mỗi con được vẽ riêng cho TinyWorld, con nào cũng đủ 12 kiểu chuyển động: đi, chạy, leo, nhảy, ngồi mép, ngủ... Bấm vào một con để thả nó xuống màn hình ở đầu trang.",
+    "onScreen": "Trên màn hình",
+    "drop": "Thả {name} xuống màn hình",
+    "long": "Giữ Shift khi bấm vào Long thì có bất ngờ :)))"
+  },
+  "tips": {
+    "title": "Cách chơi với pet",
+    "items": [
+      { "keys": ["Bấm"], "text": "Pet nhảy lên; đang ngủ thì thức dậy, đang leo thì tuột tay" },
+      { "keys": ["Bấm đúp"], "text": "Pet nói giờ, ngày âm lịch và thời tiết" },
+      { "keys": ["Kéo", "thả"], "then": true, "text": "Rơi xuống mép cửa sổ hoặc taskbar" },
+      { "keys": ["Vung", "buông"], "then": true, "text": "Pet bay theo đà, đập tường thì bật lại" },
+      { "keys": ["Chuột phải"], "text": "Mở khung chat ngay cạnh pet" },
+      { "keys": ["Ctrl", "bấm"], "text": "Bấm xuyên qua pet xuống app bên dưới" },
+      { "keys": ["Shift", "bấm Long"], "text": "Bí mật :)))" },
+      { "keys": ["Khay hệ thống"], "text": "Icon TinyWorld cạnh đồng hồ: tạm dừng, ẩn hiện pet, mở Cài đặt" }
+    ]
+  },
+  "calm": {
+    "title": "Nhẹ nhàng, không làm phiền",
+    "items": [
+      { "icon": "quiet", "title": "Không chen ngang", "text": "Không âm thanh, không popup. Mở video hay chơi game toàn màn hình là pet tự ẩn, thoát ra lại hiện." },
+      { "icon": "cursor", "title": "Không cướp chuột", "text": "Chuột đi xuyên qua mọi chỗ trống. Bấm vào pet cũng không làm mất chỗ bạn đang gõ." },
+      { "icon": "leaf", "title": "Nhẹ máy", "text": "Cả nhóm ngủ thì app gần như nghỉ hẳn. Pet chỉ vẽ lại khi có gì thay đổi." },
+      { "icon": "lock", "title": "Giữ riêng tư", "text": "Không đọc tiêu đề hay nội dung cửa sổ, không ghi lại phím bạn gõ. Số liệu giờ ngồi máy chỉ nằm trên máy bạn." },
+      { "icon": "globe", "title": "Tiếng Việt và tiếng Anh", "text": "App tự theo ngôn ngữ của Windows, đổi lúc nào cũng được trong Cài đặt." },
+      { "icon": "refresh", "title": "Tự cập nhật", "text": "Có bản mới thì pet báo, bấm một nút là xong." }
+    ]
+  },
+  "download": {
+    "title": "Rước pet về máy",
+    "lede": "Miễn phí, cho Windows 10 và 11 (64-bit).",
+    "setup": "Tải bản cài đặt",
+    "portable": "Bản chạy thẳng, không cần cài",
+    "meta": "Phiên bản {version} · {size}",
+    "metaLoading": "Bản mới nhất",
+    "steps": [
+      "Mở file vừa tải về.",
+      "Nếu Windows hiện “Windows protected your PC”: bấm More info rồi Run anyway. App chưa được ký số nên Windows chưa nhận ra, không phải lỗi.",
+      "Pet xuất hiện ở góc phải dưới màn hình. Mọi cài đặt nằm ở icon TinyWorld trên khay hệ thống, cạnh đồng hồ."
+    ],
+    "updates": "Có bản mới thì app tự báo.",
+    "allReleases": "Xem các phiên bản trước"
+  },
+  "footer": {
+    "made": "TinyWorld · làm cho vui :)))",
+    "source": "Mã nguồn trên GitHub"
+  }
+}

@@ -1,0 +1,298 @@
+<!doctype html>
+<!-- Khung trang chung cho mọi ngôn ngữ. scripts/prepare-website.mjs điền chữ trong vi.json, en.json vào đây
+     rồi ghi ra website/index.html (tiếng Việt) và website/en/index.html (tiếng Anh): sửa chữ thì sửa file
+     JSON, sửa bố cục thì sửa file này, rồi chạy lại script. {{t.mục}} là chữ, {{raw.tên}} là đoạn HTML script
+     dựng sẵn. -->
+<html lang="{{raw.lang}}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{t.meta.title}}</title>
+    <meta name="description" content="{{t.meta.description}}" />
+    <meta name="theme-color" content="#0b1424" />
+    <meta name="color-scheme" content="dark" />
+    {{raw.links}}
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/img/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TinyWorld" />
+    <meta property="og:title" content="{{t.meta.title}}" />
+    <meta property="og:description" content="{{t.meta.ogDescription}}" />
+    <meta property="og:locale" content="{{raw.locale}}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="modulepreload" href="/js/desk.js" />
+    <script type="module" src="/js/main.js"></script>
+  </head>
+  <body>
+    <svg class="symbols" aria-hidden="true">
+      <symbol id="i-window" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5" /><path d="M3 9h18M6.5 6.8h.1M9 6.8h.1" /></symbol>
+      <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8.5 11V5.8a1.6 1.6 0 0 1 3.2 0V10M11.7 9.5V4.6a1.6 1.6 0 0 1 3.2 0V10M14.9 10V6.2a1.6 1.6 0 0 1 3.1 0v7.3c0 4-2.6 6.9-6.3 6.9-2.5 0-4.1-1.1-5.4-3l-2.4-3.7a1.5 1.5 0 0 1 2.4-1.8l2 2.1V8.3a1.6 1.6 0 0 1 3.2 0" /></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z" /><path d="M16 4.5h3l-3 3.5h3M13 2.5h1.8l-1.8 2h1.8" /></symbol>
+      <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 15.5h10a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.6-.9A4 4 0 0 0 7 15.5z" /><path d="M8.5 18.5l-.8 2M12 18.5l-.8 2M15.5 18.5l-.8 2" /></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 19.5s-7.5-4.4-7.5-9.6A4.1 4.1 0 0 1 12 7.6a4.1 4.1 0 0 1 7.5 2.3c0 5.2-7.5 9.6-7.5 9.6z" /><path d="M7.5 12h2.2l1.2-2 2 4 1.2-2H16.5" /></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z" /><path d="M8.5 10.5h.1M12 10.5h.1M15.5 10.5h.1" /></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="2.5" /><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4M9 14l2 2 4-4" /></symbol>
+      <symbol id="i-group" viewBox="0 0 24 24"><circle cx="8" cy="9" r="3" /><circle cx="16.5" cy="10" r="2.5" /><path d="M2.8 19c.6-3 2.6-4.8 5.2-4.8s4.6 1.8 5.2 4.8M13.6 15.4c.8-.6 1.8-.9 2.9-.9 2.2 0 3.8 1.5 4.3 4.5" /></symbol>
+      <symbol id="i-quiet" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path d="M16 9.5l4.5 5M20.5 9.5 16 14.5" /></symbol>
+      <symbol id="i-cursor" viewBox="0 0 24 24"><path d="M6 3.5l12 7.5-5.2 1.3 3 5.6-2.4 1.3-3-5.6L6.6 17z" /></symbol>
+      <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8.5 5.5-14 15-14 0 9.5-5.5 15-14 15" /><path d="M5 19c3-4 6-6.5 10-8.5" /></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5M12 14.5v2.5" /></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.2 3.5 8.5s-1.1 6.1-3.5 8.5M12 3.5C9.6 5.9 8.5 8.7 8.5 12s1.1 6.1 3.5 8.5" /></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.1-5" /><path d="M17.5 3.5V7.5h-4" /></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14" /></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-2.8 17.5c.4.1.6-.2.6-.4v-1.6c-2.5.5-3-1.1-3-1.1-.4-1-1-1.3-1-1.3-.8-.6.1-.6.1-.6.9.1 1.4.9 1.4.9.8 1.4 2.1 1 2.6.8.1-.6.3-1 .6-1.2-2-.2-4.1-1-4.1-4.4 0-1 .4-1.8.9-2.4-.1-.2-.4-1.1.1-2.4 0 0 .8-.2 2.5.9a8.6 8.6 0 0 1 4.6 0c1.7-1.1 2.5-.9 2.5-.9.5 1.3.2 2.2.1 2.4.6.6.9 1.4.9 2.4 0 3.5-2.1 4.2-4.1 4.4.3.3.6.8.6 1.6v2.4c0 .2.2.5.6.4A9 9 0 0 0 12 3z" /></symbol>
+    </svg>
+
+    <div class="suggest" data-suggest hidden>
+      <span>{{raw.suggestText}}</span>
+      <a class="suggest__go" href="{{raw.otherHref}}" data-lang-link="{{raw.otherLang}}">{{raw.suggestAction}}</a>
+      <button class="suggest__close" type="button" data-suggest-close aria-label="{{t.nav.dismiss}}">×</button>
+    </div>
+
+    <header class="nav">
+      <div class="nav__inner">
+        <a class="brand" href="#top">
+          <img src="/img/logo.png" alt="" width="34" height="34" />
+          <span>TinyWorld</span>
+        </a>
+        <nav class="nav__links" aria-label="TinyWorld">
+          <a href="#tinh-nang">{{t.nav.features}}</a>
+          <a href="#thoi-tiet">{{t.nav.weather}}</a>
+          <a href="#nhan-vat">{{t.nav.pets}}</a>
+        </nav>
+        <a class="nav__lang" href="{{raw.otherHref}}" hreflang="{{raw.otherLang}}" lang="{{raw.otherLang}}" data-lang-link="{{raw.otherLang}}">
+          <svg class="icon"><use href="#i-globe" /></svg>{{t.nav.otherLanguage}}
+        </a>
+        <a class="btn btn--small" href="#tai-ve">{{t.nav.download}}</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="sky" aria-hidden="true" data-stars></div>
+        <div class="hero__text">
+          <p class="eyebrow">{{t.hero.eyebrow}}</p>
+          <h1>{{t.hero.title}}</h1>
+          <p class="lede">{{t.hero.lede}}</p>
+          <div class="actions">
+            <a class="btn btn--primary" href="#tai-ve">
+              <svg class="icon"><use href="#i-download" /></svg>{{t.hero.download}}
+            </a>
+            <a class="btn btn--ghost" href="#nhan-vat">{{t.hero.meet}}</a>
+          </div>
+        </div>
+
+        <div class="desk" id="desk" data-desk>
+          <div class="desk__screen" role="group" aria-label="{{t.hero.deskLabel}}">
+            <div class="desk__world" data-world>
+              <svg class="desk__wallpaper" viewBox="0 0 440 150" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+                <defs>
+                  <radialGradient id="lantern-glow">
+                    <stop offset="0" stop-color="#ffbf66" stop-opacity="0.75" />
+                    <stop offset="0.45" stop-color="#ffb05a" stop-opacity="0.25" />
+                    <stop offset="1" stop-color="#ffb05a" stop-opacity="0" />
+                  </radialGradient>
+                  <radialGradient id="window-glow">
+                    <stop offset="0" stop-color="#ffc46b" stop-opacity="0.6" />
+                    <stop offset="1" stop-color="#ffc46b" stop-opacity="0" />
+                  </radialGradient>
+                  <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#315c66" />
+                    <stop offset="0.5" stop-color="#1f3a4f" />
+                    <stop offset="1" stop-color="#13213a" />
+                  </linearGradient>
+                </defs>
+                <g fill="#25375f">
+                  <circle cx="196" cy="130" r="13" />
+                  <circle cx="214" cy="126" r="11" />
+                  <path d="M290 150v-24l10-9 10 9v24z" />
+                  <circle cx="314" cy="130" r="8" />
+                </g>
+                <g fill="#2f4575">
+                  <path d="M232 150V102l9-18 9 18v48z" />
+                  <path d="M240.2 84V73h1.6v11zM237.5 76.5h7v1.6h-7z" />
+                  <path d="M252 150v-34l16-14 16 14v34z" />
+                </g>
+                <g fill="url(#window-glow)">
+                  <circle cx="241" cy="110" r="9" />
+                  <circle cx="269" cy="127" r="11" />
+                  <circle cx="299" cy="132" r="7" />
+                </g>
+                <g fill="#ffc768">
+                  <rect x="239" y="106" width="4" height="7" rx="2" />
+                  <rect x="262" y="124" width="5" height="6" rx="1" />
+                  <rect x="272" y="124" width="5" height="6" rx="1" opacity="0.8" />
+                  <rect x="297" y="130" width="4" height="5" rx="1" />
+                </g>
+                <path d="M120 150C200 146 262 124 320 118S402 110 440 112V150Z" fill="url(#hill)" />
+                <path d="M120 150C200 146 262 124 320 118S402 110 440 112" fill="none" stroke="#86c8a4" stroke-opacity="0.75" stroke-width="1.6" />
+                <g fill="none" stroke="#6fb28f" stroke-width="1.3" stroke-linecap="round">
+                  <path d="M296 121l2-6 1 6 2-5 1 5" />
+                  <path d="M340 116l2-5 1 5 2-4" />
+                  <path d="M408 111l2-5 1 5 2-4 1 4" />
+                </g>
+                <circle cx="318" cy="108" r="44" fill="url(#lantern-glow)" />
+                <path d="M312 94q6-9 12 0" fill="none" stroke="#3b2d24" stroke-width="1.8" />
+                <rect x="310.5" y="93" width="15" height="4" rx="1.5" fill="#3b2d24" />
+                <rect x="311.5" y="97" width="13" height="16" rx="2" fill="#ffcd72" stroke="#4a3424" stroke-width="1.6" />
+                <path d="M318 97v16" stroke="#d8923c" stroke-width="0.9" />
+                <ellipse cx="318" cy="106" rx="2" ry="3.4" fill="#fff3c6" />
+                <rect x="309.5" y="113" width="17" height="4" rx="1.2" fill="#3b2d24" />
+              </svg>
+              <div class="desk__moon" aria-hidden="true"></div>
+
+              <section class="win" data-win="notes" aria-label="{{t.desk.notesTitle}}">
+                <div class="win__bar" data-win-bar>
+                  <span class="win__title"><span class="win__app win__app--notes" aria-hidden="true"></span>{{t.desk.notesTitle}}</span>
+                  <span class="win__buttons">
+                    <button type="button" data-win-act="min" aria-label="{{t.desk.minimize}}"><span class="glyph glyph--min"></span></button>
+                    <button type="button" tabindex="-1" aria-label="{{t.desk.maximize}}"><span class="glyph glyph--max"></span></button>
+                    <button type="button" class="win__close" data-win-act="close" aria-label="{{t.desk.close}}"><span class="glyph glyph--close"></span></button>
+                  </span>
+                </div>
+                <div class="win__body win__body--notes">{{raw.notes}}</div>
+              </section>
+
+              <section class="win win--music" data-win="music" aria-label="{{t.desk.musicTitle}}">
+                <div class="win__bar" data-win-bar>
+                  <span class="win__title"><span class="win__app win__app--music" aria-hidden="true"></span>{{t.desk.musicTitle}}</span>
+                  <span class="win__buttons">
+                    <button type="button" data-win-act="min" aria-label="{{t.desk.minimize}}"><span class="glyph glyph--min"></span></button>
+                    <button type="button" tabindex="-1" aria-label="{{t.desk.maximize}}"><span class="glyph glyph--max"></span></button>
+                    <button type="button" class="win__close" data-win-act="close" aria-label="{{t.desk.close}}"><span class="glyph glyph--close"></span></button>
+                  </span>
+                </div>
+                <div class="win__body win__body--music">
+                  <div class="album" aria-hidden="true"><span>♪</span></div>
+                  <div class="track">
+                    <strong>{{t.desk.song}}</strong>
+                    <span>{{t.desk.artist}}</span>
+                    <div class="track__bar"><span></span></div>
+                    <div class="track__controls" aria-hidden="true"><span>⏮</span><span class="track__play">⏸</span><span>⏭</span></div>
+                  </div>
+                </div>
+              </section>
+
+              <div class="desk__pets" data-pets></div>
+
+              <div class="taskbar">
+                <div class="taskbar__apps">
+                  <span class="tb tb--start" title="{{t.desk.start}}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                  <span class="tb tb--search" title="{{t.desk.search}}" aria-hidden="true"></span>
+                  <span class="tb tb--files" title="{{t.desk.files}}" aria-hidden="true"></span>
+                  <span class="tb tb--browser" title="{{t.desk.browser}}" aria-hidden="true"></span>
+                  <button type="button" class="tb tb--notes" data-open="notes" aria-label="{{t.desk.notesTitle}}"></button>
+                  <button type="button" class="tb tb--music" data-open="music" aria-label="{{t.desk.musicTitle}}"></button>
+                </div>
+                <div class="taskbar__tray">
+                  <img class="tray__pet" src="/img/favicon-32.png" alt="{{t.desk.tray}}" title="{{t.desk.tray}}" width="18" height="18" />
+                  <span class="tray__icons" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M3 9.5a13 13 0 0 1 18 0M6 12.8a8.6 8.6 0 0 1 12 0M9 16a4.2 4.2 0 0 1 6 0" /><circle cx="12" cy="19" r="1" /></svg>
+                    <svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" /></svg>
+                  </span>
+                  <span class="clock" data-clock><span data-clock-time>--:--</span><span data-clock-date></span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="hint">{{t.hero.hint}}</p>
+      </section>
+
+      <section class="section" id="tinh-nang">
+        <div class="section__head">
+          <h2>{{t.features.title}}</h2>
+          <p class="lede">{{t.features.lede}}</p>
+        </div>
+        <ul class="features">{{raw.features}}</ul>
+        <p class="secret">{{t.features.secret}}</p>
+      </section>
+
+      <section class="section section--split" id="thoi-tiet">
+        <div class="section__head">
+          <h2>{{t.weather.title}}</h2>
+          <p class="lede">{{t.weather.lede}}</p>
+          <div class="chips" role="group" aria-label="{{t.weather.skyGroup}}" data-sky-chips>{{raw.skyChips}}</div>
+          <div class="chips" role="group" aria-label="{{t.weather.warmthGroup}}" data-warmth-chips>{{raw.warmthChips}}</div>
+          <p class="note">{{t.weather.note}}</p>
+        </div>
+        <div class="demo" data-demo>
+          <div class="demo__stage" role="img" aria-label="{{t.weather.stageLabel}}" data-demo-stage data-sky="rain">
+            <div class="demo__stars" aria-hidden="true"></div>
+            <svg class="demo__hills" viewBox="0 0 420 80" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M0 50C70 30 140 42 210 34S350 20 420 36V80H0Z" fill="#1d3550" />
+              <path d="M0 62C90 52 170 60 240 54S360 46 420 56V80H0Z" fill="#20425a" />
+            </svg>
+            <div class="demo__ground" aria-hidden="true"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="nhan-vat">
+        <div class="section__head">
+          <h2>{{t.pets.title}}</h2>
+          <p class="lede">{{t.pets.lede}}</p>
+        </div>
+        <ul class="roster" data-roster>{{raw.roster}}</ul>
+        <p class="secret">{{t.pets.long}}</p>
+      </section>
+
+      <section class="section" id="cach-choi">
+        <div class="section__head">
+          <h2>{{t.tips.title}}</h2>
+        </div>
+        <dl class="tips">{{raw.tips}}</dl>
+      </section>
+
+      <section class="section">
+        <div class="section__head">
+          <h2>{{t.calm.title}}</h2>
+        </div>
+        <ul class="calm">{{raw.calm}}</ul>
+      </section>
+
+      <section class="section" id="tai-ve">
+        <div class="download">
+          <img class="download__logo" src="/img/logo.png" alt="" width="84" height="84" />
+          <h2>{{t.download.title}}</h2>
+          <p class="lede">{{t.download.lede}}</p>
+          <div class="actions actions--center">
+            <a class="btn btn--primary btn--large" href="{{raw.releases}}" data-download="setup">
+              <svg class="icon"><use href="#i-download" /></svg>{{t.download.setup}}
+            </a>
+            <a class="btn btn--ghost" href="{{raw.releases}}" data-download="portable">{{t.download.portable}}</a>
+          </div>
+          <p class="download__meta" data-download-meta>{{t.download.metaLoading}}</p>
+          <ol class="steps">{{raw.steps}}</ol>
+          <p class="download__note">
+            {{t.download.updates}}
+            <a href="{{raw.releasesAll}}">{{t.download.allReleases}}</a>
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer__ground" aria-hidden="true">
+        <span class="footer__pet sprite sprite--sleep"></span>
+        <span class="footer__z">z</span>
+      </div>
+      <div class="footer__inner">
+        <span>{{t.footer.made}}</span>
+        <a href="{{raw.repo}}"><svg class="icon"><use href="#i-github" /></svg>{{t.footer.source}}</a>
+      </div>
+    </footer>
+
+    <script id="tw-text" type="application/json">{{raw.runtime}}</script>
+    <script id="tw-app-text" type="application/json">{{raw.appText}}</script>
+  </body>
+</html>

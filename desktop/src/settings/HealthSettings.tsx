@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { BREAK_MINUTES, WATER_MINUTES, errorMessage, type ScreenStats, type Settings } from "@tinyworld/core";
+import {
+  BREAK_MINUTES,
+  WATER_MINUTES,
+  errorMessage,
+  fill,
+  type Messages,
+  type ScreenStats,
+  type Settings,
+} from "@tinyworld/core";
 import { api } from "../api";
+import { useMessages } from "../i18n";
 import { BellIcon, ClockIcon } from "./icons";
 import { Toggle } from "./Toggle";
 
@@ -11,7 +20,6 @@ const BREAK_CHOICES = [30, 45, 50, 60, 90].filter(within(BREAK_MINUTES));
 const WATER_CHOICES = [30, 45, 60, 90, 120].filter(within(WATER_MINUTES));
 /** Cột cao nhất của biểu đồ 7 ngày (CSS pixel), khớp `.days__plot` trong settings.css. */
 const PLOT_HEIGHT = 96;
-const WEEKDAYS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const HOUR = 3_600_000;
 const MINUTE = 60_000;
 
@@ -20,23 +28,23 @@ interface Props {
   onChange: (patch: Partial<Settings>) => void;
 }
 
-/** "3 giờ 12 phút", "42 phút", "< 1 phút". */
-export function formatDuration(ms: number): string {
+/** "3 giờ 12 phút", "42 phút", "< 1 phút" ("3 h 12 min", "42 min", "< 1 min"). */
+export function formatDuration(ms: number, m: Messages): string {
   const minutes = Math.floor(ms / MINUTE);
-  if (minutes < 1) return "< 1 phút";
+  if (minutes < 1) return m.health.underMinute;
   const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m} phút`;
-  return m === 0 ? `${h} giờ` : `${h} giờ ${m} phút`;
+  const rest = minutes % 60;
+  if (h === 0) return fill(m.health.durationMinutes, { m: rest });
+  return rest === 0 ? fill(m.health.durationHours, { h }) : fill(m.health.durationHoursMinutes, { h, m: rest });
 }
 
-/** Dạng ngắn trên đỉnh cột: "3h12", "3h", "42p". */
-function shortDuration(ms: number): string {
+/** Dạng ngắn trên đỉnh cột: "3h12", "3h", "42p" ("42m"). */
+function shortDuration(ms: number, m: Messages): string {
   const minutes = Math.floor(ms / MINUTE);
   const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m}p`;
-  return m === 0 ? `${h}h` : `${h}h${pad(m)}`;
+  const rest = minutes % 60;
+  if (h === 0) return fill(m.health.shortMinutes, { m: rest });
+  return rest === 0 ? fill(m.health.shortHours, { h }) : fill(m.health.shortHoursMinutes, { h, mm: pad(rest) });
 }
 
 /** Ngày "2026-10-01" lùi `back` ngày, tính theo lịch (không theo múi giờ). */
@@ -64,17 +72,18 @@ function minutesOf(time: string): number | null {
  * ở máy này.
  */
 export function HealthSettings({ settings, onChange }: Props) {
+  const m = useMessages();
   return (
     <>
       <section className="field">
         <h2 className="field__label">
           <ClockIcon />
-          Giờ ngồi máy
+          {m.health.screenTime}
         </h2>
         <div className="toggles">
           <Toggle
-            label="Đếm giờ ngồi máy"
-            hint="Chỉ tính lúc có chạm chuột hay phím; vắng quá 5 phút là đang nghỉ"
+            label={m.health.count}
+            hint={m.health.countHint}
             checked={settings.screenTime}
             onChange={(screenTime) => onChange({ screenTime })}
           />
@@ -84,18 +93,18 @@ export function HealthSettings({ settings, onChange }: Props) {
       <section className="field">
         <h2 className="field__label">
           <BellIcon />
-          Nhắc nhở
+          {m.health.reminders}
         </h2>
         <div className="toggles">
           <Toggle
-            label="Nhắc nghỉ"
-            hint={`Ngồi liền ${settings.breakMinutes} phút thì pet nhắc đứng dậy nghỉ mắt`}
+            label={m.health.break}
+            hint={fill(m.health.breakHint, { minutes: settings.breakMinutes })}
             checked={settings.breakReminder}
             onChange={(breakReminder) => onChange({ breakReminder })}
           >
             {settings.breakReminder && (
               <MinuteChoices
-                label="Số phút ngồi liền"
+                label={m.health.breakChoices}
                 choices={BREAK_CHOICES}
                 value={settings.breakMinutes}
                 onChange={(breakMinutes) => onChange({ breakMinutes })}
@@ -103,14 +112,14 @@ export function HealthSettings({ settings, onChange }: Props) {
             )}
           </Toggle>
           <Toggle
-            label="Nhắc uống nước"
-            hint={`Cứ ngồi máy ${settings.waterMinutes} phút thì pet nhắc uống nước`}
+            label={m.health.water}
+            hint={fill(m.health.waterHint, { minutes: settings.waterMinutes })}
             checked={settings.waterReminder}
             onChange={(waterReminder) => onChange({ waterReminder })}
           >
             {settings.waterReminder && (
               <MinuteChoices
-                label="Số phút ngồi máy"
+                label={m.health.waterChoices}
                 choices={WATER_CHOICES}
                 value={settings.waterMinutes}
                 onChange={(waterMinutes) => onChange({ waterMinutes })}
@@ -118,8 +127,8 @@ export function HealthSettings({ settings, onChange }: Props) {
             )}
           </Toggle>
           <Toggle
-            label="Nhắc đi ngủ"
-            hint="Sau giờ này mà còn ngồi máy thì pet nhắc, 30 phút một lần, tới 5 giờ sáng"
+            label={m.health.bedtime}
+            hint={m.health.bedtimeHint}
             checked={settings.bedtimeReminder}
             onChange={(bedtimeReminder) => onChange({ bedtimeReminder })}
           >
@@ -127,7 +136,7 @@ export function HealthSettings({ settings, onChange }: Props) {
               <input
                 className="input input--time"
                 type="time"
-                aria-label="Giờ đi ngủ"
+                aria-label={m.health.bedtimeLabel}
                 value={timeOf(settings.bedtime)}
                 onChange={(event) => {
                   const bedtime = minutesOf(event.target.value);
@@ -137,14 +146,14 @@ export function HealthSettings({ settings, onChange }: Props) {
             )}
           </Toggle>
           <Toggle
-            label="Spam Ctrl+S"
-            hint="Bấm Ctrl+S 5 lần trong 10 giây thì pet kêu; chỉ đọc phím S lúc đang giữ Ctrl"
+            label={m.health.saveSpam}
+            hint={m.health.saveSpamHint}
             checked={settings.saveSpam}
             onChange={(saveSpam) => onChange({ saveSpam })}
           />
         </div>
       </section>
-      <p className="hint">Số liệu chỉ lưu trên máy này, không gửi đi đâu. Bấm vào pet đang nhắc để tắt lời nhắc đó.</p>
+      <p className="hint">{m.health.privacy}</p>
     </>
   );
 }
@@ -161,6 +170,7 @@ function MinuteChoices({
   value: number;
   onChange: (minutes: number) => void;
 }) {
+  const m = useMessages();
   return (
     <div className="segments" role="radiogroup" aria-label={label}>
       {choices.map((minutes) => (
@@ -169,7 +179,7 @@ function MinuteChoices({
           type="button"
           role="radio"
           aria-checked={value === minutes}
-          aria-label={`${minutes} phút`}
+          aria-label={fill(m.health.minutes, { n: minutes })}
           className={value === minutes ? "segment segment--active" : "segment"}
           onClick={() => onChange(minutes)}
         >
@@ -182,6 +192,7 @@ function MinuteChoices({
 
 /** Hôm nay (giờ ngồi máy, ngồi liền, lượt lâu nhất, số lần nghỉ) và 7 ngày gần nhất; xoá được. */
 function StatsPanel({ enabled }: { enabled: boolean }) {
+  const m = useMessages();
   const [stats, setStats] = useState<ScreenStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -209,11 +220,17 @@ function StatsPanel({ enabled }: { enabled: boolean }) {
   const week = Array.from({ length: 7 }, (_, i) => {
     const date = shiftDate(stats.today, 6 - i);
     const key = keyOf(date);
-    const label = i === 6 ? "Hôm nay" : WEEKDAYS[date.getUTCDay()];
+    const label = i === 6 ? m.health.today : m.calendar.shortWeekdays[date.getUTCDay()];
     return {
       key,
       label,
-      title: `${label} ${pad(date.getUTCDate())}/${pad(date.getUTCMonth() + 1)}`,
+      title: fill(m.health.dayTitle, {
+        label,
+        dd: pad(date.getUTCDate()),
+        mm: pad(date.getUTCMonth() + 1),
+        day: date.getUTCDate(),
+        shortMonth: m.calendar.shortMonths[date.getUTCMonth()],
+      }),
       ms: stats.days[key]?.activeMs ?? 0,
     };
   });
@@ -234,17 +251,17 @@ function StatsPanel({ enabled }: { enabled: boolean }) {
   return (
     <div className="stats">
       <dl className="stats__tiles">
-        <Tile label="Hôm nay" value={formatDuration(today?.activeMs ?? 0)} />
-        {enabled && <Tile label="Đang ngồi liền" value={formatDuration(stats.sessionMs)} />}
-        <Tile label="Ngồi liền lâu nhất" value={formatDuration(today?.longestMs ?? 0)} />
-        <Tile label="Đã đứng dậy nghỉ" value={breaks === 0 ? "Chưa lần nào" : `${breaks} lần`} />
+        <Tile label={m.health.today} value={formatDuration(today?.activeMs ?? 0, m)} />
+        {enabled && <Tile label={m.health.session} value={formatDuration(stats.sessionMs, m)} />}
+        <Tile label={m.health.longest} value={formatDuration(today?.longestMs ?? 0, m)} />
+        <Tile label={m.health.breaks} value={breaks === 0 ? m.health.noBreaks : fill(m.health.breakCount, { n: breaks })} />
       </dl>
       <div className="stats__part">
-        <span className="stats__label">7 ngày gần nhất</span>
+        <span className="stats__label">{m.health.week}</span>
         {week.some((day) => day.ms >= MINUTE) ? (
           <WeekChart days={week} />
         ) : (
-          <p className="stats__empty">Ngồi máy một lúc là có số liệu ở đây.</p>
+          <p className="stats__empty">{m.health.weekEmpty}</p>
         )}
       </div>
       <button
@@ -253,7 +270,7 @@ function StatsPanel({ enabled }: { enabled: boolean }) {
         onClick={clear}
         onBlur={() => setConfirming(false)}
       >
-        {confirming ? "Bấm lần nữa để xoá hết" : "Xoá số liệu"}
+        {confirming ? m.health.clearConfirm : m.health.clear}
       </button>
     </div>
   );
@@ -281,13 +298,14 @@ interface WeekDay {
  * máy là vạch mờ sát đáy.
  */
 function WeekChart({ days }: { days: WeekDay[] }) {
+  const m = useMessages();
   const [hover, setHover] = useState<number | null>(null);
   const top = Math.max(1, Math.ceil(Math.max(...days.map((d) => d.ms)) / HOUR)) * HOUR;
   return (
-    <figure className="days" aria-label="Giờ ngồi máy 7 ngày gần nhất">
+    <figure className="days" aria-label={m.health.chart}>
       <div className="days__plot">
         <span className="days__grid" aria-hidden="true">
-          <span className="days__tick">{top / HOUR} giờ</span>
+          <span className="days__tick">{fill(m.health.hoursTick, { n: top / HOUR })}</span>
         </span>
         {days.map((day, i) => {
           const empty = day.ms < MINUTE;
@@ -300,7 +318,7 @@ function WeekChart({ days }: { days: WeekDay[] }) {
               key={day.key}
               type="button"
               className="days__slot"
-              aria-label={`${day.title}: ${empty ? "không ngồi máy" : formatDuration(day.ms)}`}
+              aria-label={`${day.title}: ${empty ? m.health.idle : formatDuration(day.ms, m)}`}
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(null)}
               onFocus={() => setHover(i)}
@@ -309,13 +327,13 @@ function WeekChart({ days }: { days: WeekDay[] }) {
               {hover === i ? (
                 <span className={`days__tip days__tip--${align}`} style={{ bottom: height + 6 }} aria-hidden="true">
                   <span className="days__tip-day">{day.title}</span>
-                  {empty ? "Không ngồi máy" : formatDuration(day.ms)}
+                  {empty ? m.health.idleTip : formatDuration(day.ms, m)}
                 </span>
               ) : (
                 today &&
                 !empty && (
                   <span className="days__value" style={{ bottom: height + 4 }} aria-hidden="true">
-                    {shortDuration(day.ms)}
+                    {shortDuration(day.ms, m)}
                   </span>
                 )
               )}
@@ -330,12 +348,12 @@ function WeekChart({ days }: { days: WeekDay[] }) {
         ))}
       </div>
       <table className="sr-only">
-        <caption>Giờ ngồi máy 7 ngày gần nhất</caption>
+        <caption>{m.health.chart}</caption>
         <tbody>
           {days.map((day) => (
             <tr key={day.key}>
               <th scope="row">{day.title}</th>
-              <td>{formatDuration(day.ms)}</td>
+              <td>{formatDuration(day.ms, m)}</td>
             </tr>
           ))}
         </tbody>

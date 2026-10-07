@@ -39,8 +39,9 @@ mod registry {
         s.encode_utf16().chain(Some(0)).collect()
     }
 
-    fn fail(action: &str, status: WIN32_ERROR) -> AppError {
-        AppError::internal(format!("Không {action} được registry (mã lỗi {status})."))
+    /// `key`: "errors.registryRead", "errors.registryWrite" hay "errors.registryDelete".
+    fn fail(key: &str, status: WIN32_ERROR) -> AppError {
+        AppError::internal(crate::i18n::tf(key, &[("status", &status)]))
     }
 
     pub fn read(key: &str, name: &str) -> AppResult<Option<String>> {
@@ -66,7 +67,7 @@ mod registry {
                 Ok(Some(String::from_utf16_lossy(&buffer[..len])))
             }
             ERROR_FILE_NOT_FOUND => Ok(None),
-            status => Err(fail("đọc", status)),
+            status => Err(fail("errors.registryRead", status)),
         }
     }
 
@@ -86,7 +87,7 @@ mod registry {
         if status == ERROR_SUCCESS {
             Ok(())
         } else {
-            Err(fail("ghi", status))
+            Err(fail("errors.registryWrite", status))
         }
     }
 
@@ -97,7 +98,7 @@ mod registry {
         let status = unsafe { RegDeleteKeyValueW(HKEY_CURRENT_USER, key.as_ptr(), name.as_ptr()) };
         match status {
             ERROR_SUCCESS | ERROR_FILE_NOT_FOUND => Ok(()),
-            status => Err(fail("xoá", status)),
+            status => Err(fail("errors.registryDelete", status)),
         }
     }
 

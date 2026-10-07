@@ -111,6 +111,12 @@ export const PREVIEW_SECONDS = 30;
 export const PREVIEW_HOT = 36;
 export const PREVIEW_COLD = 8;
 
+/** Ngôn ngữ chọn trong Cài đặt, khớp `Language` trong i18n.rs: theo Windows, tiếng Việt, tiếng Anh. */
+export type Language = "auto" | "vi" | "en";
+
+/** Ngôn ngữ đang dùng, khớp `Lang` trong i18n.rs. */
+export type Lang = "vi" | "en";
+
 /** Cài đặt người dùng (command `get_settings` / `set_settings`), khớp `Settings` trong settings.rs. */
 export interface Settings {
   /** Cỡ nhân vật so với cỡ gốc của sprite pack, 0.5–2. */
@@ -151,6 +157,10 @@ export interface Settings {
   saveSpam: boolean;
   /** Phase 6, mặc định tắt: click chuột phải vào pet để chat (gửi câu hỏi tới Gemini). */
   chat: boolean;
+  /** Ngôn ngữ chọn trong Cài đặt; mặc định theo Windows. */
+  language: Language;
+  /** Ngôn ngữ đang dùng, Rust tính từ `language` (và ngôn ngữ Windows); gửi lại Rust thì bị bỏ qua. */
+  lang: Lang;
 }
 
 /** Đang chat với con nào, khớp `ChatTarget` trong chat.rs. */
@@ -159,6 +169,19 @@ export interface ChatTarget {
   pet: string;
   /** Tên ngắn để hiện, ví dụ "Momo". */
   name: string;
+}
+
+/** Câu hỏi tiếp Gemini gợi ý, khớp `FollowUp` trong gemini.rs: nút ghi `label`, bấm thì gửi `query`. */
+export interface FollowUp {
+  label: string;
+  query: string;
+}
+
+/** Câu trả lời của pet, khớp `ChatReply` trong chat.rs. */
+export interface ChatReply {
+  text: string;
+  /** Câu hỏi tiếp gợi ý, thường rỗng. */
+  followUps: FollowUp[];
 }
 
 /** Khoảng chọn được của `Settings.breakMinutes`, khớp `BREAK_MINUTES` trong settings.rs. */
@@ -206,6 +229,11 @@ export interface Occasion {
   /** Câu một con nói (mỗi ngày một lần) trong dịp đó; rỗng là không nói. */
   message: string;
   enabled: boolean;
+  /**
+   * Dịp có sẵn chưa sửa tên hay câu nói (mục trong `occasions` của file chữ): tên và câu hiện theo ngôn ngữ
+   * đang dùng (`occasionText`), `name`/`message` giữ bản tiếng Việt. Sửa rồi thì bỏ.
+   */
+  preset?: string;
 }
 
 /** Thành phố đã chọn trong Cài đặt, khớp `City` trong settings.rs. */

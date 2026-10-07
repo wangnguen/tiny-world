@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
   EVENTS,
+  type ChatReply,
   type ChatTarget,
   type CityResult,
   type CursorInfo,
@@ -83,7 +84,7 @@ export const api = {
   /** Cửa sổ chat đang chat với con nào. */
   chatTarget: () => invoke<ChatTarget | null>("chat_target"),
   /** Gửi câu hỏi, chờ câu trả lời; gửi dồn dập thì lỗi `BUSY`, mất mạng `OFFLINE`, Google lỗi `UNAVAILABLE`. */
-  sendChat: (prompt: string) => invoke<string>("send_chat", { prompt }),
+  sendChat: (prompt: string) => invoke<ChatReply>("send_chat", { prompt }),
   /** Mở link http/https bằng trình duyệt. */
   openLink: (url: string) => invoke<void>("open_link", { url }),
   /** Bản mới theo lần hỏi GitHub gần nhất; `null` là chưa thấy (update.rs). */

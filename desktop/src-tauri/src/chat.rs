@@ -9,7 +9,8 @@
 
 use crate::error::{AppError, AppResult};
 use crate::events;
-use crate::gemini::{Gemini, GeminiError};
+use crate::gemini::{FollowUp, Gemini, GeminiError};
+use crate::i18n::{self, Lang};
 use crate::overlay::{self, Overlay, ScreenInfo};
 use crate::settings::SettingsStore;
 use serde::{Deserialize, Serialize};
@@ -61,6 +62,15 @@ pub struct ChatTarget {
     pub pet: String,
     /// Tên ngắn để hiện, ví dụ "Momo".
     pub name: String,
+}
+
+/// Câu trả lời cho khung chat, khớp `ChatReply` trong packages/core.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatReply {
+    pub text: String,
+    /// Câu hỏi tiếp Gemini gợi ý, khung chat vẽ thành nút dưới câu trả lời.
+    pub follow_ups: Vec<FollowUp>,
 }
 
 /// Vì sao chưa cho gửi.
@@ -140,37 +150,40 @@ impl Limiter {
     }
 }
 
-/// "3 giây", "12 phút".
-fn duration_text(d: Duration) -> String {
+/// "3 giây", "12 phút" ("3 seconds", "12 minutes").
+fn duration_text(d: Duration, lang: Lang) -> String {
     let secs = d.as_secs_f64().ceil() as u64;
-    if secs < 60 {
-        format!("{} giây", secs.max(1))
-    } else {
-        format!("{} phút", secs.div_ceil(60))
-    }
+    let (n, unit) = if secs < 60 { (secs.max(1), "second") } else { (secs.div_ceil(60), "minute") };
+    let key = if n == 1 { format!("time.{unit}") } else { format!("time.{unit}s") };
+    lang.tf(&key, &[("n", &n)])
 }
 
 /// Câu ngắn cho khung chat, không lộ lỗi kỹ thuật.
-fn wait_error(wait: Wait) -> AppError {
+fn wait_error(wait: Wait, lang: Lang) -> AppError {
+    let after = |key: &str, d: Duration| lang.tf(key, &[("time", &duration_text(d, lang))]);
     match wait {
-        Wait::Busy => AppError::busy("Đang trả lời câu trước, đợi chút nhé :)"),
-        Wait::TooFast(d) => AppError::busy(format!("Từ từ thôi, gửi lại sau {} nhé :)", duration_text(d))),
-        Wait::Hourly(d) => AppError::busy(format!(
-            "Hỏi nhiều quá rồi, nghỉ chút đã, gửi lại được sau {} :)",
-            duration_text(d)
-        )),
-        Wait::Backoff(d) => AppError::unavailable(format!(
-            "Google đang bận, gửi lại được sau {}",
-            duration_text(d)
-        )),
+        Wait::Busy => AppError::busy(lang.t("errors.chatBusy")),
+        Wait::TooFast(d) => AppError::busy(after("errors.chatTooFast", d)),
+        Wait::Hourly(d) => AppError::busy(after("errors.chatHourly", d)),
+        Wait::Backoff(d) => AppError::unavailable(after("errors.chatBackoff", d)),
     }
+}
+
+/// Click chuột phải hay gửi câu hỏi lúc chat đang tắt.
+pub fn chat_off() -> AppError {
+    AppError::bad_request(i18n::t("errors.chatOff"))
+}
+
+/// Tiêu đề cửa sổ chat: "Chat với Momo".
+fn title(name: &str) -> String {
+    i18n::tf("chat.title", &[("name", &name)])
 }
 
 /// Câu gợi ý của ngày, do Gemini viết.
 #[derive(Default)]
 struct Suggestions {
-    /// Ngày "2026-10-01" và các câu của ngày đó.
-    day: Option<(String, Vec<String>)>,
+    /// Ngày "2026-10-01", ngôn ngữ và các câu của ngày đó.
+    day: Option<(String, Lang, Vec<String>)>,
     /// Lần hỏi gần nhất bị lỗi.
     failed_at: Option<Instant>,
     in_flight: bool,
@@ -203,13 +216,15 @@ impl Chat {
         *self.target.lock().unwrap_or_else(|e| e.into_inner()) = target;
     }
 
-    /// Câu gợi ý của hôm nay (`today` "2026-10-01", `date` để ghi vào câu hỏi). Chưa có thì hỏi Gemini một
-    /// lần; đang hỏi, vừa hỏi lỗi hay Google đang bận thì trả danh sách rỗng (khung chat dùng câu có sẵn).
+    /// Câu gợi ý của hôm nay (`today` "2026-10-01", `date` để ghi vào câu hỏi) theo ngôn ngữ đang dùng. Chưa
+    /// có thì hỏi Gemini một lần; đang hỏi, vừa hỏi lỗi hay Google đang bận thì trả danh sách rỗng (khung chat
+    /// dùng câu có sẵn).
     pub async fn suggestions(&self, today: &str, date: &str) -> Vec<String> {
+        let lang = i18n::current();
         {
             let mut s = self.suggestions.lock().unwrap_or_else(|e| e.into_inner());
-            if let Some((day, list)) = &s.day {
-                if day == today {
+            if let Some((day, written, list)) = &s.day {
+                if day == today && *written == lang {
                     return list.clone();
                 }
             }
@@ -225,32 +240,33 @@ impl Chat {
             }
             s.in_flight = true;
         }
-        let result = self.gemini.chat(&suggest_prompt(date)).await;
+        let result = self.gemini.chat(&suggest_prompt(date, lang)).await;
         let mut s = self.suggestions.lock().unwrap_or_else(|e| e.into_inner());
         s.in_flight = false;
         let list = result.map(|reply| parse_suggestions(&reply.text)).unwrap_or_default();
         if list.is_empty() {
             s.failed_at = Some(Instant::now());
         } else {
-            s.day = Some((today.to_string(), list.clone()));
+            s.day = Some((today.to_string(), lang, list.clone()));
         }
         list
     }
 
     /// Gửi `prompt` (đã kèm tính cách pet, giờ, vài lượt chat gần nhất) và chờ câu trả lời.
-    pub async fn send(&self, prompt: &str) -> AppResult<String> {
+    pub async fn send(&self, prompt: &str) -> AppResult<ChatReply> {
+        let lang = i18n::current();
         let prompt = prompt.trim();
         if prompt.is_empty() {
-            return Err(AppError::bad_request("Chưa có gì để gửi."));
+            return Err(AppError::bad_request(lang.t("errors.chatEmpty")));
         }
         if prompt.chars().count() > PROMPT_MAX_CHARS {
-            return Err(AppError::bad_request("Câu hỏi dài quá, cắt bớt nhé."));
+            return Err(AppError::bad_request(lang.t("errors.chatTooLong")));
         }
         self.limiter
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .begin(Instant::now())
-            .map_err(wait_error)?;
+            .map_err(|wait| wait_error(wait, lang))?;
         let result = self.gemini.chat(prompt).await;
         let outcome = match &result {
             Ok(_) => Outcome::Ok,
@@ -260,26 +276,25 @@ impl Chat {
         let mut limiter = self.limiter.lock().unwrap_or_else(|e| e.into_inner());
         limiter.finish(Instant::now(), outcome);
         match result {
-            Ok(reply) => Ok(reply.text),
-            Err(GeminiError::Offline) => Err(AppError::offline("Mất mạng")),
-            Err(GeminiError::Timeout) => Err(AppError::unavailable("Lâu quá Google chưa trả lời, gửi lại thử nhé")),
+            Ok(reply) => Ok(ChatReply {
+                text: reply.text,
+                follow_ups: reply.follow_ups,
+            }),
+            Err(GeminiError::Offline) => Err(AppError::offline(lang.t("errors.chatOffline"))),
+            Err(GeminiError::Timeout) => Err(AppError::unavailable(lang.t("errors.chatTimeout"))),
             Err(e) => {
                 eprintln!("Chat lỗi: {e}");
                 let wait = limiter.blocked_until.map(|until| until.saturating_duration_since(Instant::now()));
-                Err(wait_error(Wait::Backoff(wait.unwrap_or(BACKOFF_START))))
+                Err(wait_error(Wait::Backoff(wait.unwrap_or(BACKOFF_START)), lang))
             }
         }
     }
 }
 
-/// Câu nhờ Gemini viết câu gợi ý cho ngày `date` ("Thứ Năm 01/10/2026").
-fn suggest_prompt(date: &str) -> String {
-    format!(
-        "Hôm nay là {date}. Gợi ý {SUGGEST_COUNT} câu hỏi ngắn (mỗi câu dưới 45 ký tự) mà dân văn phòng ở Việt \
-         Nam hay muốn hỏi nhanh hôm nay: tỉ giá, giá vàng, tin tức, thời tiết, đổi đơn vị, mẹo dùng máy tính, \
-         viết giúp một câu... Đa dạng, hợp với ngày hôm nay (ngày lễ, dịp gần đây nếu có). Mỗi câu một dòng, \
-         không đánh số, không giải thích."
-    )
+/// Câu nhờ Gemini viết câu gợi ý cho ngày `date` ("Thứ Năm 01/10/2026", "Thursday, October 1, 2026") bằng
+/// ngôn ngữ `lang`.
+fn suggest_prompt(date: &str, lang: Lang) -> String {
+    lang.tf("prompt.suggest", &[("date", &date), ("count", &SUGGEST_COUNT)])
 }
 
 /// Tách câu trả lời thành các câu gợi ý: bỏ gạch đầu dòng, số thứ tự, ngoặc kép, dòng tiêu đề, câu quá
@@ -310,7 +325,7 @@ fn parse_suggestions(text: &str) -> Vec<String> {
 /// Trả về phía của cửa sổ so với pet (-1 bên trái, 1 bên phải) để pet quay mặt về phía đó.
 pub fn open(app: &AppHandle, mut target: ChatTarget, pet: PetBox) -> AppResult<i8> {
     if !app.state::<SettingsStore>().get().chat {
-        return Err(AppError::bad_request("Chat với pet đang tắt trong Cài đặt."));
+        return Err(chat_off());
     }
     target.name = target.name.trim().chars().take(NAME_MAX_CHARS).collect();
     if target.pet.is_empty() || target.name.is_empty() {
@@ -354,7 +369,7 @@ fn show_or_create(app: &AppHandle, target: &ChatTarget, pet: PetBox, side: i8) -
     let to_screen = |(x, y): (f64, f64)| {
         LogicalPosition::new(f64::from(overlay.window.x) / scale + x, f64::from(overlay.window.y) / scale + y)
     };
-    let title = format!("Chat với {}", target.name);
+    let title = title(&target.name);
     if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
         window.set_title(&title)?;
         app.emit_to(WINDOW_LABEL, events::CHAT_TARGET, target)?;
@@ -393,6 +408,16 @@ fn show_or_create(app: &AppHandle, target: &ChatTarget, pet: PetBox, side: i8) -
     window.set_focus()
 }
 
+/// Đổi tiêu đề cửa sổ chat đang mở theo ngôn ngữ đang dùng.
+pub fn retitle(app: &AppHandle) {
+    let (Some(window), Some(target)) = (app.get_webview_window(WINDOW_LABEL), app.state::<Chat>().target()) else {
+        return;
+    };
+    if let Err(e) = window.set_title(&title(&target.name)) {
+        eprintln!("Không đổi được tiêu đề cửa sổ chat: {e}");
+    }
+}
+
 /// Cỡ cửa sổ cả viền và thanh tiêu đề (CSS pixel).
 fn outer_size(window: &WebviewWindow) -> tauri::Result<(f64, f64)> {
     let size = window.outer_size()?.to_logical::<f64>(window.scale_factor()?);
@@ -406,7 +431,7 @@ pub fn open_link(url: &str) -> AppResult<()> {
         && url.len() <= 2048
         && !url.chars().any(|c| c.is_control() || c == '"');
     if !ok {
-        return Err(AppError::bad_request("Link không hợp lệ."));
+        return Err(AppError::bad_request(i18n::t("errors.badLink")));
     }
     shell_open(url)
 }
@@ -433,7 +458,7 @@ fn shell_open(url: &str) -> AppResult<()> {
     if result as isize > 32 {
         Ok(())
     } else {
-        Err(AppError::internal("Không mở được trình duyệt."))
+        Err(AppError::internal(i18n::t("errors.browser")))
     }
 }
 
@@ -513,10 +538,13 @@ mod tests {
 
     #[test]
     fn cau_bao_cho_ghi_thoi_gian_de_doc() {
-        assert_eq!(duration_text(Duration::from_millis(1200)), "2 giây");
-        assert_eq!(duration_text(secs(90)), "2 phút");
-        assert_eq!(wait_error(Wait::TooFast(secs(2))).code, "BUSY");
-        assert_eq!(wait_error(Wait::Backoff(secs(30))).code, "UNAVAILABLE");
+        assert_eq!(duration_text(Duration::from_millis(1200), Lang::Vi), "2 giây");
+        assert_eq!(duration_text(secs(90), Lang::Vi), "2 phút");
+        assert_eq!(duration_text(secs(1), Lang::En), "1 second");
+        assert_eq!(duration_text(secs(90), Lang::En), "2 minutes");
+        assert_eq!(wait_error(Wait::TooFast(secs(2)), Lang::Vi).code, "BUSY");
+        let busy = wait_error(Wait::Backoff(secs(30)), Lang::En);
+        assert_eq!((busy.code, busy.message.as_str()), ("UNAVAILABLE", "Google is busy, try again in 30 seconds"));
     }
 
     #[test]
@@ -546,7 +574,8 @@ mod tests {
             parse_suggestions(text),
             vec!["Tỉ giá USD hôm nay?", "Giá vàng SJC?", "1 inch bằng bao nhiêu cm?", "1.5 lít là bao nhiêu ml?"]
         );
-        assert!(suggest_prompt("Thứ Năm 01/10/2026").starts_with("Hôm nay là Thứ Năm 01/10/2026."));
+        assert!(suggest_prompt("Thứ Năm 01/10/2026", Lang::Vi).starts_with("Hôm nay là Thứ Năm 01/10/2026."));
+        assert!(suggest_prompt("Thursday, October 1, 2026", Lang::En).starts_with("Today is Thursday, October 1, 2026."));
     }
 
     #[test]

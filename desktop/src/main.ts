@@ -9,13 +9,14 @@ import {
   type WindowList,
 } from "@tinyworld/core";
 import {
-  CHAT_OFF_LINE,
   FixedStep,
   StepBlend,
   TUNING,
   World,
+  chatOffLine,
   clamp,
   parseWorldSnapshot,
+  setLang,
   type Bounds,
   type Facing,
   type PetSnapshot,
@@ -138,6 +139,7 @@ async function start(): Promise<void> {
     loadSaved(),
   ]);
 
+  setLang(settings.lang);
   const world = new World(boundsOf(screen), Date.now());
   world.setScreen(boundsOf(screen), screen.neighbors);
   world.speed = settings.speed;
@@ -203,7 +205,7 @@ async function start(): Promise<void> {
     const box = member?.view.bounds;
     if (!member || !box || paused) return;
     if (!chatOn) {
-      member.pet.say(CHAT_OFF_LINE);
+      member.pet.say(chatOffLine());
       wake();
       return;
     }
@@ -517,6 +519,7 @@ async function start(): Promise<void> {
   if (windows && !windowsSeen) applyWindows(windows);
 
   const applySettings = async (next: Settings) => {
+    setLang(next.lang);
     world.speed = next.speed;
     chatOn = next.chat;
     ambience.setSettings(next);

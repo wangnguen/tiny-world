@@ -9,6 +9,7 @@
 //! Mỗi lần `chat` gửi đúng một request, không tự thử lại: `chat.rs` lo giới hạn tần suất. Gửi dạng chat tạm
 //! (không vào lịch sử Gemini).
 
+use serde::Serialize;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 
@@ -31,6 +32,17 @@ const FALLBACK_MODEL: &str = "fbb127bbb056c959";
 const MODE_FAST: u8 = 1;
 /// Mức suy nghĩ của Flash như trang Gemini gửi.
 const THINK_FAST: u8 = 4;
+/// Thẻ HTML không có thẻ đóng.
+const VOID_TAGS: [&str; 3] = ["br", "hr", "img"];
+/// Thẻ HTML bỏ đi thì thay bằng xuống dòng, để chữ hai bên không dính nhau; thẻ khác bỏ hẳn.
+const BREAK_TAGS: [&str; 6] = ["br", "hr", "p", "div", "li", "tr"];
+/// Dài hơn chừng này byte thì không coi là thẻ.
+const TAG_MAX: usize = 4096;
+/// Câu hỏi tiếp dưới câu trả lời: tối đa chừng này nút; chữ trên nút và câu gửi đi tối đa chừng này ký tự
+/// (câu gửi đi khớp `MESSAGE_MAX` trong desktop/src/chat/prompt.ts).
+const FOLLOW_UP_MAX: usize = 4;
+const LABEL_MAX_CHARS: usize = 80;
+const QUERY_MAX_CHARS: usize = 1000;
 
 /// Vì sao không có câu trả lời.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -93,11 +105,21 @@ struct Cached {
     until: Instant,
 }
 
-/// Câu trả lời và tên model Google đã dùng (như trang Gemini ghi, ví dụ "3.6 Flash").
+/// Câu trả lời, câu hỏi tiếp trang Gemini gợi ý và tên model Google đã dùng (như trang Gemini ghi, ví dụ
+/// "3.6 Flash").
 #[derive(Debug, Clone, PartialEq)]
 pub struct Reply {
     pub text: String,
+    pub follow_ups: Vec<FollowUp>,
     pub model: Option<String>,
+}
+
+/// Câu hỏi tiếp trang Gemini gợi ý dưới câu trả lời (thẻ `<Elicitation>`): nút ghi `label`, bấm thì gửi
+/// `query`. Khớp `FollowUp` trong packages/core.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct FollowUp {
+    pub label: String,
+    pub query: String,
 }
 
 pub struct Gemini {
@@ -294,14 +316,17 @@ fn parse_reply(raw: &str) -> Reply {
             }
         }
     }
+    let (text, follow_ups) = clean(&text);
     Reply {
-        text: clean(&text),
+        text,
+        follow_ups,
         model,
     }
 }
 
-/// Bỏ chỗ trang Gemini chèn link nội bộ thay cho thẻ (bản đồ, ảnh...): người dùng không mở được.
-fn clean(text: &str) -> String {
+/// Bỏ chỗ trang Gemini chèn link nội bộ thay cho thẻ (bản đồ, ảnh...): người dùng không mở được. Bỏ cả thẻ
+/// kiểu HTML (`strip_tags`). Trả về chữ còn lại và các câu hỏi tiếp lấy từ thẻ.
+fn clean(text: &str) -> (String, Vec<FollowUp>) {
     const CARD: &str = "http://googleusercontent.com/";
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
@@ -312,7 +337,193 @@ fn clean(text: &str) -> String {
         rest = &tail[end..];
     }
     out.push_str(rest);
-    out.trim().to_string()
+    let mut follow_ups = Vec::new();
+    let text = strip_tags(&out, &mut follow_ups);
+    (text.trim().to_string(), follow_ups)
+}
+
+/// Bỏ thẻ kiểu HTML khỏi câu trả lời, trừ trong code. Trang Gemini chèn `<ElicitationsGroup message=…>` bọc
+/// các `<Elicitation label=… query=…/>` để vẽ nút hỏi tiếp: câu `message` giữ lại làm một đoạn, mỗi
+/// `<Elicitation>` thành một `FollowUp`. Thẻ HTML như `<br>`, `<b>…</b>` thì bỏ thẻ, giữ chữ. Chỉ đụng tới chỗ
+/// chắc là thẻ: thẻ đóng, thẻ tự đóng, thẻ có thuộc tính, `<br>`, hoặc thẻ mở có thẻ đóng phía sau; nên
+/// `Vec<String>`, `git clone <url>` giữ nguyên.
+fn strip_tags(text: &str, follow_ups: &mut Vec<FollowUp>) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut prose = String::new();
+    let mut fence = false;
+    for line in text.split_inclusive('\n') {
+        let is_fence = line.trim_start().starts_with("```");
+        if fence || is_fence {
+            out.push_str(&strip_prose(&prose, follow_ups));
+            prose.clear();
+            out.push_str(line);
+            fence ^= is_fence;
+        } else {
+            prose.push_str(line);
+        }
+    }
+    out.push_str(&strip_prose(&prose, follow_ups));
+    out
+}
+
+/// `strip_tags` cho đoạn ngoài khối code: giữ `code` trong dòng, thay thẻ, rồi gộp các dòng trống liền nhau
+/// (thẻ bỏ đi để lại dòng trống).
+fn strip_prose(text: &str, follow_ups: &mut Vec<FollowUp>) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(at) = rest.find(['<', '`']) {
+        out.push_str(&rest[..at]);
+        rest = &rest[at..];
+        let keep = if rest.starts_with('`') {
+            rest[1..]
+                .find(['`', '\n'])
+                .filter(|&end| rest[1 + end..].starts_with('`'))
+                .map_or(1, |end| end + 2)
+        } else if let Some(tag) = tag_at(rest) {
+            out.push_str(&replace_tag(&tag, follow_ups));
+            rest = &rest[tag.len..];
+            continue;
+        } else {
+            1
+        };
+        out.push_str(&rest[..keep]);
+        rest = &rest[keep..];
+    }
+    out.push_str(rest);
+    let mut tidy = String::with_capacity(out.len());
+    let mut blank = false;
+    for line in out.split_inclusive('\n') {
+        let empty = line.trim().is_empty();
+        if !(empty && blank) {
+            tidy.push_str(if empty { "\n" } else { line });
+        }
+        blank = empty;
+    }
+    tidy
+}
+
+/// Một thẻ kiểu HTML trong câu trả lời.
+struct Tag<'a> {
+    /// Tên viết thường: "br", "elicitation".
+    name: String,
+    /// Thẻ đóng `</tên>`.
+    closing: bool,
+    /// Phần sau tên, trước `>`: ` label="…" query="…"/`.
+    attrs: &'a str,
+    /// Độ dài cả thẻ (byte).
+    len: usize,
+}
+
+/// Thẻ ở đầu `s` (bắt đầu bằng `<`) nếu chắc là thẻ.
+fn tag_at(s: &str) -> Option<Tag<'_>> {
+    let b = s.as_bytes();
+    let closing = b.get(1) == Some(&b'/');
+    let start = if closing { 2 } else { 1 };
+    if !b.get(start)?.is_ascii_alphabetic() {
+        return None;
+    }
+    let mut i = start;
+    while b.get(i).is_some_and(|&c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_') {
+        i += 1;
+    }
+    let name_end = i;
+    let name = s[start..name_end].to_ascii_lowercase();
+    if !b.get(i).is_some_and(|&c| c == b'>' || c == b'/' || c.is_ascii_whitespace()) {
+        return None;
+    }
+    let mut has_attrs = false;
+    let mut quote = None;
+    let end = loop {
+        let c = *b.get(i).filter(|_| i < TAG_MAX)?;
+        match quote {
+            Some(q) if c == q => quote = None,
+            Some(_) => {}
+            None if c == b'>' => break i,
+            None if c == b'<' => return None,
+            None if (c == b'"' || c == b'\'') && b[i - 1] == b'=' => {
+                quote = Some(c);
+                has_attrs = true;
+            }
+            None => {}
+        }
+        i += 1;
+    };
+    let self_closing = b[end - 1] == b'/';
+    let sure = closing
+        || self_closing
+        || has_attrs
+        || VOID_TAGS.contains(&name.as_str())
+        || s[end..].to_ascii_lowercase().contains(&format!("</{name}>"));
+    sure.then(|| Tag {
+        name,
+        closing,
+        attrs: &s[name_end..end],
+        len: end + 1,
+    })
+}
+
+/// Chữ thay cho thẻ: câu hỏi chung của `<ElicitationsGroup>` thành một đoạn, `<Elicitation>` thành câu hỏi
+/// tiếp (không để lại chữ), thẻ xuống dòng thành xuống dòng, thẻ khác bỏ.
+fn replace_tag(tag: &Tag, follow_ups: &mut Vec<FollowUp>) -> String {
+    let line_break = if BREAK_TAGS.contains(&tag.name.as_str()) { "\n" } else { "" };
+    if tag.closing {
+        return line_break.to_string();
+    }
+    match tag.name.as_str() {
+        "elicitationsgroup" => attr(tag.attrs, "message").map_or_else(String::new, |message| format!("\n\n{message}\n\n")),
+        "elicitation" => {
+            let query = attr(tag.attrs, "query").unwrap_or_default();
+            let label = attr(tag.attrs, "label").filter(|l| !l.is_empty()).unwrap_or_else(|| query.clone());
+            let query = if query.is_empty() { label.clone() } else { query };
+            let follow_up = FollowUp {
+                label: label.chars().take(LABEL_MAX_CHARS).collect(),
+                query: query.chars().take(QUERY_MAX_CHARS).collect(),
+            };
+            let known = follow_ups.iter().any(|f| f.label == follow_up.label);
+            if !follow_up.label.is_empty() && !known && follow_ups.len() < FOLLOW_UP_MAX {
+                follow_ups.push(follow_up);
+            }
+            String::new()
+        }
+        _ => line_break.to_string(),
+    }
+}
+
+/// Giá trị thuộc tính `key="…"` (hay `'…'`) trong phần thuộc tính của thẻ, đã đổi `&quot;`... về chữ và gộp
+/// khoảng trắng.
+fn attr(attrs: &str, key: &str) -> Option<String> {
+    let mut rest = attrs;
+    loop {
+        rest = &rest[rest.find(|c: char| c.is_ascii_alphabetic())?..];
+        let name_end = rest
+            .find(|c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_'))
+            .unwrap_or(rest.len());
+        let name = &rest[..name_end];
+        rest = rest[name_end..].trim_start();
+        let Some(value) = rest.strip_prefix('=').map(str::trim_start) else {
+            continue;
+        };
+        let Some(quote) = value.chars().next().filter(|&c| c == '"' || c == '\'') else {
+            rest = value;
+            continue;
+        };
+        let close = value[1..].find(quote)?;
+        if name.eq_ignore_ascii_case(key) {
+            let value = unescape(&value[1..1 + close]);
+            return Some(value.split_whitespace().collect::<Vec<_>>().join(" "));
+        }
+        rest = &value[close + 2..];
+    }
+}
+
+/// `&quot;`, `&#39;`, `&lt;`, `&gt;`, `&amp;` trong giá trị thuộc tính.
+fn unescape(s: &str) -> String {
+    s.replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&apos;", "'")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&amp;", "&")
 }
 
 fn now_secs() -> u64 {
@@ -382,10 +593,74 @@ mod tests {
             parse_reply(&raw),
             Reply {
                 text: "Xin chào! Xem  nhé".into(),
+                follow_ups: Vec::new(),
                 model: Some("3.6 Flash".into()),
             }
         );
         assert_eq!(parse_reply("<html>").text, "");
+    }
+
+    #[test]
+    fn tach_nut_hoi_tiep_cua_trang_gemini() {
+        let reply = concat!(
+            "Có vài hướng nè.\n\n",
+            "<ElicitationsGroup message=\"Bạn muốn tớ gợi ý sâu hơn theo hướng nào?\">\n",
+            "<Elicitation label=\"Gợi ý phim\" query=\"Gợi ý vài bộ phim &quot;dài&quot; > 2 tiếng.\"/>\n",
+            "<Elicitation label='Kênh YouTube' query=\"Tìm kênh\n  YouTube hay.\" />\n",
+            "<Elicitation label=\"Gợi ý phim\" query=\"Trùng chữ trên nút thì bỏ.\"/>\n",
+            "<Elicitation query=\"Chỉ có câu hỏi\"/>\n",
+            "</ElicitationsGroup>"
+        );
+        let follow_up = |label: &str, query: &str| FollowUp {
+            label: label.into(),
+            query: query.into(),
+        };
+        assert_eq!(
+            clean(reply),
+            (
+                "Có vài hướng nè.\n\nBạn muốn tớ gợi ý sâu hơn theo hướng nào?".to_string(),
+                vec![
+                    follow_up("Gợi ý phim", "Gợi ý vài bộ phim \"dài\" > 2 tiếng."),
+                    follow_up("Kênh YouTube", "Tìm kênh YouTube hay."),
+                    follow_up("Chỉ có câu hỏi", "Chỉ có câu hỏi"),
+                ]
+            )
+        );
+        assert_eq!(
+            clean("<ElicitationsGroup><Elicitation label=\"x\" query=\"y\"/></ElicitationsGroup>"),
+            (String::new(), vec![follow_up("x", "y")])
+        );
+        let many: String = (0..9).map(|i| format!("<Elicitation label=\"Nút {i}\" query=\"Câu {i}\"/>")).collect();
+        assert_eq!(clean(&many).1.len(), FOLLOW_UP_MAX);
+    }
+
+    #[test]
+    fn bo_the_html_giu_chu() {
+        let text = |s: &str| clean(s).0;
+        assert_eq!(text("A\n\n<Group>\n<Item x='1' />\n</Group>\n\nB"), "A\n\nB");
+        assert_eq!(
+            text("Dòng 1<br>Dòng 2<BR/>Có <b>đậm</b>, <a href=\"https://x.vn\">link</a> và<sup>1</sup>"),
+            "Dòng 1\nDòng 2\nCó đậm, link và1"
+        );
+    }
+
+    #[test]
+    fn giu_nguyen_code_va_chu_trong_ngoac_nhon() {
+        let code = concat!(
+            "Nút nè:\n",
+            "```html\n<button class=\"x\">Bấm</button>\n\n\n<Elicitation label=\"x\" query=\"y\"/>\n```\n",
+            "Dùng `<br>` để xuống dòng, `<b>` để in đậm."
+        );
+        assert_eq!(clean(code), (code.to_string(), Vec::new()));
+        for text in [
+            "Vec<String> và HashMap<String, i32>",
+            "Chạy git clone <url> nhé",
+            "a < b > c, x<5 và y>3",
+            "Đặt tên <tên file>.txt",
+            "Link <https://example.com/>",
+        ] {
+            assert_eq!(clean(text).0, text);
+        }
     }
 
     #[test]
