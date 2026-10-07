@@ -158,8 +158,9 @@ hiện kèm số lần chạy và commit (ví dụ `Phiên bản 1.3.3 · build 
 cùng version. Chạy dev thì hiện `Bản dev`.
 
 Test hỏng thì không build ra file. Push liên tục thì lần build cũ bị huỷ, chỉ giữ lần mới nhất.
-Push chỉ sửa file `.md` hoặc `release.yml` thì không build (sửa sprite, icon trong `assets/` vẫn
-build vì chúng nằm trong app). Muốn build lại mà không push: tab **Actions → Build → Run workflow**.
+Chỉ build khi push đổi thứ đi vào app: `desktop/`, `packages/`, `assets/` (sprite, icon), `scripts/`,
+dependencies. Push chỉ sửa file `.md` hay trang giới thiệu (`website/`) thì không build. Muốn build lại mà
+không push: tab **Actions → Build → Run workflow**.
 
 ### Release bằng GitHub Actions (chạy tay)
 
