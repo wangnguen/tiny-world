@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { skyLine, warmthLine } from "./lines";
+import { setLang, skyLine, warmthLine } from "./lines";
 import { daySky, simulatedSky, skyOf, warmthOf, type Sky } from "./weather";
 
 describe("mã thời tiết WMO", () => {
@@ -69,5 +69,15 @@ describe("câu khi trời đổi", () => {
     expect(skyLine("sunny", 28, null)).toBe("Nắng đẹp ghê, 28°C :)))");
     expect(warmthLine("cold", 9.6)).toBe("Lạnh ghê, 10°C :(((");
     expect(warmthLine("hot", 35)).toBe("Nóng quá, 35°C :(((");
+  });
+
+  it("tiếng Anh", () => {
+    setLang("en");
+    try {
+      expect(skyLine("rain", 24.4, null)).toBe("It's raining, 24°C :(");
+      expect(warmthLine("cold", 9.6)).toBe("Brr, it's cold, 10°C :(((");
+    } finally {
+      setLang("vi");
+    }
   });
 });

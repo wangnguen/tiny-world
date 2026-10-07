@@ -1,7 +1,14 @@
 /**
  * Câu gửi Gemini khi chat với pet: tính cách ngắn của nhân vật, ngày giờ hiện tại, vài lượt chat gần nhất
- * và câu hỏi. Không gửi gì khác (không gửi tên người dùng, thành phố, cửa sổ đang mở...).
+ * và câu hỏi. Không gửi gì khác (không gửi tên người dùng, thành phố, cửa sổ đang mở...). Câu chữ theo ngôn
+ * ngữ đang dùng, lấy ở mục `prompt`, `personas`, `calendar` của file chữ (packages/core/src/i18n).
+ *
+ * File này không import giá trị nào (chỉ kiểu) để test chạy thẳng được (scripts/chat.test.mjs).
  */
+import type { Messages } from "@tinyworld/core";
+
+/** Phần file chữ mà câu gửi Gemini cần. */
+export type PromptText = Pick<Messages, "prompt" | "personas" | "calendar">;
 
 /** Một lượt trong khung chat. */
 export interface Turn {
@@ -22,42 +29,29 @@ export const PROMPT_MAX = 6000;
 /** Một câu hỏi tối đa chừng này ký tự (ô nhập). */
 export const MESSAGE_MAX = 1000;
 
-const WEEKDAYS = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** Tính cách theo tên thư mục pack, khớp bảng nhân vật trong assets/sprite-sources/README.md. */
-const PERSONAS: Record<string, Persona> = {
-  "a-momo": { name: "Momo", about: "axolotl hồng hiền lành, mang san hô, hay tò mò" },
-  "b-bong": { name: "Bông", about: "thỏ kem tai hồng quàng khăn xanh, nhanh nhảu" },
-  "b-kitsu": { name: "Kitsu", about: "cáo cam đuôi trắng, lanh lợi" },
-  "c-mam": { name: "Mầm", about: "sinh vật rừng màu kem có hai lá trên đầu, dịu dàng" },
-  "c-bip": { name: "Bíp", about: "robot xanh mắt LED vàng, thích số liệu chính xác" },
-  "c-lumi": { name: "Lumi", about: "tinh linh đầu sao vàng, lạc quan" },
-  "c-nam": { name: "Nấm", about: "bé nấm mũ đỏ đốm trắng, chậm rãi" },
-  "c-may": { name: "Mây", about: "tinh linh mây xanh nhạt, bay bổng" },
-  "c-tan": { name: "Tàn", about: "bé lửa cam nhiệt tình" },
-  "c-reu": { name: "Rêu", about: "rồng lá xanh ngọc, hiểu biết" },
-  "c-cuc": { name: "Cục", about: "golem đá tím có tinh thể trên đầu, ít nói mà chắc" },
-  "c-muc": { name: "Mực", about: "bạch tuộc tím tròn, khéo tay" },
-  "c-dua": { name: "Dứa", about: "bé dứa vàng vui tính" },
-  "c-su": { name: "Su", about: "phi hành gia nhỏ, mê khám phá" },
-  "c-bap": { name: "Bắp", about: "ong vàng tròn chăm chỉ" },
-  "c-boggo": { name: "Boggo", about: "ếch coder mắt lúc nào cũng mệt, ôm ly cà phê" },
-  "c-gloop": { name: "Gloop", about: "ếch nghịch ngợm quàng khăn cam" },
-  "c-bep": { name: "Bẹp", about: "cóc lùn mặt chán đời nhưng tốt bụng" },
-  "c-frobu": { name: "Frobu", about: "ếch cú đêm mặc hoodie đeo tai nghe" },
-  "c-byte": { name: "Byte", about: "chim cánh cụt coder đeo kính tròn" },
-  "c-patch": { name: "Patch", about: "gấu trúc đỏ coder đeo tai nghe tím" },
-};
-
-/** Tính cách của pack `pet`; pack mới chưa có trong bảng thì chỉ có tên. */
-export function personaOf(pet: string, name: string): Persona {
-  return PERSONAS[pet] ?? { name, about: "pet nhỏ dễ thương" };
+/** Thay `{tên}` trong `template` (như `fill` của packages/core, chép lại để file này không import gì). */
+function format(template: string, params: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, name: string) => (name in params ? String(params[name]) : match));
 }
 
-/** "Thứ Năm 01/10/2026" theo giờ máy. */
-export function dayText(now: Date): string {
-  return `${WEEKDAYS[now.getDay()]} ${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+/** Tính cách theo tên thư mục pack (mục `personas`, khớp bảng nhân vật trong assets/sprite-sources/README.md); pack mới chưa có thì chỉ có tên. */
+export function personaOf(pet: string, name: string, text: PromptText): Persona {
+  const personas: Record<string, string | undefined> = text.personas;
+  return { name, about: personas[pet] ?? text.prompt.defaultAbout };
+}
+
+/** "Thứ Năm 01/10/2026" ("Thursday, October 1, 2026") theo giờ máy. */
+export function dayText(now: Date, text: PromptText): string {
+  return format(text.prompt.date, {
+    weekday: text.calendar.weekdays[now.getDay()],
+    dd: pad(now.getDate()),
+    mm: pad(now.getMonth() + 1),
+    yyyy: now.getFullYear(),
+    d: now.getDate(),
+    monthName: text.calendar.months[now.getMonth()],
+  });
 }
 
 /** "2026-10-01" theo giờ máy. */
@@ -65,25 +59,9 @@ export function dayKey(now: Date): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-function timeText(now: Date): string {
-  return `${dayText(now)}, ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+function timeText(now: Date, text: PromptText): string {
+  return format(text.prompt.time, { date: dayText(now, text), hh: pad(now.getHours()), min: pad(now.getMinutes()) });
 }
-
-/** Câu gợi ý có sẵn: dùng lúc chưa có câu Gemini viết cho hôm nay (đang hỏi, mất mạng). */
-export const SUGGESTION_POOL = [
-  "Tỉ giá USD hôm nay?",
-  "Giá vàng SJC hôm nay?",
-  "Tin công nghệ nổi bật hôm nay",
-  "1 inch bằng bao nhiêu cm?",
-  "Giá xăng hôm nay bao nhiêu?",
-  "Viết lời chúc sinh nhật đồng nghiệp",
-  "Phím tắt chụp màn hình trên Windows?",
-  "Trưa nay ăn gì cho nhanh?",
-  "Đổi 100 đô ra tiền Việt",
-  "Mẹo tập trung khi làm việc",
-  "REST API là gì, nói ngắn thôi",
-  "Còn bao nhiêu ngày nữa tới Tết?",
-];
 
 /** Khung chat hiện chừng này câu gợi ý. */
 export const SHOWN_SUGGESTIONS = 4;
@@ -97,18 +75,25 @@ export function pickSuggestions(list: readonly string[], count = SHOWN_SUGGESTIO
 }
 
 /** Ghép câu gửi Gemini; `now` theo giờ máy. */
-export function buildPrompt(persona: Persona, history: readonly Turn[], message: string, now: Date): string {
+export function buildPrompt(
+  persona: Persona,
+  history: readonly Turn[],
+  message: string,
+  now: Date,
+  text: PromptText,
+): string {
+  const { prompt } = text;
   const head = [
-    `Bạn là ${persona.name}, ${persona.about}, một pet nhỏ sống trên màn hình máy tính của người dùng (app TinyWorld).`,
-    "Trả lời bằng tiếng Việt (người dùng viết tiếng khác thì theo tiếng đó), thân thiện, không dùng emoji hay biểu tượng cảm xúc kiểu \":)))\".",
-    "Ưu tiên đúng và gọn: vài câu hoặc vài gạch đầu dòng. Thông tin mới (tỉ giá, giá vàng, tin tức, thời tiết) thì tra cứu rồi ghi nguồn hoặc link nếu có. Không chắc thì nói không chắc, không bịa.",
-    `Bây giờ là ${timeText(now)} (giờ máy người dùng).`,
+    format(prompt.you, { name: persona.name, about: persona.about }),
+    prompt.language,
+    prompt.style,
+    format(prompt.now, { time: timeText(now, text) }),
   ].join("\n");
-  const line = (turn: Turn) => `${turn.from === "user" ? "Người dùng" : persona.name}: ${turn.text.trim()}`;
-  const ask = `Người dùng: ${message.trim()}\n${persona.name}:`;
+  const line = (turn: Turn) => `${turn.from === "user" ? prompt.user : persona.name}: ${turn.text.trim()}`;
+  const ask = `${prompt.user}: ${message.trim()}\n${persona.name}:`;
   const recent = history.slice(-HISTORY_TURNS).map(line);
   // Dài quá thì bỏ dần lượt cũ nhất.
   while (recent.length > 0 && [head, ...recent, ask].join("\n\n").length > PROMPT_MAX) recent.shift();
-  const parts = recent.length > 0 ? [head, "Đoạn chat gần đây:", recent.join("\n"), ask] : [head, ask];
+  const parts = recent.length > 0 ? [head, prompt.recent, recent.join("\n"), ask] : [head, ask];
   return parts.join("\n\n").slice(0, PROMPT_MAX);
 }

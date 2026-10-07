@@ -8,9 +8,11 @@ import {
   PREVIEW_HOT,
   PREVIEW_SECONDS,
   errorMessage,
+  fill,
   isAppError,
   type City,
   type CityResult,
+  type Messages,
   type Occasion,
   type PreviewState,
   type Settings,
@@ -19,18 +21,9 @@ import {
   type WeatherPreview,
   type WeatherReport,
 } from "@tinyworld/core";
-import {
-  NO_NETWORK,
-  NO_WEATHER,
-  REPORT_MAX_AGE,
-  SKY_NAMES,
-  activeOccasions,
-  daySky,
-  skyOf,
-  toLunar,
-  wallClock,
-} from "@tinyworld/sim";
+import { REPORT_MAX_AGE, activeOccasions, daySky, occasionText, skyOf, toLunar, wallClock } from "@tinyworld/sim";
 import { api } from "../api";
+import { useLang, useMessages } from "../i18n";
 import { skyIconSvg } from "../skyIcons";
 import { CalendarIcon, PinIcon, PlayIcon, SparkIcon } from "./icons";
 import { Toggle } from "./Toggle";
@@ -48,43 +41,44 @@ interface Props {
 
 /** Tab "Thế giới": thành phố (thời tiết thật, giờ ở đó), bật tắt hiệu ứng, lịch sự kiện. */
 export function WorldSettings({ settings, onChange }: Props) {
+  const m = useMessages();
   return (
     <>
-      <p className="tip">Bấm đúp vào pet để xem giờ, ngày âm lịch và thời tiết.</p>
+      <p className="tip">{m.world.tip}</p>
       <CityField city={settings.city} onChange={(city) => onChange({ city })} />
       <section className="field">
         <h2 className="field__label">
           <SparkIcon />
-          Hiệu ứng
+          {m.world.effects}
         </h2>
         <div className="toggles">
           <Toggle
-            label="Thời tiết quanh pet"
-            hint="Nắng, mây, sao, mưa, tuyết, sương mù; nóng thì hơi nóng bốc lên, lạnh thì thở ra khói"
+            label={m.world.weather}
+            hint={m.world.weatherHint}
             checked={settings.weather}
             onChange={(weather) => onChange({ weather })}
           />
           <Toggle
-            label="Nhiệt độ cạnh pet"
-            hint="Số °C ở thành phố đã chọn, kèm hình thời tiết"
+            label={m.world.temperature}
+            hint={m.world.temperatureHint}
             checked={settings.temperatureTag}
             onChange={(temperatureTag) => onChange({ temperatureTag })}
           />
           <Toggle
-            label="Pet nói chuyện cho vui"
-            hint="Chào nhau, kêu trời mưa; vài câu mỗi giờ"
+            label={m.world.chatter}
+            hint={m.world.chatterHint}
             checked={settings.chatter}
             onChange={(chatter) => onChange({ chatter })}
           />
           <Toggle
-            label="Lịch sự kiện"
-            hint="Đúng dịp thì pet nói câu chúc"
+            label={m.world.events}
+            hint={m.world.eventsHint}
             checked={settings.events}
             onChange={(events) => onChange({ events })}
           />
           <Toggle
-            label="Ma lúc 2 giờ sáng"
-            hint="Thỉnh thoảng có con ma bay qua :)))"
+            label={m.world.ghost}
+            hint={m.world.ghostHint}
             checked={settings.ghost}
             onChange={(ghost) => onChange({ ghost })}
           />
@@ -101,19 +95,10 @@ export function WorldSettings({ settings, onChange }: Props) {
   );
 }
 
-const PREVIEW_SKIES: { sky: Sky; label: string }[] = [
-  { sky: "sunny", label: "Nắng" },
-  { sky: "clear", label: "Trời quang" },
-  { sky: "cloudy", label: "Nhiều mây" },
-  { sky: "rain", label: "Mưa" },
-  { sky: "storm", label: "Giông" },
-  { sky: "snow", label: "Tuyết" },
-  { sky: "fog", label: "Sương mù" },
-  { sky: "petals", label: "Hoa rơi" },
-];
-const PREVIEW_TEMPERATURES: { temperature: number; label: string; warmth: "hot" | "cold" }[] = [
-  { temperature: PREVIEW_HOT, label: `Nóng ${PREVIEW_HOT}°C`, warmth: "hot" },
-  { temperature: PREVIEW_COLD, label: `Lạnh ${PREVIEW_COLD}°C`, warmth: "cold" },
+const PREVIEW_SKIES: Sky[] = ["sunny", "clear", "cloudy", "rain", "storm", "snow", "fog", "petals"];
+const PREVIEW_TEMPERATURES: { temperature: number; warmth: "hot" | "cold" }[] = [
+  { temperature: PREVIEW_HOT, warmth: "hot" },
+  { temperature: PREVIEW_COLD, warmth: "cold" },
 ];
 const NO_PREVIEW: PreviewState = { sky: null, temperature: null, until: null, ghost: false };
 /** Đếm ngược xem thử mỗi chừng này ms. */
@@ -130,6 +115,7 @@ function SkyIcon({ sky }: { sky: Sky }) {
  * đúng thứ overlay đang vẽ (overlay báo lại qua Rust, mở lại Cài đặt vẫn đúng).
  */
 function EffectPreviews() {
+  const m = useMessages();
   const [state, setState] = useState<PreviewState>(NO_PREVIEW);
   const [now, setNow] = useState(() => Date.now());
   const [problem, setProblem] = useState<string | null>(null);
@@ -173,46 +159,45 @@ function EffectPreviews() {
     setProblem(null);
     api.previewGhost().catch((e: unknown) => setProblem(errorMessage(e)));
   };
+  const temperatureLabel = (t: number, warmth?: "hot" | "cold") => (warmth ? fill(m.world[warmth], { temperature: t }) : `${t}°C`);
 
   const names = [
-    PREVIEW_SKIES.find((p) => p.sky === sky)?.label,
-    PREVIEW_TEMPERATURES.find((p) => p.temperature === temperature)?.label ??
-      (temperature === null ? undefined : `${temperature}°C`),
+    sky === null ? undefined : m.world.skies[sky],
+    temperature === null
+      ? undefined
+      : temperatureLabel(temperature, PREVIEW_TEMPERATURES.find((p) => p.temperature === temperature)?.warmth),
   ].filter((name) => name !== undefined);
-  let status = "Chưa xem thử gì.";
-  if (active) status = `Đang xem: ${names.join(" · ")} · còn ${left} giây`;
-  else if (state.ghost) status = "Con ma đang bay qua...";
+  let status = m.world.previewNone;
+  if (active) status = fill(m.world.previewing, { names: names.join(" · "), seconds: left });
+  else if (state.ghost) status = m.world.ghostFlying;
 
   return (
     <section className="field">
       <h2 className="field__label">
         <PlayIcon />
-        Xem thử
+        {m.world.preview}
       </h2>
-      <p className="hint">
-        Bấm để pet gặp ngay trong {PREVIEW_SECONDS} giây, kể cả khi đang tắt ở trên; bấm lại để tắt. Bật được
-        một kiểu thời tiết và một mức nhiệt cùng lúc.
-      </p>
+      <p className="hint">{fill(m.world.previewHint, { seconds: PREVIEW_SECONDS })}</p>
       <div className="preview-row">
-        <span className="preview-row__label">Thời tiết</span>
-        <div className="segments" role="group" aria-label="Thời tiết">
+        <span className="preview-row__label">{m.world.previewWeather}</span>
+        <div className="segments" role="group" aria-label={m.world.previewWeather}>
           {PREVIEW_SKIES.map((p) => (
             <button
-              key={p.sky}
+              key={p}
               type="button"
-              className={`segment segment--icon${sky === p.sky ? " segment--active" : ""}`}
-              aria-pressed={sky === p.sky}
-              onClick={() => send({ sky: sky === p.sky ? null : p.sky, temperature })}
+              className={`segment segment--icon${sky === p ? " segment--active" : ""}`}
+              aria-pressed={sky === p}
+              onClick={() => send({ sky: sky === p ? null : p, temperature })}
             >
-              <SkyIcon sky={p.sky} />
-              {p.label}
+              <SkyIcon sky={p} />
+              {m.world.skies[p]}
             </button>
           ))}
         </div>
       </div>
       <div className="preview-row">
-        <span className="preview-row__label">Nhiệt độ</span>
-        <div className="segments" role="group" aria-label="Nhiệt độ">
+        <span className="preview-row__label">{m.world.previewTemperature}</span>
+        <div className="segments" role="group" aria-label={m.world.previewTemperature}>
           {PREVIEW_TEMPERATURES.map((p) => (
             <button
               key={p.temperature}
@@ -221,14 +206,14 @@ function EffectPreviews() {
               aria-pressed={temperature === p.temperature}
               onClick={() => send({ sky, temperature: temperature === p.temperature ? null : p.temperature })}
             >
-              {p.label}
+              {temperatureLabel(p.temperature, p.warmth)}
             </button>
           ))}
         </div>
       </div>
       <div className="preview-row">
-        <span className="preview-row__label">Sự kiện</span>
-        <div className="segments" role="group" aria-label="Sự kiện">
+        <span className="preview-row__label">{m.world.previewEvent}</span>
+        <div className="segments" role="group" aria-label={m.world.previewEvent}>
           <button
             type="button"
             className={`segment${state.ghost ? " segment--active" : ""}`}
@@ -236,7 +221,7 @@ function EffectPreviews() {
             disabled={state.ghost}
             onClick={flyGhost}
           >
-            Con ma
+            {m.world.ghostButton}
           </button>
         </div>
       </div>
@@ -248,7 +233,7 @@ function EffectPreviews() {
           disabled={!active}
           onClick={() => send({ sky: null, temperature: null })}
         >
-          Dừng
+          {m.world.stop}
         </button>
         {active && <span className="preview-status__bar" style={{ width: `${(left / PREVIEW_SECONDS) * 100}%` }} />}
       </div>
@@ -271,15 +256,19 @@ function freshReport(report: WeatherReport | null, city: City): WeatherReport | 
  * chọn thì thời tiết giả lập theo mùa, giờ theo máy, không gọi mạng.
  */
 function CityField({ city, onChange }: { city: City | null; onChange: (city: City | null) => void }) {
+  const m = useMessages();
+  const lang = useLang();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CityResult[]>([]);
-  const [status, setStatus] = useState<string | null>(null);
+  /** Câu báo dưới ô tìm: đang tìm, không thấy, mất mạng, hay lỗi Rust trả về (đã theo ngôn ngữ). */
+  const [status, setStatus] = useState<"searching" | "none" | "offline" | { error: string } | null>(null);
   const [report, setReport] = useState<WeatherReport | null>(null);
   const [failure, setFailure] = useState<WeatherFailure | null>(null);
   const [now, setNow] = useState(() => new Date());
   /** Lần tìm gần nhất; kết quả của lần tìm cũ về sau thì bỏ. */
   const search = useRef(0);
 
+  // Đổi ngôn ngữ thì tìm lại: tên thành phố trong kết quả theo ngôn ngữ đang dùng.
   useEffect(() => {
     const text = query.trim();
     const id = ++search.current;
@@ -289,22 +278,22 @@ function CityField({ city, onChange }: { city: City | null; onChange: (city: Cit
       return;
     }
     const timer = window.setTimeout(() => {
-      setStatus("Đang tìm...");
+      setStatus("searching");
       api
         .searchCity(text)
         .then((found) => {
           if (id !== search.current) return;
           setResults(found);
-          setStatus(found.length ? null : "Không tìm thấy thành phố nào :)");
+          setStatus(found.length ? null : "none");
         })
         .catch((e: unknown) => {
           if (id !== search.current) return;
           setResults([]);
-          setStatus(isAppError(e) && e.code === "OFFLINE" ? NO_NETWORK : errorMessage(e));
+          setStatus(isAppError(e) && e.code === "OFFLINE" ? "offline" : { error: errorMessage(e) });
         });
     }, SEARCH_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [query, lang]);
 
   // Thời tiết hiện tại: lấy cái đã có, rồi nghe Rust báo mỗi lần lấy được thời tiết mới hoặc bị lỗi.
   useEffect(() => {
@@ -342,17 +331,24 @@ function CityField({ city, onChange }: { city: City | null; onChange: (city: Cit
     });
   };
 
-  let weatherText = "Đang lấy thời tiết...";
+  let weatherText = m.world.fetching;
   const fresh = city ? freshReport(report, city) : null;
   const wall = wallClock(now, city?.timezone);
-  if (fresh) weatherText = `${SKY_NAMES[daySky(skyOf(fresh.code), wall.getMonth(), fresh.isDay)]}, ${Math.round(fresh.temperature)}°C`;
-  else if (failure) weatherText = failure.offline ? NO_NETWORK : NO_WEATHER;
+  if (fresh) {
+    weatherText = `${m.pet.skyNames[daySky(skyOf(fresh.code), wall.getMonth(), fresh.isDay)]}, ${Math.round(fresh.temperature)}°C`;
+  } else if (failure) weatherText = failure.offline ? m.pet.noNetwork : m.pet.noWeather;
+
+  let statusText: string | null = null;
+  if (status === "searching") statusText = m.world.searching;
+  else if (status === "none") statusText = m.world.noCity;
+  else if (status === "offline") statusText = m.pet.noNetwork;
+  else if (status) statusText = status.error;
 
   return (
     <section className="field">
       <h2 className="field__label">
         <PinIcon />
-        Thành phố
+        {m.world.city}
       </h2>
       {city ? (
         <div className="city">
@@ -363,21 +359,21 @@ function CityField({ city, onChange }: { city: City | null; onChange: (city: Cit
             </small>
           </div>
           <button type="button" className="button button--quiet" onClick={() => onChange(null)}>
-            Bỏ
+            {m.world.removeCity}
           </button>
         </div>
       ) : (
-        <p className="hint">Chọn thành phố để pet theo thời tiết và giờ ở đó.</p>
+        <p className="hint">{m.world.cityHint}</p>
       )}
       <input
         className="input"
         type="search"
-        placeholder={city ? "Đổi thành phố..." : "Tìm thành phố, ví dụ Hà Nội"}
+        placeholder={city ? m.world.changeCity : m.world.findCity}
         value={query}
         maxLength={80}
         onChange={(event) => setQuery(event.target.value)}
       />
-      {status && <p className="hint">{status}</p>}
+      {statusText && <p className="hint">{statusText}</p>}
       {results.length > 0 && (
         <ul className="results">
           {results.map((result) => (
@@ -392,7 +388,7 @@ function CityField({ city, onChange }: { city: City | null; onChange: (city: Cit
       {/* Giấy phép CC BY 4.0 của Open-Meteo: chỗ nào hiện dữ liệu của họ thì ghi nguồn kèm link. */}
       {(city || results.length > 0) && (
         <p className="hint hint--small">
-          Thời tiết từ{" "}
+          {m.world.source}{" "}
           <a
             className="link"
             href="https://open-meteo.com/"
@@ -430,15 +426,17 @@ function maxDay(month: number, lunar: boolean): number {
   return [4, 6, 9, 11].includes(month) ? 30 : 31;
 }
 
-function describe(occasion: Occasion): string {
-  const parts = [`${occasion.day}/${occasion.month}${occasion.lunar ? " âm lịch" : ""}`];
-  if (occasion.days > 1) parts.push(`${occasion.days} ngày`);
+function describe(occasion: Occasion, m: Messages): string {
+  const date = { day: occasion.day, month: occasion.month, shortMonth: m.calendar.shortMonths[occasion.month - 1] };
+  const parts = [fill(occasion.lunar ? m.world.lunarDate : m.world.solarDate, date)];
+  if (occasion.days > 1) parts.push(fill(m.world.days, { n: occasion.days }));
   return parts.join(" · ");
 }
 
 /**
  * Mục "Lịch sự kiện": các dịp lặp lại mỗi năm (dương hoặc âm lịch). Bật tắt từng dịp, sửa, xoá, thêm dịp
- * mới (sinh nhật, ngày kỷ niệm...). Đúng dịp thì một con nói câu của dịp đó mỗi ngày một lần.
+ * mới (sinh nhật, ngày kỷ niệm...). Đúng dịp thì một con nói câu của dịp đó mỗi ngày một lần. Dịp có sẵn chưa
+ * sửa thì tên và câu nói theo ngôn ngữ đang dùng.
  */
 function OccasionList({
   occasions,
@@ -452,10 +450,19 @@ function OccasionList({
   disabled: boolean;
   onChange: (occasions: Occasion[]) => void;
 }) {
+  const m = useMessages();
+  const lang = useLang();
   const today = wallClock(new Date(), timezone);
   const lunar = toLunar(today);
   const active = activeOccasions(occasions, today);
-  const todayText = `Hôm nay ${today.getDate()}/${today.getMonth() + 1}, âm lịch ${lunar.day}/${lunar.month}${lunar.leap ? " nhuận" : ""}`;
+  const todayText = fill(m.world.today, {
+    day: today.getDate(),
+    month: today.getMonth() + 1,
+    shortMonth: m.calendar.shortMonths[today.getMonth()],
+    lunarDay: lunar.day,
+    lunarMonth: lunar.month,
+    leap: lunar.leap ? m.world.leap : "",
+  });
   /** Dịp đang sửa: chỉ số trong danh sách, `-1` là đang thêm dịp mới, `null` là không sửa gì. */
   const [editing, setEditing] = useState<number | null>(null);
   const save = (index: number, occasion: Occasion) => {
@@ -468,20 +475,21 @@ function OccasionList({
   };
   const toggle = (index: number, enabled: boolean) =>
     onChange(occasions.map((o, i) => (i === index ? { ...o, enabled } : o)));
+  const nameOf = (occasion: Occasion) => occasionText(occasion, lang).name;
 
   return (
     <section className={disabled ? "field field--off" : "field"}>
       <div className="field__head">
         <h2 className="field__label">
           <CalendarIcon />
-          Lịch sự kiện
+          {m.world.calendar}
           <span className="field__count">
             {occasions.length}/{MAX_OCCASIONS}
           </span>
         </h2>
         {editing === null && occasions.length < MAX_OCCASIONS && (
           <button type="button" className="button" onClick={() => setEditing(-1)}>
-            Thêm
+            {m.world.add}
           </button>
         )}
       </div>
@@ -490,10 +498,10 @@ function OccasionList({
       )}
       <p className="hint">
         {active.length
-          ? `${todayText}: ${active.map((o) => o.name).join(", ")}.`
-          : `${todayText}: không có dịp nào.`}
+          ? fill(m.world.todayWith, { today: todayText, names: active.map(nameOf).join(", ") })
+          : fill(m.world.todayNone, { today: todayText })}
       </p>
-      {occasions.length === 0 && editing !== -1 && <p className="hint">Chưa có dịp nào.</p>}
+      {occasions.length === 0 && editing !== -1 && <p className="hint">{m.world.empty}</p>}
       <ul className="occasions">
         {occasions.map((occasion, index) =>
           editing === index ? (
@@ -510,16 +518,16 @@ function OccasionList({
               <input
                 className="checkbox"
                 type="checkbox"
-                aria-label={`Bật ${occasion.name}`}
+                aria-label={fill(m.world.enable, { name: nameOf(occasion) })}
                 checked={occasion.enabled}
                 onChange={(event) => toggle(index, event.target.checked)}
               />
               <span className="occasion__text">
                 <strong>
-                  {occasion.name}
-                  {active.includes(occasion) && <span className="badge">Hôm nay</span>}
+                  {nameOf(occasion)}
+                  {active.includes(occasion) && <span className="badge">{m.world.todayBadge}</span>}
                 </strong>
-                <small>{describe(occasion)}</small>
+                <small>{describe(occasion, m)}</small>
               </span>
               <button
                 type="button"
@@ -527,7 +535,7 @@ function OccasionList({
                 disabled={editing !== null}
                 onClick={() => setEditing(index)}
               >
-                Sửa
+                {m.world.edit}
               </button>
             </li>
           ),
@@ -537,6 +545,10 @@ function OccasionList({
   );
 }
 
+/**
+ * Sửa một dịp. Dịp có sẵn hiện tên, câu nói theo ngôn ngữ đang dùng; lưu mà không đổi hai thứ đó thì vẫn là
+ * dịp có sẵn (giữ bản tiếng Việt trong file), đổi rồi thì thành dịp riêng ghi đúng chữ người dùng nhập.
+ */
 function OccasionEditor({
   initial,
   onSave,
@@ -548,19 +560,28 @@ function OccasionEditor({
   onCancel: () => void;
   onDelete?: () => void;
 }) {
-  const [draft, setDraft] = useState(initial);
+  const m = useMessages();
+  const lang = useLang();
+  const shown = occasionText(initial, lang);
+  const [draft, setDraft] = useState<Occasion>(() => ({ ...initial, ...shown }));
   const [problem, setProblem] = useState<string | null>(null);
   const set = (patch: Partial<Occasion>) => setDraft((d) => ({ ...d, ...patch }));
   const number = (value: string) => Math.trunc(Number(value)) || 0;
 
   const submit = () => {
     const name = draft.name.trim();
-    if (!name) return setProblem("Nhập tên dịp.");
-    if (draft.month < 1 || draft.month > 12) return setProblem("Tháng từ 1 tới 12.");
+    const message = draft.message.trim();
+    if (!name) return setProblem(m.world.needName);
+    if (draft.month < 1 || draft.month > 12) return setProblem(m.world.badMonth);
     const last = maxDay(draft.month, draft.lunar);
-    if (draft.day < 1 || draft.day > last) return setProblem(`Tháng ${draft.month} chỉ có tới ngày ${last}.`);
-    if (draft.days < 1 || draft.days > OCCASION_DAYS_MAX) return setProblem(`Kéo dài từ 1 tới ${OCCASION_DAYS_MAX} ngày.`);
-    onSave({ ...draft, name, message: draft.message.trim() });
+    if (draft.day < 1 || draft.day > last) return setProblem(fill(m.world.badDay, { month: draft.month, last }));
+    if (draft.days < 1 || draft.days > OCCASION_DAYS_MAX) return setProblem(fill(m.world.badLength, { max: OCCASION_DAYS_MAX }));
+    const untouched = initial.preset !== undefined && name === shown.name && message === shown.message;
+    onSave(
+      untouched
+        ? { ...draft, name: initial.name, message: initial.message }
+        : { ...draft, name, message, preset: undefined },
+    );
   };
 
   return (
@@ -572,25 +593,25 @@ function OccasionEditor({
       }}
     >
       <label className="editor__row">
-        <span>Tên</span>
+        <span>{m.world.name}</span>
         <input
           className="input"
           value={draft.name}
           maxLength={OCCASION_NAME_MAX}
-          placeholder="Ví dụ: Sinh nhật mình"
+          placeholder={m.world.namePlaceholder}
           autoFocus
           onChange={(event) => set({ name: event.target.value })}
         />
       </label>
       <div className="editor__row">
-        <span>Ngày</span>
+        <span>{m.world.date}</span>
         <div className="editor__date">
           <input
             className="input input--number"
             type="number"
             min={1}
             max={maxDay(draft.month, draft.lunar)}
-            aria-label="Ngày"
+            aria-label={m.world.day}
             value={draft.day}
             onChange={(event) => set({ day: number(event.target.value) })}
           />
@@ -600,11 +621,11 @@ function OccasionEditor({
             type="number"
             min={1}
             max={12}
-            aria-label="Tháng"
+            aria-label={m.world.month}
             value={draft.month}
             onChange={(event) => set({ month: number(event.target.value) })}
           />
-          <div className="segments" role="radiogroup" aria-label="Loại lịch">
+          <div className="segments" role="radiogroup" aria-label={m.world.calendarKind}>
             {[false, true].map((lunar) => (
               <button
                 key={String(lunar)}
@@ -614,14 +635,14 @@ function OccasionEditor({
                 className={draft.lunar === lunar ? "segment segment--active" : "segment"}
                 onClick={() => set({ lunar })}
               >
-                {lunar ? "Âm lịch" : "Dương lịch"}
+                {lunar ? m.world.lunar : m.world.solar}
               </button>
             ))}
           </div>
         </div>
       </div>
       <label className="editor__row">
-        <span>Số ngày</span>
+        <span>{m.world.length}</span>
         <input
           className="input input--number"
           type="number"
@@ -632,12 +653,12 @@ function OccasionEditor({
         />
       </label>
       <label className="editor__row">
-        <span>Câu nói</span>
+        <span>{m.world.message}</span>
         <input
           className="input"
           value={draft.message}
           maxLength={OCCASION_MESSAGE_MAX}
-          placeholder="Để trống thì không nói gì"
+          placeholder={m.world.messagePlaceholder}
           onChange={(event) => set({ message: event.target.value })}
         />
       </label>
@@ -645,14 +666,14 @@ function OccasionEditor({
       <div className="editor__actions">
         {onDelete && (
           <button type="button" className="button button--danger" onClick={onDelete}>
-            Xoá
+            {m.world.delete}
           </button>
         )}
         <button type="button" className="button button--quiet" onClick={onCancel}>
-          Huỷ
+          {m.world.cancel}
         </button>
         <button type="submit" className="button button--primary">
-          Lưu
+          {m.world.save}
         </button>
       </div>
     </form>

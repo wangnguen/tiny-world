@@ -3,8 +3,8 @@
 //! mở lại Cài đặt vẫn biết, và gửi sang Cài đặt mỗi lần đổi (nút đang bật sáng lên, đếm ngược).
 
 use crate::error::{AppError, AppResult};
-use crate::events;
 use crate::overlay::{self, Overlay};
+use crate::{events, i18n};
 use crate::settings;
 use serde::{Deserialize, Serialize};
 use std::sync::{Mutex, PoisonError};
@@ -45,7 +45,7 @@ impl WeatherPreview {
     fn check(&self) -> AppResult<()> {
         match self.temperature {
             Some(t) if !t.is_finite() || t < TEMPERATURE.0 || t > TEMPERATURE.1 => {
-                Err(AppError::bad_request("Nhiệt độ không hợp lệ."))
+                Err(AppError::bad_request(i18n::t("errors.previewTemperature")))
             }
             _ => Ok(()),
         }
@@ -81,14 +81,10 @@ impl Preview {
 /// Pet đang ẩn hay tạm dừng thì overlay không vẽ, xem thử cũng không thấy gì: báo để người dùng biết.
 fn ready(overlay: &Overlay) -> AppResult<()> {
     if !overlay.is_visible() {
-        return Err(AppError::bad_request(
-            "Pet đang ẩn, hiện pet ở khay hệ thống rồi xem thử.",
-        ));
+        return Err(AppError::bad_request(i18n::t("errors.previewHidden")));
     }
     if overlay.is_paused() {
-        return Err(AppError::bad_request(
-            "Pet đang tạm dừng, bỏ Tạm dừng ở khay hệ thống rồi xem thử.",
-        ));
+        return Err(AppError::bad_request(i18n::t("errors.previewPaused")));
     }
     Ok(())
 }

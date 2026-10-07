@@ -11,8 +11,13 @@ async function load(file) {
   return import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
 }
 const { parseInline, parseReply } = await load("markdown.ts");
-const { buildPrompt, dayKey, dayText, personaOf, pickSuggestions, HISTORY_TURNS, PROMPT_MAX, SUGGESTION_POOL } =
-  await load("prompt.ts");
+const { buildPrompt, dayKey, dayText, personaOf, pickSuggestions, HISTORY_TURNS, PROMPT_MAX } = await load("prompt.ts");
+// Chữ của khung chat theo ngôn ngữ (file chữ dùng chung, packages/core/src/i18n).
+const words = (lang) =>
+  JSON.parse(readFileSync(new URL(`../packages/core/src/i18n/${lang}.json`, import.meta.url), "utf8"));
+const vi = words("vi");
+const en = words("en");
+const SUGGESTION_POOL = vi.prompt.suggestions;
 
 test("chữ đậm, code, link markdown và link trần (bỏ dấu câu dính sau)", () => {
   assert.deepEqual(parseInline("Xem **tỉ giá** ở [Vietcombank](https://vcb.com.vn/ty-gia) hoặc https://sbv.gov.vn. Gõ `npm i`."), [
@@ -58,18 +63,28 @@ test("đoạn, tiêu đề, gạch đầu dòng, danh sách số, khối code", 
 });
 
 test("câu gửi đi có tính cách, giờ, chỉ vài lượt gần nhất, không quá dài", () => {
-  const persona = personaOf("c-byte", "Byte");
+  const persona = personaOf("c-byte", "Byte", vi);
   const history = Array.from({ length: 10 }, (_, i) => ({ from: i % 2 ? "pet" : "user", text: `lượt ${i}` }));
-  const prompt = buildPrompt(persona, history, "Tỉ giá USD?", new Date(2026, 9, 1, 22, 40));
+  const prompt = buildPrompt(persona, history, "Tỉ giá USD?", new Date(2026, 9, 1, 22, 40), vi);
   assert.match(prompt, /Bạn là Byte, chim cánh cụt coder/);
   assert.match(prompt, /Thứ Năm 01\/10\/2026, 22:40/);
   assert.ok(!prompt.includes(`lượt ${9 - HISTORY_TURNS}`));
   assert.ok(prompt.includes("lượt 9"));
   assert.ok(prompt.endsWith("Người dùng: Tỉ giá USD?\nByte:"));
-  const long = buildPrompt(persona, [{ from: "user", text: "x".repeat(10_000) }], "Hỏi", new Date());
+  const long = buildPrompt(persona, [{ from: "user", text: "x".repeat(10_000) }], "Hỏi", new Date(), vi);
   assert.ok(long.length <= PROMPT_MAX);
   assert.ok(long.endsWith("Byte:"));
-  assert.equal(personaOf("z-moi", "Mới").name, "Mới");
+  assert.deepEqual(personaOf("z-moi", "Mới", vi), { name: "Mới", about: "pet nhỏ dễ thương" });
+});
+
+test("câu gửi đi bằng tiếng Anh khi dùng tiếng Anh", () => {
+  const persona = personaOf("c-byte", "Byte", en);
+  const prompt = buildPrompt(persona, [{ from: "user", text: "hi" }], "USD rate?", new Date(2026, 9, 1, 22, 40), en);
+  assert.match(prompt, /^You are Byte, a coder penguin with round glasses/);
+  assert.match(prompt, /Reply in English/);
+  assert.match(prompt, /Thursday, October 1, 2026, 22:40/);
+  assert.ok(prompt.includes("Recent chat:\n\nUser: hi"));
+  assert.ok(prompt.endsWith("User: USD rate?\nByte:"));
 });
 
 test("câu gợi ý: bốc ngẫu nhiên không trùng, ngày gửi Rust theo giờ máy", () => {
@@ -82,5 +97,6 @@ test("câu gợi ý: bốc ngẫu nhiên không trùng, ngày gửi Rust theo gi
   assert.deepEqual(pickSuggestions(["a", "b", "c"], 2, () => 0.99), ["c", "b"]);
   const day = new Date(2026, 9, 1, 23, 50);
   assert.equal(dayKey(day), "2026-10-01");
-  assert.equal(dayText(day), "Thứ Năm 01/10/2026");
+  assert.equal(dayText(day, vi), "Thứ Năm 01/10/2026");
+  assert.equal(dayText(day, en), "Thursday, October 1, 2026");
 });

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type WheelEvent } from "react";
-import { MAX_PETS } from "@tinyworld/core";
+import { MAX_PETS, fill } from "@tinyworld/core";
+import { useMessages } from "../i18n";
 import { loadThumbnail, type PackInfo, type Thumbnail } from "../overlay/sprites";
 import { ChevronIcon, PawIcon } from "./icons";
 
@@ -26,6 +27,7 @@ interface Props {
  * tiêu đề, lăn chuột trên lưới cũng lật được. Mở ra ở đúng trang có nhân vật chọn đầu tiên.
  */
 export function PetPicker({ packs, value, onChange }: Props) {
+  const m = useMessages();
   const pages = Math.ceil(packs.length / PAGE_SIZE);
   const [page, setPage] = useState(() =>
     Math.max(0, Math.floor(packs.findIndex((pack) => pack.id === value[0]) / PAGE_SIZE)),
@@ -54,7 +56,7 @@ export function PetPicker({ packs, value, onChange }: Props) {
       <div className="field__head">
         <h2 className="field__label">
           <PawIcon />
-          Nhân vật
+          {m.picker.title}
           <span className="field__count">
             {value.length}/{MAX_PETS}
           </span>
@@ -62,22 +64,22 @@ export function PetPicker({ packs, value, onChange }: Props) {
         {pages > 1 && <Pager page={page} pages={pages} onChange={go} />}
       </div>
       {/* Tên đầy đủ của các nhân vật đang hiện, theo thứ tự chọn; dài quá thì xuống dòng, không cắt. */}
-      <ul className="chosen" aria-label="Đang hiện">
+      <ul className="chosen" aria-label={m.picker.chosen}>
         {chosen.map((pack) => (
           <li key={pack.id} className="chosen__name">
             {pack.name}
           </li>
         ))}
       </ul>
-      <div className="pets" role="group" aria-label={`Nhân vật, chọn tối đa ${MAX_PETS}`} onWheel={onWheel}>
+      <div className="pets" role="group" aria-label={fill(m.picker.group, { max: MAX_PETS })} onWheel={onWheel}>
         {packs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((pack) => {
           const active = value.includes(pack.id);
           const locked = !active && full;
           const only = active && value.length === 1;
           const hint = locked
-            ? `${pack.name}: đã đủ ${MAX_PETS} nhân vật, bỏ chọn bớt một con trước`
+            ? fill(m.picker.full, { name: pack.name, max: MAX_PETS })
             : only
-              ? `${pack.name}: cần ít nhất một nhân vật`
+              ? fill(m.picker.last, { name: pack.name })
               : pack.name;
           return (
             <button
@@ -104,12 +106,13 @@ export function PetPicker({ packs, value, onChange }: Props) {
 
 /** Mũi tên trước/sau và một chấm cho mỗi trang (chấm trang hiện tại dài hơn, bấm chấm để nhảy tới). */
 function Pager({ page, pages, onChange }: { page: number; pages: number; onChange: (page: number) => void }) {
+  const m = useMessages();
   return (
-    <nav className="pager" aria-label="Trang nhân vật">
+    <nav className="pager" aria-label={m.picker.pages}>
       <button
         type="button"
         className="pager__arrow"
-        aria-label="Trang trước"
+        aria-label={m.picker.previous}
         disabled={page === 0}
         onClick={() => onChange(page - 1)}
       >
@@ -120,7 +123,7 @@ function Pager({ page, pages, onChange }: { page: number; pages: number; onChang
           key={i}
           type="button"
           className={i === page ? "pager__dot pager__dot--active" : "pager__dot"}
-          aria-label={`Trang ${i + 1}`}
+          aria-label={fill(m.picker.page, { n: i + 1 })}
           aria-current={i === page ? "page" : undefined}
           onClick={() => onChange(i)}
         />
@@ -128,7 +131,7 @@ function Pager({ page, pages, onChange }: { page: number; pages: number; onChang
       <button
         type="button"
         className="pager__arrow"
-        aria-label="Trang sau"
+        aria-label={m.picker.next}
         disabled={page === pages - 1}
         onClick={() => onChange(page + 1)}
       >

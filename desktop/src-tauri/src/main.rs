@@ -12,6 +12,7 @@ mod error;
 mod events;
 mod fullscreen;
 mod gemini;
+mod i18n;
 mod overlay;
 mod preview;
 mod settings;

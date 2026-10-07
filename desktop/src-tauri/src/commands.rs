@@ -5,8 +5,8 @@ use crate::autostart;
 use crate::chat::{self, Chat, ChatTarget};
 use crate::cursor::CursorInterest;
 use crate::error::{AppError, AppResult};
-use crate::events;
 use crate::overlay::{self, Overlay, Rect, ScreenInfo};
+use crate::{events, i18n, tray};
 use crate::settings::{Settings, SettingsStore};
 use crate::storage::Storage;
 use crate::weather::{self, CityResult, Report, Weather};
@@ -71,8 +71,9 @@ pub fn get_settings(store: State<'_, SettingsStore>) -> Settings {
     store.get()
 }
 
-/// Lưu cài đặt rồi báo overlay áp dụng ngay. Trả về giá trị đã kẹp vào khoảng cho phép. Đổi thành
-/// phố thì thời tiết cũ không còn đúng: báo overlay dùng thời tiết giả lập trong lúc hỏi thời tiết mới.
+/// Lưu cài đặt rồi báo overlay (và khung chat đang mở) áp dụng ngay. Trả về giá trị đã kẹp vào khoảng cho
+/// phép. Đổi thành phố thì thời tiết cũ không còn đúng: báo overlay dùng thời tiết giả lập trong lúc hỏi thời
+/// tiết mới. Đổi ngôn ngữ thì đổi luôn chữ trong menu khay và tiêu đề khung chat.
 #[tauri::command]
 pub fn set_settings(
     app: AppHandle,
@@ -81,17 +82,22 @@ pub fn set_settings(
     activity: State<'_, Activity>,
     settings: Settings,
 ) -> AppResult<Settings> {
-    let before = store.get().city;
+    let before = store.get();
     let settings = store.set(settings)?;
     activity.configure(&settings);
+    if settings.lang != before.lang {
+        i18n::set(settings.lang);
+        tray::retitle(&app);
+        chat::retitle(&app);
+    }
     // Tắt chat thì đóng luôn cửa sổ chat đang mở.
     if !settings.chat {
         if let Some(window) = app.get_webview_window(chat::WINDOW_LABEL) {
             window.close()?;
         }
     }
-    app.emit_to(overlay::LABEL, events::SETTINGS_CHANGED, &settings)?;
-    if settings.city != before {
+    app.emit(events::SETTINGS_CHANGED, &settings)?;
+    if settings.city != before.city {
         app.emit(events::WEATHER_CHANGED, weather.current(settings.city.as_ref()))?;
         weather.city_changed();
     }
@@ -142,7 +148,7 @@ pub fn chat_target(chat: State<'_, Chat>) -> Option<ChatTarget> {
 #[tauri::command]
 pub async fn send_chat(chat: State<'_, Chat>, store: State<'_, SettingsStore>, prompt: String) -> AppResult<String> {
     if !store.get().chat {
-        return Err(AppError::bad_request("Chat với pet đang tắt trong Cài đặt."));
+        return Err(chat::chat_off());
     }
     chat.send(&prompt).await
 }

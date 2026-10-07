@@ -53,7 +53,7 @@ tray:
 |---|---|
 | **Tạm dừng** | Pet đứng yên, chuột đi xuyên qua pet; bấm lần nữa để pet sống tiếp |
 | **Ẩn / hiện pet** | Ẩn hẳn pet (app dừng vòng lặp, không tốn CPU) |
-| **Cài đặt…** | Tab **Pet**: chọn 1–3 nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chat với pet (mặc định tắt), chạy cùng Windows. Tab **Thế giới**: thành phố (thời tiết thật, giờ ở đó), bật tắt thời tiết quanh pet, nhãn nhiệt độ cạnh pet, câu nói cho vui, lịch sự kiện, con ma lúc 2 giờ sáng; mục Xem thử cho pet gặp ngay một kiểu thời tiết (nắng, trời quang, nhiều mây, mưa, giông, tuyết, sương mù, hoa rơi) và một mức nhiệt (nóng 36°C, lạnh 8°C) trong 30 giây, hoặc con ma; nút đang bật sáng lên kèm đếm ngược, bấm lại để tắt; sửa lịch sự kiện. Tab **Sức khoẻ** (mặc định tắt hết): giờ ngồi máy hôm nay và 7 ngày, nhắc nghỉ, nhắc uống nước, nhắc đi ngủ, spam Ctrl+S. Đổi là áp dụng ngay. Dưới tiêu đề là version đang chạy |
+| **Cài đặt…** | Tab **Pet**: chọn 1–3 nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chat với pet (mặc định tắt), ngôn ngữ (theo Windows, tiếng Việt, tiếng Anh), chạy cùng Windows. Tab **Thế giới**: thành phố (thời tiết thật, giờ ở đó), bật tắt thời tiết quanh pet, nhãn nhiệt độ cạnh pet, câu nói cho vui, lịch sự kiện, con ma lúc 2 giờ sáng; mục Xem thử cho pet gặp ngay một kiểu thời tiết (nắng, trời quang, nhiều mây, mưa, giông, tuyết, sương mù, hoa rơi) và một mức nhiệt (nóng 36°C, lạnh 8°C) trong 30 giây, hoặc con ma; nút đang bật sáng lên kèm đếm ngược, bấm lại để tắt; sửa lịch sự kiện. Tab **Sức khoẻ** (mặc định tắt hết): giờ ngồi máy hôm nay và 7 ngày, nhắc nghỉ, nhắc uống nước, nhắc đi ngủ, spam Ctrl+S. Đổi là áp dụng ngay. Dưới tiêu đề là version đang chạy |
 | **Thoát** | Lưu trạng thái pet rồi thoát |
 | **Mở DevTools** | Chỉ khi chạy dev (overlay để chuột đi xuyên nên không bấm F12 được) |
 
@@ -268,6 +268,12 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
   đăng nhập (`gemini.rs`: chọn Flash bằng header như trang, build label và mã model đọc từ trang `/app`,
   chat tạm). Không chạy server, không mở cổng. Câu trả lời markdown được đọc thành khối (`markdown.ts`)
   rồi vẽ bằng React, không dùng HTML thô.
+- **Ngôn ngữ** (`packages/core/src/i18n/`): mọi chữ người dùng thấy nằm trong `vi.json` và `en.json`, dùng
+  chung cho frontend (Cài đặt, khung chat, câu pet nói qua `packages/sim/src/lines.ts`) và Rust (`i18n.rs` nhúng
+  hai file lúc build: menu khay, tiêu đề khung chat, câu báo lỗi). Chỗ `{tên}` được điền lúc dùng. Thêm câu thì
+  thêm vào cả hai file; thiếu mục thì typecheck và test báo. Mặc định theo ngôn ngữ hiển thị của Windows (tiếng
+  Việt thì tiếng Việt, còn lại tiếng Anh); Rust tính ra `lang` gửi kèm cài đặt. Dịp có sẵn trong lịch sự kiện
+  mà chưa sửa tên hay câu nói (`preset`) thì hiện theo ngôn ngữ đang dùng.
 - **Cửa sổ cài đặt** (`src/settings/`, `src-tauri/src/settings.rs`): trang React riêng
   (`settings.html`), chỉ tạo khi bấm **Cài đặt…** và huỷ khi đóng để đỡ tốn RAM. Overlay không kéo
   React theo.
@@ -275,8 +281,8 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
   - `world.json`: vị trí, hướng, đang ngủ hay không của từng con (id là tên thư mục pack). Lưu 30 giây một lần (chỉ khi có thay
     đổi) và khi bấm **Thoát**; tắt máy ngang thì mất tối đa 30 giây.
   - `settings.json`: các nhân vật đang hiện (`pets`, tên thư mục pack theo thứ tự chọn), cỡ nhân vật,
-    tốc độ, thành phố (tên, toạ độ, múi giờ), các công tắc của tab Thế giới, lịch sự kiện (`occasions`,
-    tối đa 30 dịp). Sửa tay sai thì app kẹp về khoảng cho phép, bỏ tên trùng, quá 3 con thì bỏ bớt, bỏ dịp
+    tốc độ, ngôn ngữ (`language`: `auto`, `vi`, `en`), thành phố (tên, toạ độ, múi giờ), các công tắc của tab
+    Thế giới, lịch sự kiện (`occasions`, tối đa 30 dịp). Sửa tay sai thì app kẹp về khoảng cho phép, bỏ tên trùng, quá 3 con thì bỏ bớt, bỏ dịp
     có ngày không có thật; pack không còn thì bỏ qua, không còn pack nào thì dùng pack đầu tiên. File của
     bản cũ (`pet`, một nhân vật; chưa có các mục của tab Thế giới) vẫn đọc được.
   - `weather.json`: thời tiết lấy được gần nhất, mở app lúc mất mạng vẫn dùng được nếu chưa quá 3 giờ.
@@ -289,8 +295,8 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
 
 ```bash
 pnpm typecheck
-pnpm test                               # sprite pack, effect của Long, kéo thả/bấm đúp overlay, combo của Long, pet.json, FSM, World/Pet, nhóm pet, địa hình cửa sổ, con trỏ, đổi màn hình, world.json, thời tiết, âm lịch, lịch sự kiện
-cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên cạnh, đổi toạ độ giữa hai màn hình, danh sách cửa sổ, lưu trạng thái, cài đặt, lịch sự kiện, đọc kết quả Open-Meteo, giờ ngồi máy và lời nhắc, spam Ctrl+S, giới hạn gửi chat, vị trí cửa sổ chat, đọc trang và câu trả lời Gemini, câu gợi ý, registry
+pnpm test                               # sprite pack, effect của Long, kéo thả/bấm đúp overlay, combo của Long, pet.json, file chữ vi/en, FSM, World/Pet, nhóm pet, địa hình cửa sổ, con trỏ, đổi màn hình, world.json, thời tiết, âm lịch, lịch sự kiện
+cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên cạnh, đổi toạ độ giữa hai màn hình, danh sách cửa sổ, lưu trạng thái, cài đặt, ngôn ngữ, lịch sự kiện, đọc kết quả Open-Meteo, giờ ngồi máy và lời nhắc, spam Ctrl+S, giới hạn gửi chat, vị trí cửa sổ chat, đọc trang và câu trả lời Gemini, câu gợi ý, registry
 ```
 
 `pnpm test` gồm `pnpm test:sprites` (script chuẩn hoá sprite, `prepare-sprites.mjs --check` trên

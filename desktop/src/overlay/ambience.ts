@@ -10,17 +10,17 @@ import {
   type WeatherReport,
 } from "@tinyworld/core";
 import {
-  GHOST_LINE,
-  SAVE_SPAM_LINE,
-  WATER_LINE,
-  bedtimeLine,
-  breakLine,
-  NO_NETWORK,
-  NO_WEATHER,
   REPORT_MAX_AGE,
   activeOccasions,
+  bedtimeLine,
+  breakLine,
   daySky,
+  ghostLine,
+  noNetwork,
+  noWeather,
   nowText,
+  occasionText,
+  saveSpamLine,
   simulatedSky,
   skyLine,
   skyOf,
@@ -29,6 +29,7 @@ import {
   wallClock,
   warmthLine,
   warmthOf,
+  waterLine,
   weatherLine,
   type Pet,
   type PlaceWeather,
@@ -202,7 +203,7 @@ export class Ambience {
     this.failure = failure;
     this.announce = false;
     if (!this.settings.city) return;
-    this.notices.push({ text: failure.offline ? NO_NETWORK : NO_WEATHER });
+    this.notices.push({ text: failure.offline ? noNetwork() : noWeather() });
     this.refresh();
     this.host.wake();
   }
@@ -272,7 +273,7 @@ export class Ambience {
         // Đang ngủ thì giật mình tỉnh dậy, đang thức thì nhảy dựng lên.
         if (pet.state === "sleep") pet.wake();
         else pet.startle();
-        if (this.scared.size === 0) pet.say(GHOST_LINE);
+        if (this.scared.size === 0) pet.say(ghostLine());
         this.scared.add(pet);
       }
     }
@@ -351,12 +352,12 @@ export class Ambience {
   /** Rust nhắc (activity.rs): nhắc nghỉ, uống nước, nhắc khuya, spam Ctrl+S. Không qua giới hạn câu nói cho vui. */
   remind(reminder: Reminder): void {
     if (reminder.kind === "saveSpam") {
-      this.notices.push({ text: SAVE_SPAM_LINE, urgent: true });
+      this.notices.push({ text: saveSpamLine(), urgent: true });
     } else {
       const now = new Date();
       const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
       const text =
-        reminder.kind === "break" ? breakLine(reminder.minutes) : reminder.kind === "water" ? WATER_LINE : bedtimeLine(time);
+        reminder.kind === "break" ? breakLine(reminder.minutes) : reminder.kind === "water" ? waterLine() : bedtimeLine(time);
       this.notices.push({ text, seconds: REMINDER_SECONDS, urgent: true });
     }
     this.host.wake();
@@ -422,9 +423,11 @@ export class Ambience {
     const active = this.settings.events ? activeOccasions(this.settings.occasions, wall) : [];
     for (const occasion of active) {
       const key = `occasion:${occasion.name}`;
-      if (!occasion.message || this.said.has(day, key) || this.queued.has(`${day}/${key}`)) continue;
+      // Dịp có sẵn nói theo ngôn ngữ đang dùng; `name` lưu trong file không đổi theo ngôn ngữ nên khoá vẫn đúng.
+      const { message } = occasionText(occasion);
+      if (!message || this.said.has(day, key) || this.queued.has(`${day}/${key}`)) continue;
       this.queued.add(`${day}/${key}`);
-      this.notices.push({ text: occasion.message, day, key });
+      this.notices.push({ text: message, day, key });
       changed = true;
     }
 
@@ -479,7 +482,7 @@ export class Ambience {
     const place = city.name.split(",")[0].trim() || city.name;
     const report = this.freshReport(new Date());
     if (!report) {
-      const problem = this.failure ? (this.failure.offline ? NO_NETWORK : NO_WEATHER) : undefined;
+      const problem = this.failure ? (this.failure.offline ? noNetwork() : noWeather()) : undefined;
       return { place, sky: null, problem };
     }
     return { place, sky: daySky(skyOf(report.code), wall.getMonth(), report.isDay), temperature: report.temperature };

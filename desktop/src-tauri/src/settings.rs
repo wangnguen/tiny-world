@@ -3,6 +3,7 @@
 
 use crate::app_icon;
 use crate::error::AppResult;
+use crate::i18n::{Lang, Language};
 use crate::storage::write_atomic;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -26,6 +27,7 @@ const MAX_OCCASIONS: usize = 30;
 const OCCASION_NAME_MAX_LEN: usize = 40;
 const OCCASION_MESSAGE_MAX_LEN: usize = 80;
 const OCCASION_DAYS: (u8, u8) = (1, 10);
+const PRESET_MAX_LEN: usize = 24;
 /// Nhắc nghỉ sau chừng này phút ngồi liền (mặc định 50).
 const BREAK_MINUTES: (u16, u16) = (15, 120);
 /// Nhắc uống nước sau chừng này phút ngồi máy (mặc định 60).
@@ -85,6 +87,10 @@ pub struct Occasion {
     pub message: String,
     #[serde(default = "enabled")]
     pub enabled: bool,
+    /// Dịp có sẵn (`presets`) mà người dùng chưa sửa tên hay câu nói: tên và câu hiện theo ngôn ngữ đang
+    /// dùng (mục `occasions` trong file chữ), `name`/`message` giữ bản tiếng Việt. Sửa rồi thì bỏ.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preset: Option<String>,
 }
 
 fn one_day() -> u8 {
@@ -105,21 +111,52 @@ impl Occasion {
             days,
             message: message.into(),
             enabled: true,
+            preset: None,
         }
     }
 
-    /// Ngày lễ Việt Nam có sẵn trong lịch lúc mới cài; người dùng tắt, sửa, xoá hay thêm dịp riêng được.
+    /// Ngày lễ Việt Nam có sẵn trong lịch lúc mới cài; người dùng tắt, sửa, xoá hay thêm dịp riêng được. Tên
+    /// và câu nói lấy ở mục `occasions.<preset>` của file chữ: lưu bản tiếng Việt (như các bản trước), hiện
+    /// theo ngôn ngữ đang dùng.
     pub fn presets() -> Vec<Self> {
-        vec![
-            Self::new("Tết Nguyên Đán", 1, 1, true, 5, "Chúc mừng năm mới :)))"),
-            Self::new("Tết Dương lịch", 1, 1, false, 1, "Năm mới vui vẻ nha :)))"),
-            Self::new("Giỗ Tổ Hùng Vương", 10, 3, true, 1, "Hôm nay Giỗ Tổ Hùng Vương đó :)"),
-            Self::new("Ngày Thống nhất", 30, 4, false, 1, "30/4 rồi, nghỉ lễ chưa :)))"),
-            Self::new("Quốc tế Lao động", 1, 5, false, 1, "1/5 nghỉ ngơi chút đi :)))"),
-            Self::new("Quốc khánh", 2, 9, false, 1, "Mừng Quốc khánh 2/9 :)"),
-            Self::new("Trung thu", 15, 8, true, 1, "Trung thu ăn bánh chưa :)))"),
-            Self::new("Giáng sinh", 24, 12, false, 2, "Giáng sinh vui vẻ :)))"),
+        [
+            ("tet", 1, 1, true, 5),
+            ("new-year", 1, 1, false, 1),
+            ("hung-kings", 10, 3, true, 1),
+            ("reunification", 30, 4, false, 1),
+            ("labour", 1, 5, false, 1),
+            ("national-day", 2, 9, false, 1),
+            ("mid-autumn", 15, 8, true, 1),
+            ("christmas", 24, 12, false, 2),
         ]
+        .into_iter()
+        .map(|(id, day, month, lunar, days)| {
+            let name = Lang::Vi.t(&format!("occasions.{id}.name"));
+            let message = Lang::Vi.t(&format!("occasions.{id}.message"));
+            Self {
+                preset: Some(id.into()),
+                ..Self::new(&name, day, month, lunar, days, &message)
+            }
+        })
+        .collect()
+    }
+
+    /// Mã dịp có sẵn: giữ nếu hợp lệ; file của bản trước chưa có mã thì nhận ra dịp có sẵn chưa sửa (đúng tên,
+    /// câu nói, ngày) để dịp đó cũng đổi theo ngôn ngữ.
+    fn preset_id(&self) -> Option<String> {
+        if let Some(id) = &self.preset {
+            let valid = !id.is_empty()
+                && id.len() <= PRESET_MAX_LEN
+                && id.chars().all(|c| c.is_ascii_lowercase() || c == '-');
+            return valid.then(|| id.clone());
+        }
+        Self::presets()
+            .into_iter()
+            .find(|p| {
+                (p.name.as_str(), p.message.as_str(), p.day, p.month, p.lunar)
+                    == (self.name.as_str(), self.message.as_str(), self.day, self.month, self.lunar)
+            })
+            .and_then(|p| p.preset)
     }
 
     /// Ngày có thật (âm lịch tối đa 30 ngày), tên không rỗng; cắt bớt chữ quá dài, kẹp số ngày kéo dài.
@@ -139,6 +176,7 @@ impl Occasion {
             && (1..=12).contains(&self.month)
             && (1..=max_day).contains(&self.day);
         valid.then(|| Self {
+            preset: self.preset_id(),
             name,
             message: self.message.trim().chars().take(OCCASION_MESSAGE_MAX_LEN).collect(),
             days: self.days.clamp(OCCASION_DAYS.0, OCCASION_DAYS.1),
@@ -192,6 +230,12 @@ pub struct Settings {
     pub save_spam: bool,
     /// Phase 6, mặc định tắt: click chuột phải vào pet để chat (gửi câu hỏi tới Gemini, chat.rs).
     pub chat: bool,
+    /// Ngôn ngữ chọn trong Cài đặt; mặc định theo Windows (i18n.rs).
+    pub language: Language,
+    /// Ngôn ngữ đang dùng, tính từ `language` lúc kẹp lại (`sanitized`) để frontend khỏi tự đoán. Chỉ để gửi
+    /// đi: đọc file hay nhận từ frontend thì bỏ qua.
+    #[serde(skip_deserializing)]
+    pub lang: Lang,
 }
 
 impl Default for Settings {
@@ -217,6 +261,8 @@ impl Default for Settings {
             bedtime: 23 * 60,
             save_spam: false,
             chat: false,
+            language: Language::Auto,
+            lang: Language::Auto.resolve(),
         }
     }
 }
@@ -265,6 +311,7 @@ impl Settings {
             } else {
                 default.bedtime
             },
+            lang: self.language.resolve(),
             ..self
         }
     }
@@ -588,5 +635,53 @@ mod tests {
         for id in bad {
             assert!(!valid(id), "{id}");
         }
+    }
+
+    #[test]
+    fn ngon_ngu_mac_dinh_theo_windows_chon_tay_thi_theo_lua_chon() {
+        let settings: Settings = serde_json::from_str(r#"{ "pet": "a-momo" }"#).unwrap();
+        let settings = settings.sanitized();
+        assert_eq!(settings.language, Language::Auto);
+        assert_eq!(settings.lang, Language::Auto.resolve());
+        // `lang` chỉ để gửi đi: frontend gửi lại giá trị cũ thì vẫn tính theo `language`.
+        let english: Settings = serde_json::from_str(r#"{ "language": "en", "lang": "vi" }"#).unwrap();
+        assert_eq!(english.sanitized().lang, Lang::En);
+        let odd: Settings = serde_json::from_str(r#"{ "language": "klingon", "speed": 1.5 }"#).unwrap();
+        assert_eq!((odd.language, odd.speed), (Language::Auto, 1.5));
+    }
+
+    #[test]
+    fn dip_co_san_chua_sua_doi_theo_ngon_ngu_sua_roi_thi_thoi() {
+        let sanitized = |occasions: Vec<Occasion>| {
+            Settings {
+                occasions,
+                ..Settings::default()
+            }
+            .sanitized()
+            .occasions
+        };
+        // File bản trước: dịp có sẵn chưa có mã thì nhận ra theo tên, câu nói, ngày.
+        let old: Vec<Occasion> = Occasion::presets()
+            .into_iter()
+            .map(|o| Occasion { preset: None, ..o })
+            .collect();
+        assert_eq!(sanitized(old), Occasion::presets());
+        // Đã sửa câu nói, hay dịp riêng: không có mã.
+        let edited = Occasion {
+            message: "Tết rồi :)))".into(),
+            preset: None,
+            ..Occasion::presets()[0].clone()
+        };
+        assert_eq!(sanitized(vec![edited])[0].preset, None);
+        assert_eq!(sanitized(vec![Occasion::new("Sinh nhật", 1, 2, false, 1, "")])[0].preset, None);
+        // Mã lạ thì bỏ.
+        let odd = Occasion {
+            preset: Some("../x".into()),
+            ..Occasion::new("A", 1, 1, false, 1, "")
+        };
+        assert_eq!(sanitized(vec![odd])[0].preset, None);
+        // Dịp riêng không ghi `preset` ra file.
+        let json = serde_json::to_string(&Occasion::new("A", 1, 1, false, 1, "")).unwrap();
+        assert!(!json.contains("preset"));
     }
 }

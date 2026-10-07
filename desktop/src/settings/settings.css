@@ -1308,3 +1308,13 @@ h2 {
 .icon--chat {
   stroke: #9cc0ff;
 }
+
+.icon--globe {
+  stroke: #7fd8be;
+}
+
+/* Nút chữ dài (Ngôn ngữ: "Same as Windows") nhỏ chữ lại cho vừa ô. */
+.choices--compact .choice {
+  padding: 0 6px;
+  font-size: 14px;
+}

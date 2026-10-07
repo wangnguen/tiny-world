@@ -8,6 +8,7 @@
 
 use crate::error::{AppError, AppResult};
 use crate::events;
+use crate::i18n::{self, Lang};
 use crate::settings::{City, SettingsStore};
 use crate::storage::write_atomic;
 use serde::{Deserialize, Serialize};
@@ -134,7 +135,7 @@ fn client() -> AppResult<reqwest::Client> {
         .timeout(TIMEOUT)
         .user_agent(concat!("TinyWorld/", env!("CARGO_PKG_VERSION")))
         .build()
-        .map_err(|e| AppError::internal(format!("Không tạo được HTTP client: {e}")))
+        .map_err(|e| AppError::internal(i18n::tf("errors.httpClient", &[("error", &e)])))
 }
 
 /// Chờ trước lần hỏi tiếp theo: lần trước lỗi thì gấp đôi lần chờ trước, tối đa `REFRESH`.
@@ -228,7 +229,7 @@ async fn fetch(client: &reqwest::Client, city: &City) -> AppResult<Report> {
     parse_forecast(&body, city, now_secs())
 }
 
-/// Tìm thành phố theo tên (command `search_city`), tên tiếng Việt nếu có.
+/// Tìm thành phố theo tên (command `search_city`), tên theo ngôn ngữ đang dùng nếu có.
 pub async fn search(query: &str) -> AppResult<Vec<CityResult>> {
     let query = query.trim();
     let len = query.chars().count();
@@ -237,7 +238,7 @@ pub async fn search(query: &str) -> AppResult<Vec<CityResult>> {
     }
     let body = client()?
         .get(GEOCODING_URL)
-        .query(&[("name", query), ("count", SEARCH_COUNT), ("language", "vi"), ("format", "json")])
+        .query(&[("name", query), ("count", SEARCH_COUNT), ("language", language()), ("format", "json")])
         .send()
         .await
         .and_then(reqwest::Response::error_for_status)
@@ -248,12 +249,20 @@ pub async fn search(query: &str) -> AppResult<Vec<CityResult>> {
     parse_search(&body)
 }
 
+/// Ngôn ngữ của tên thành phố trong kết quả tìm.
+fn language() -> &'static str {
+    match i18n::current() {
+        Lang::Vi => "vi",
+        Lang::En => "en",
+    }
+}
+
 /// Lỗi mạng: mất mạng, hết giờ chờ, máy chủ trả lỗi.
 fn network_error(e: reqwest::Error) -> AppError {
     if e.is_connect() || e.is_timeout() {
-        AppError::offline("Mất mạng hoặc máy chủ thời tiết không trả lời.")
+        AppError::offline(i18n::t("errors.weatherOffline"))
     } else {
-        AppError::internal(format!("Lỗi khi hỏi thời tiết: {e}"))
+        AppError::internal(i18n::tf("errors.weatherFailed", &[("error", &e)]))
     }
 }
 
@@ -272,7 +281,7 @@ struct CurrentBody {
 
 fn parse_forecast(body: &str, city: &City, fetched_at: u64) -> AppResult<Report> {
     let body: ForecastBody = serde_json::from_str(body)
-        .map_err(|e| AppError::internal(format!("Open-Meteo trả về dữ liệu lạ: {e}")))?;
+        .map_err(|e| AppError::internal(i18n::tf("errors.weatherOdd", &[("error", &e)])))?;
     let current = body.current;
     Ok(Report {
         latitude: city.latitude,
@@ -306,7 +315,7 @@ struct SearchItem {
 
 fn parse_search(body: &str) -> AppResult<Vec<CityResult>> {
     let body: SearchBody = serde_json::from_str(body)
-        .map_err(|e| AppError::internal(format!("Open-Meteo trả về dữ liệu lạ: {e}")))?;
+        .map_err(|e| AppError::internal(i18n::tf("errors.weatherOdd", &[("error", &e)])))?;
     Ok(body
         .results
         .into_iter()

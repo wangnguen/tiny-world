@@ -1,6 +1,6 @@
 import type { AnimationName, Point, Rect, Remap } from "@tinyworld/core";
 import { StateMachine, type StateTable } from "./fsm";
-import { GREETINGS } from "./lines";
+import { greetings } from "./lines";
 import { clamp } from "./math";
 import {
   buried,
@@ -874,7 +874,7 @@ function meet(pet: Pet, other: Pet): void {
   pet.pause(facing, time);
   // Con kia đứng lâu hơn một chút để còn kịp được rủ đi cùng (`nextActivity` của con này).
   other.pause(facing === 1 ? -1 : 1, time + 1);
-  if (rng.chance(TUNING.meetChatChance)) pet.env.chat(pet, rng.pick(GREETINGS));
+  if (rng.chance(TUNING.meetChatChance)) pet.env.chat(pet, rng.pick(greetings()));
   if (rng.chance(TUNING.strollChance)) pet.buddy = other;
 }
 
