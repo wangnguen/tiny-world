@@ -1,311 +1,343 @@
 # TinyWorld
 
-Pet sống trên desktop Windows: app **Tauri v2 + Vite + TypeScript**, backend Rust. Nhân vật được vẽ
-trên một cửa sổ overlay trong suốt, luôn nằm trên cùng, chuột đi xuyên qua trừ khi trỏ vào pet.
-Lộ trình và các hướng đã chốt: [PLAN.md](PLAN.md).
+Desktop pets for Windows: a **Tauri v2 + Vite + TypeScript** app with a Rust backend. The pets are drawn
+on a transparent overlay window that always stays on top and lets the mouse pass through except where it
+points at a pet. Roadmap and settled decisions: [PLAN.md](PLAN.md).
+
+The other docs in this repo (PLAN.md, CREATE_PET.md, AGENTS.md, the READMEs under `assets/` and
+`website/`) and the code comments are in Vietnamese.
 
 ```
 desktop-pet/
 ├── assets/
-│   ├── icon.png          # logo gốc của app
-│   ├── sprites/          # sprite pack chạy trong app: <pack>/pet.json + WebP
-│   └── sprite-sources/   # atlas, prompt gốc của các nhân vật và trang xem animation
+│   ├── icon.png          # the app's source logo
+│   ├── sprites/          # sprite packs the app runs: <pack>/pet.json + WebP
+│   └── sprite-sources/   # source atlases and prompts for each character, plus an animation viewer
 ├── packages/
-│   ├── core/             # types dùng chung Rust <-> TS, tên event, đọc/kiểm tra pet.json
-│   └── sim/              # engine mô phỏng TS thuần: FSM, bước thời gian cố định, RNG có seed
+│   ├── core/             # types shared by Rust and TS, event names, reading/validating pet.json
+│   └── sim/              # pure TS simulation engine: FSM, fixed time step, seeded RNG
 ├── desktop/              # Tauri v2
-│   ├── src/              # overlay (vẽ pet bằng canvas, TS thuần) và src/settings/ (cửa sổ cài đặt, React)
-│   └── src-tauri/        # Rust: overlay, click-through, đọc con trỏ, tray, cài đặt, lưu trạng thái
-└── scripts/              # chuẩn hoá sprite từ atlas nguồn, tạo icon
+│   ├── src/              # overlay (draws pets on a canvas, plain TS) and src/settings/ (settings window, React)
+│   └── src-tauri/        # Rust: overlay, click-through, cursor tracking, tray, settings, saved state
+└── scripts/              # normalize sprites from source atlases, generate icons
 ```
 
-## Nhân vật
+## Characters
 
-22 nhân vật tự vẽ cho dự án. Chọn trong **Cài đặt… → Nhân vật**, bấm một ô để thêm hoặc bớt nhân vật
-đó: tối đa 3 con cùng sống trên màn hình, luôn còn ít nhất một con (16 nhân vật mỗi trang, lật bằng
-mũi tên, chấm trang hoặc lăn chuột). Gồm Momo (mặc định), Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn,
-Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp, Frobu, Long, Byte và Patch. Nhân vật nào cũng đủ 12
-animation: 9 của Phase 1 cộng leo, ngồi mép, nhảy. Xem chuyển động bằng [sprite studio](assets/sprite-sources/index.html) (mở
-thẳng bằng trình duyệt), thiết kế từng nhân vật ở [assets/sprite-sources/README.md](assets/sprite-sources/README.md).
+22 original characters drawn for the project. Pick them in **Settings… → Pets** and click a tile to add or
+remove that character: up to 3 can live on the screen at once, and at least one always stays (16
+characters per page; flip pages with the arrows, the page dots or the mouse wheel). They are Momo (the
+default), Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp,
+Frobu, Long, Byte and Patch. Every character has all 12 animations: the 9 from Phase 1 plus climb, perch
+and jump. Watch them move in the [sprite studio](assets/sprite-sources/index.html) (open it straight in a
+browser); each character's design is in [assets/sprite-sources/README.md](assets/sprite-sources/README.md).
 
-Định dạng `pet.json`: [assets/README.md](assets/README.md). Hướng dẫn đầy đủ để tạo và thêm nhân vật mới:
-[CREATE_PET.md](CREATE_PET.md).
+The `pet.json` format: [assets/README.md](assets/README.md). The full guide to creating and adding a new
+character: [CREATE_PET.md](CREATE_PET.md).
 
-## Yêu cầu
+## Requirements
 
-- Node.js 22+, pnpm 11+ (pnpm 10 tự chuyển sang bản ghi trong `packageManager`)
-- Rust (toolchain `x86_64-pc-windows-msvc`) và Visual Studio Build Tools (C++). Toolchain
-  `x86_64-pc-windows-gnu` cũng build được nhưng linker báo cảnh báo gộp manifest; CI dùng MSVC.
-- WebView2 Runtime (có sẵn trên Windows 10/11 bản mới)
+- Node.js 22+, pnpm 11+ (pnpm 10 switches itself to the version in `packageManager`)
+- Rust (`x86_64-pc-windows-msvc` toolchain) and Visual Studio Build Tools (C++). The
+  `x86_64-pc-windows-gnu` toolchain also builds, but the linker warns about merging manifests; CI uses MSVC.
+- WebView2 Runtime (preinstalled on recent Windows 10/11)
 
-## Chạy dev
+## Running in dev
 
 ```bash
 pnpm install
-pnpm dev:desktop   # lần đầu compile Rust mất vài phút
+pnpm dev:desktop   # the first Rust compile takes a few minutes
 ```
 
-App không có cửa sổ trên taskbar: lần đầu pet xuất hiện ở góc phải dưới, đứng trên mép taskbar; các
-lần sau pet ở đúng chỗ lúc tắt app (đang ngủ thì vẫn ngủ). Điều khiển bằng icon **TinyWorld** ở system
-tray:
+The app has no window on the taskbar. The first time, the pet appears in the bottom-right corner, standing
+on the edge of the taskbar; after that it comes back exactly where it was when the app closed (still
+asleep if it was sleeping). Control it with the **TinyWorld** icon in the system tray:
 
-| Mục | Tác dụng |
+| Item | What it does |
 |---|---|
-| **Tạm dừng** | Pet đứng yên, chuột đi xuyên qua pet; bấm lần nữa để pet sống tiếp |
-| **Ẩn / hiện pet** | Ẩn hẳn pet (app dừng vòng lặp, không tốn CPU) |
-| **Cài đặt…** | Tab **Pet**: chọn 1–3 nhân vật, cỡ nhân vật (50–200%), tốc độ đi lại, chat với pet (mặc định tắt), ngôn ngữ (theo Windows, tiếng Việt, tiếng Anh), chạy cùng Windows. Tab **Thế giới**: thành phố (thời tiết thật, giờ ở đó), bật tắt thời tiết quanh pet, nhãn nhiệt độ cạnh pet, câu nói cho vui, lịch sự kiện, con ma lúc 2 giờ sáng; mục Xem thử cho pet gặp ngay một kiểu thời tiết (nắng, trời quang, nhiều mây, mưa, giông, tuyết, sương mù, hoa rơi) và một mức nhiệt (nóng 36°C, lạnh 8°C) trong 30 giây, hoặc con ma; nút đang bật sáng lên kèm đếm ngược, bấm lại để tắt; sửa lịch sự kiện. Tab **Sức khoẻ** (mặc định tắt hết): giờ ngồi máy hôm nay và 7 ngày, nhắc nghỉ, nhắc uống nước, nhắc đi ngủ, spam Ctrl+S. Đổi là áp dụng ngay. Dưới tiêu đề là version đang chạy |
-| **Thoát** | Lưu trạng thái pet rồi thoát |
-| **Mở DevTools** | Chỉ khi chạy dev (overlay để chuột đi xuyên nên không bấm F12 được) |
+| **Pause** | Pets stand still and the mouse passes through them; click again to bring them back to life |
+| **Show / hide pets** | Hides the pets completely (the app stops its loop and uses no CPU) |
+| **Settings…** | **Pets** tab: pick 1–3 characters, pet size (50–200%), walking speed, chat with pets (off by default), language (same as Windows, Vietnamese, English), start with Windows. **World** tab: city (real weather, local time there), toggles for weather around pets, the temperature label next to pets, chit-chat, the event calendar and the ghost at 2 a.m.; the Preview section lets pets meet a kind of weather right away (sunny, clear, cloudy, rain, storm, snow, fog, petals) and a temperature (hot 36°C, cold 8°C) for 30 seconds, or the ghost; the active button lights up with a countdown, click it again to stop; edit the event calendar. **Health** tab (all off by default): screen time today and over 7 days, break reminders, water reminders, bedtime reminders, Ctrl+S spam. Changes apply right away. The running version is shown under the title |
+| **Quit** | Saves the pets' state, then quits |
+| **DevTools** | Dev only (the overlay lets the mouse pass through, so F12 can't reach it) |
 
-Khi chạy dev, `window.__tinyworld` trong DevTools cho xem và chỉnh pet (`pet` là con đầu tiên,
-`members` là cả nhóm), ví dụ `__tinyworld.world.pets.forEach((p) => (p.sinceInteraction = 1e6))` để
-cả nhóm đi ngủ ngay. Bật **Chạy cùng Windows** trong lúc chạy dev
-sẽ ghi đường dẫn exe bản debug, nhớ tắt lại.
+While running in dev, `window.__tinyworld` in DevTools lets you inspect and tweak the pets (`pet` is the
+first one, `members` the whole group), e.g. `__tinyworld.world.pets.forEach((p) => (p.sinceInteraction = 1e6))`
+sends the whole group to sleep right away. Turning on **Start with Windows** while running in dev records
+the path of the debug exe, so remember to turn it off again.
 
-Tương tác với pet:
+Interacting with the pets:
 
-| Thao tác | Pet |
+| Action | Pet |
 |---|---|
-| Để yên | Tự đứng, đi, chạy; chạm mép màn hình thì quay đầu. Chỉ có một con thì mép giáp màn hình khác có lúc đi sang bên đó; từ 2 con trở lên thì cả nhóm ở yên một màn hình. Các con đi xuyên qua nhau |
-| Có cửa sổ gần | Leo cạnh cửa sổ lên mép trên (cửa sổ lơ lửng thì nhảy lên bám cạnh rồi leo, đáy cao hơn chỗ đứng quá khoảng 270 px thì chịu), đi lại trên đó, ngồi ở mép, nhảy sang cửa sổ khác hoặc nhảy, leo xuống |
-| Kéo một cửa sổ khác lại sát pet | Pet chạy trốn về phía ngược lại; đang ở trên cửa sổ mà hết đường thì xuống luôn, dưới đất bị dồn vào mép màn hình thì giật mình nhảy lên. Phóng to hay đổi cỡ cửa sổ không tính |
-| Đóng một cửa sổ ở gần (trong khoảng 400 px) | Pet quay về phía đó nhảy cẫng lên hai cái ăn mừng (không phải lần nào cũng vậy, 15 giây mới ăn mừng một lần) |
-| Kéo cửa sổ pet đang đứng | Pet đi theo cửa sổ; kéo lên sát mép trên màn hình thì hết chỗ đứng, pet rơi |
-| Thu nhỏ hoặc đóng cửa sổ đó | Pet rơi xuống cửa sổ bên dưới hoặc taskbar |
-| Cửa sổ khác đè lên | Pet bị che mất phần nằm dưới cửa sổ đó (click vào đó là click cửa sổ), lát sau đi ra chỗ không bị che. Bị che hết (ví dụ bấm vào cửa sổ phóng to nằm dưới) thì rơi ngay ra trước mọi cửa sổ, đang leo thì buông tay |
-| Con trỏ ở gần | Đứng yên thì quay về phía con trỏ |
-| Click | Nhảy lên một cái rồi đi hoặc chạy tiếp; đang ngủ thì thức dậy; đang leo thì tuột tay. Click dồn dập chỉ nhảy một lần |
-| Kéo lên rồi thả | Rơi xuống mép cửa sổ bên dưới hoặc taskbar, nảy nhẹ khi chạm đất; thả từ cao thì choáng: lảo đảo, sao bay quanh đầu |
-| Kéo rồi vung chuột và buông | Bị ném bay theo quán tính, đập tường thì bật lại; ném về phía màn hình khác thì bay sang bên đó |
-| Kéo pet sang màn hình khác | Pet sang màn hình đó theo con trỏ |
-| Có nhiều con, ném hoặc kéo một con sang màn hình khác | Các con còn lại chạy theo, vào từ mép phía màn hình cũ: con ở gần mép vào trước, con ở xa vào sau; con đang ngủ thì nằm luôn ở sát mép đó |
-| Bấm vào chỗ hai con chồng lên nhau | Con nằm trên được bấm; con vừa bị bấm, bị kéo nằm lên trên các con khác |
-| Bấm đúp | Con đó nói giờ, thứ, ngày, ngày âm lịch, và thời tiết ở thành phố đã chọn (mất mạng thì "Không có mạng :))") |
-| Click chuột phải | Mở cửa sổ chat với con đó ngay cạnh nó (bật **Chat với pet** trong Cài đặt trước); con đó đứng yên chờ tới khi đóng khung chat. Hỏi nhanh tỉ giá, tin tức, đổi đơn vị... qua Google Gemini, không cần tài khoản; câu gợi ý đổi theo ngày. Link trong câu trả lời bấm được, có nút Chép. Gửi dồn dập thì app chặn trước (3 giây một câu, 30 câu mỗi giờ); mất mạng thì ghi "Mất mạng" |
-| Hai con gặp nhau | Dừng lại quay mặt vào nhau, có lúc chào một câu hoặc đi cùng nhau một đoạn; đi ngủ thì nằm cạnh nhau |
-| 3 phút không đụng tới con nào | Cả nhóm xuống taskbar (đang ở trên cửa sổ thì nhảy hoặc leo xuống) rồi lần lượt ngủ: click hay kéo con nào cũng tính chung cho cả nhóm. Click bất kỳ đâu trên màn hình hoặc kéo pet là cả nhóm dậy |
-| Giữ **Ctrl** khi click | Click xuyên qua pet xuống app bên dưới |
-| Giữ **Shift** khi click Long | Long bật aura lửa vài giây. Có con khác thì Long biến hình, rồi lần lượt tốc biến tới cạnh từng con quật đuôi một cái; con bị trúng giật mình rồi biến mất 5 giây, hiện lại đúng chỗ cũ. Con đang bị kéo, đang leo, nhảy hay đang chat thì Long chờ một lúc rồi bỏ qua; nhấc Long lên giữa chừng thì thôi. Shift + click con khác tính như click thường |
+| Leave it alone | Stands, walks and runs on its own; turns around at the screen edge. With a single pet, an edge that borders another screen sometimes leads it over there; with 2 or more, the group stays on one screen. Pets walk through each other |
+| A window nearby | Climbs the side of the window up to its top edge (for a floating window it jumps up to grab the side, then climbs; it gives up if the bottom is more than about 270 px above where it stands), walks along it, perches on the edge, jumps to another window, or jumps or climbs down |
+| Drag another window right up to a pet | The pet runs away the other way; on a window with nowhere left to go it gets down, and on the ground when cornered against the screen edge it jumps in fright. Maximizing or resizing a window doesn't count |
+| Close a window nearby (within about 400 px) | The pet turns toward it and hops twice to celebrate (not every time; at most once every 15 seconds) |
+| Drag the window a pet is standing on | The pet rides along; drag it up against the top of the screen and there's no room left to stand, so the pet falls |
+| Minimize or close that window | The pet falls onto the window below or the taskbar |
+| Another window covers it | The part of the pet under that window is hidden (clicks there go to the window), and after a while it walks out to where it isn't covered. When it's fully covered (e.g. you click a maximized window underneath) it drops in front of every window right away, letting go if it was climbing |
+| Cursor nearby | When standing still, it turns toward the cursor |
+| Click | Hops once, then keeps walking or running; wakes up if asleep; lets go if climbing. Rapid clicks only make it hop once |
+| Pick it up and drop it | Falls to the edge of the window below or the taskbar and bounces a little on landing; dropped from high up it gets dizzy: wobbling, with stars circling its head |
+| Drag, fling the mouse and let go | Gets thrown with momentum and bounces off walls; thrown toward another screen it flies over there |
+| Drag a pet to another screen | The pet follows the cursor onto that screen |
+| With several pets, throw or drag one to another screen | The others run after it, coming in from the edge facing the old screen: the closest to that edge first, the farthest last; sleeping ones lie down right by that edge |
+| Click where two pets overlap | The one on top gets the click; the one just clicked or dragged goes on top of the others |
+| Double-click | That pet says the time, weekday, date, lunar date and the weather in the chosen city ("No internet :))" when offline) |
+| Right-click | Opens a chat window with that pet right next to it (turn on **Chat with pets** in Settings first); the pet stands still and waits until the chat closes. Ask quick questions about exchange rates, news, unit conversions... through Google Gemini, no account needed; the suggested questions change every day. Links in answers are clickable, and there's a Copy button. The app stops you from sending too fast (one message every 3 seconds, 30 an hour); when offline it shows "No internet" |
+| Two pets meet | They stop and face each other, sometimes say hello or walk together for a while; at bedtime they sleep side by side |
+| No pet touched for 3 minutes | The whole group comes down to the taskbar (jumping or climbing down from windows) and falls asleep one by one: clicking or dragging any pet counts for the whole group. Clicking anywhere on the screen or dragging a pet wakes everyone up |
+| Hold **Ctrl** while clicking | The click goes through the pet to the app underneath |
+| Hold **Shift** while clicking Long | Long lights up a fire aura for a few seconds. With other pets around, Long transforms, then blinks next to each one in turn and whips it once with its tail; a pet that gets hit jumps in fright, vanishes for 5 seconds and reappears in the same spot. If a pet is being dragged, climbing, jumping or chatting, Long waits a while and then skips it; picking Long up midway stops the combo. Shift + click on any other pet counts as a normal click |
 
-Đổi độ phân giải, tỉ lệ DPI, chỗ đặt hay cỡ taskbar, cắm hoặc rút màn hình trong lúc app đang chạy thì
-overlay tự khớp lại trong khoảng một giây: pet đứng lên mặt đất mới, pet đang đứng trên cửa sổ thì
-vẫn đứng đúng mép cửa sổ đó, màn hình pet đang ở bị rút ra thì pet về màn hình chính. Taskbar để tự
-ẩn thì lúc taskbar trồi lên pet đứng lên trên nó, taskbar thụt xuống thì pet rơi xuống đáy màn hình.
-App chỉ hỗ trợ tỉ lệ 100%.
+If you change the resolution, DPI scale, taskbar position or size, or plug in or unplug a monitor while the
+app is running, the overlay readjusts within about a second: pets stand on the new ground, a pet standing
+on a window stays on that window's edge, and if the monitor a pet is on gets unplugged, the pet moves to
+the main screen. With an auto-hiding taskbar, pets stand on top of it when it slides up and drop to the
+bottom of the screen when it slides away. The app only supports 100% scaling.
 
-Click pet không làm mất focus của app đang dùng. Có app fullscreen (video, game, trình chiếu: cửa sổ
-phủ kín cả màn hình, không tính cửa sổ phóng to) thì pet tự ẩn, thoát fullscreen thì hiện lại. Lúc ẩn (kể cả ẩn từ tray) app dừng hẳn vòng lặp, pet đứng nguyên
-chỗ cũ chờ hiện lại.
+Clicking a pet doesn't take focus away from the app you're using. When an app goes fullscreen (videos,
+games, presentations: a window covering the entire screen, not counting maximized windows), the pets hide
+and come back when fullscreen ends. While hidden (including when hidden from the tray) the app stops its
+loop entirely, and the pets wait where they were until they reappear.
 
-Những thứ không cần bấm gì (tắt từng thứ trong tab **Thế giới**):
+Things that happen without you doing anything (each can be turned off in the **World** tab):
 
-- Ban đêm (theo giờ mặt trời lặn ở thành phố đã chọn, chưa chọn thì 19:00–6:00) pet đi chậm hơn, buồn
-  ngủ sớm hơn
-- Thời tiết chỉ quanh pet, vừa với dáng từng con: nắng (tia nắng, lấp lánh; mùa xuân thì hoa rơi), trời
-  quang ban đêm (sao, thỉnh thoảng sao băng), nhiều mây (mây trôi trên đầu), mưa (giọt bắn lên ở mặt đất),
-  tuyết, sương mù, sấm (chớp sáng, pet giật mình). Từ 33°C hơi nóng bốc lên hai bên pet, từ 15°C trở
-  xuống pet thở ra khói từ miệng (đi, chạy thì thở dồn hơn). Chưa chọn thành phố thì thời tiết giả lập
-  theo mùa, không có nhiệt độ; đã chọn mà mất mạng thì một con nói "Không có mạng :))", không có hiệu ứng
-- Nhãn nhiệt độ cạnh pet (cần chọn thành phố): hình thời tiết và số °C, đứng sau lưng một con. Trời đổi
-  thì câu của pet kèm nhiệt độ, ví dụ "Mưa rồi, 24°C :("
-- Câu nói cho vui (chào nhau, kêu trời mưa): cả nhóm 15 phút mới được một câu
-- Lịch sự kiện: đúng dịp (Tết, Trung thu, Giáng sinh... hoặc dịp tự thêm, dương hoặc âm lịch) thì một con
-  nói câu của dịp đó mỗi ngày một lần. Tab Thế giới ghi hôm nay có dịp nào
-- 2:00–2:30 sáng, đang ngồi máy (vừa có phím hay chuột trong một phút) thì một con ma bay lượn khắp màn
-  hình, mỗi đêm một lần; nó sà xuống ngang tầm từng con, con nào nó bay qua thì giật mình, đang ngủ cũng
-  tỉnh dậy
+- At night (from sunset in the chosen city, or 19:00–6:00 without a city) pets walk slower and get sleepy
+  sooner
+- Weather only around the pets, fitted to each one's shape: sunny (sunbeams, sparkles; falling petals in
+  spring), clear night (stars, the odd shooting star), cloudy (clouds drifting overhead), rain (drops
+  splashing on the ground), snow, fog, thunder (flashes, pets get startled). From 33°C heat haze rises on
+  both sides of a pet; at 15°C and below pets breathe out puffs of mist (puffing harder when walking or
+  running). Without a city the weather is simulated by season, with no temperature; with a city but no
+  internet, one pet says "No internet :))" and there are no effects
+- Temperature label next to the pets (needs a city): a weather icon and °C, standing behind one pet. When
+  the weather changes, the pet's line includes the temperature, e.g. "It's raining, 24°C :("
+- Chit-chat (greeting each other, grumbling about the rain): one line every 15 minutes for the whole group
+- Event calendar: on the day (Tết, Mid-Autumn, Christmas... or events you add, on the solar or lunar
+  calendar) one pet says that occasion's line once a day. The World tab shows today's events
+- From 2:00 to 2:30 a.m., if you're at the computer (a key press or mouse input within the last minute), a
+  ghost flies around the screen once a night; it swoops down to each pet's height, and any pet it flies
+  past jumps in fright, waking up even if asleep
 
-Tab **Sức khoẻ** (mặc định tắt hết, số liệu chỉ ở máy này):
+**Health** tab (all off by default, the data stays on this computer):
 
-- Giờ ngồi máy: tính lúc có chạm chuột hay phím, vắng quá 5 phút là đang nghỉ; xem hôm nay, đang ngồi
-  liền, lượt ngồi liền lâu nhất, đã đứng dậy nghỉ mấy lần, 7 ngày gần nhất. Xoá được
-- Ngồi liền 50 phút (chỉnh được) thì một con nhảy lên nhắc nghỉ mắt; cứ ngồi máy 60 phút (chỉnh được) thì
-  nhắc uống nước; sau giờ đi ngủ (mặc định 23:00) mà còn ngồi máy thì nhắc đi ngủ, 30 phút một lần. Bấm vào
-  pet đang nhắc là tắt
-- Bấm Ctrl+S 5 lần trong 10 giây thì pet kêu "Lưu rồi mà :(((("
-- Đang gõ phím (có input mà chuột đứng yên) thì pet không nói câu cho vui
+- Screen time: counted while you touch the mouse or keyboard; more than 5 minutes away counts as a break.
+  Shows today, the current stretch, the longest stretch, how many breaks you took and the last 7 days. Can
+  be cleared
+- After 50 minutes in a row (adjustable) a pet hops up to remind you to rest your eyes; every 60 minutes
+  at the computer (adjustable) it reminds you to drink water; past bedtime (23:00 by default) while you're
+  still at the computer it reminds you to go to bed every 30 minutes. Click the pet that's reminding you to
+  dismiss it
+- Press Ctrl+S 5 times in 10 seconds and a pet complains "It's already saved :(((("
+- While you're typing (input while the mouse stands still), pets don't chit-chat
 
-## Build bản phát hành
+## Building a release
 
 ```bash
-pnpm icons:desktop   # tạo lại icon nếu vừa thay assets/icon.png
-pnpm build:desktop   # installer NSIS trong desktop/src-tauri/target/release/bundle/nsis
+pnpm icons:desktop   # regenerate the icons if you just replaced assets/icon.png
+pnpm build:desktop   # NSIS installer in desktop/src-tauri/target/release/bundle/nsis
 ```
 
-Logo nguồn ở [`assets/icon.png`](assets/icon.png), dùng chung cho app, system tray, setup và portable
-(cách thay: [assets/README.md](assets/README.md#thay-logo)). Build và Release trên GitHub tự tạo bộ
-icon từ logo này trước khi compile.
+The source logo is [`assets/icon.png`](assets/icon.png), shared by the app, the system tray, the installer
+and the portable exe (how to replace it: [assets/README.md](assets/README.md#thay-logo)). The Build and
+Release workflows on GitHub generate the icon set from this logo before compiling.
 
-### Tự build khi push lên `main` hoặc `test`
+### Automatic builds on push to `main` or `test`
 
-Mỗi lần push lên `main` hoặc `test`, workflow [`.github/workflows/build.yml`](.github/workflows/build.yml) chạy
-typecheck, test, `cargo test` rồi build file `.exe` cho Windows (mất khoảng 10–15 phút lần đầu, các
-lần sau nhanh hơn nhờ cache). Nhánh `test` dùng để tải artifact kiểm thử trước khi merge vào `main`;
-workflow này không tạo GitHub Release.
+Every push to `main` or `test` runs the [`.github/workflows/build.yml`](.github/workflows/build.yml)
+workflow: typecheck, tests, `cargo test`, then a Windows `.exe` build (about 10–15 minutes the first time,
+faster afterwards thanks to the cache). The `test` branch is for downloading artifacts to try out before
+merging into `main`; this workflow doesn't create a GitHub Release.
 
-Tải về: GitHub → tab **Actions** → bấm vào lần chạy mới nhất → mục **Artifacts** ở cuối trang. Mỗi
-file là một artifact, tải về là file `.exe` luôn, không phải zip (giữ 30 ngày). Trước đây cả hai nằm
-chung một zip, mà Explorer hiện file exe nằm trong zip bằng icon exe chung, trông như app mất icon.
+To download: GitHub → **Actions** tab → click the latest run → **Artifacts** at the bottom of the page. Each
+file is its own artifact and downloads as the `.exe` itself, not a zip (kept for 30 days). Both files used
+to share one zip, and Explorer shows an exe inside a zip with the generic exe icon, which made the app
+look like it had lost its icon.
 
-| File | Dùng khi |
+| File | Use it to |
 |---|---|
-| `TinyWorld_<version>-<số lần chạy>-<commit>_x64-setup.exe` | Cài vào máy (có shortcut, gỡ được trong Settings) |
-| `TinyWorld_<version>-<số lần chạy>-<commit>_x64-portable.exe` | Chạy thẳng không cần cài (cần WebView2, Windows 10/11 bản mới có sẵn) |
+| `TinyWorld_<version>-<run number>-<commit>_x64-setup.exe` | Install the app (with shortcuts, uninstallable from Settings) |
+| `TinyWorld_<version>-<run number>-<commit>_x64-portable.exe` | Run it directly without installing (needs WebView2, preinstalled on recent Windows 10/11) |
 
-`<version>` là version sắp phát hành: commit đã được phát hành thì đúng version đó, chưa thì tăng số cuối
-của release mới nhất (đã có `v1.3.2` thì là `1.3.3`). Version này cũng được ghi vào app; cửa sổ Cài đặt
-hiện kèm số lần chạy và commit (ví dụ `Phiên bản 1.3.3 · build 57 · 14e831c`) để phân biệt với bản Release
-cùng version. Chạy dev thì hiện `Bản dev`.
+`<version>` is the upcoming version: if the commit has already been released, that exact version;
+otherwise the latest release with its last number bumped (`1.3.3` if `v1.3.2` exists). This version is
+also baked into the app; the Settings window shows it with the run number and commit (e.g.
+`Version 1.3.3 · build 57 · 14e831c`) to tell it apart from the Release of the same version. In dev it
+shows `Dev build`.
 
-Test hỏng thì không build ra file. Push liên tục thì lần build cũ bị huỷ, chỉ giữ lần mới nhất.
-Chỉ build khi push đổi thứ đi vào app: `desktop/`, `packages/`, `assets/` (sprite, icon), `scripts/`,
-dependencies. Push chỉ sửa file `.md` hay trang giới thiệu (`website/`) thì không build. Muốn build lại mà
-không push: tab **Actions → Build → Run workflow**.
+If the tests fail, no files are built. Pushing repeatedly cancels the older build and keeps only the
+newest. It only builds when a push changes something that goes into the app: `desktop/`, `packages/`,
+`assets/` (sprites, icons), `scripts/`, dependencies. A push that only touches `.md` files or the landing
+page (`website/`) doesn't build. To rebuild without pushing: **Actions → Build → Run workflow**.
 
-### Release bằng GitHub Actions (chạy tay)
+### Releasing with GitHub Actions (manual)
 
-Khi muốn phát hành chính thức lên trang **Releases**, workflow
-[`.github/workflows/release.yml`](.github/workflows/release.yml) chạy test, build
-`TinyWorld_<version>_x64-setup.exe` và `TinyWorld_<version>_x64-portable.exe`, rồi gắn cả hai vào
+To publish an official release on the **Releases** page, the
+[`.github/workflows/release.yml`](.github/workflows/release.yml) workflow runs the tests, builds
+`TinyWorld_<version>_x64-setup.exe` and `TinyWorld_<version>_x64-portable.exe`, and attaches both to the
 GitHub Release `v<version>`.
 
-1. Push code cần phát hành lên GitHub.
-2. GitHub → **Actions → Release → Run workflow** → nhập **version** (dạng `x.y.z`, ví dụ `0.2.0`).
-   Version này được ghi vào app lúc build, không cần sửa file trong repo.
-3. Mặc định tạo **bản nháp**; kiểm tra file ở trang **Releases** rồi bấm **Publish release**.
-   Bỏ chọn *draft* nếu muốn phát hành luôn.
+1. Push the code you want to release to GitHub.
+2. GitHub → **Actions → Release → Run workflow** → enter the **version** (`x.y.z`, e.g. `0.2.0`).
+   The version is baked into the app at build time; no file in the repo needs editing.
+3. It creates a **draft** by default; check the files on the **Releases** page, then click **Publish
+   release**. Untick *draft* to publish right away.
 
-Chạy lại với version đã *publish* sẽ bị từ chối (phải tăng version); chạy lại khi còn là bản nháp
-thì file cũ được ghi đè. App chưa ký số nên Windows hiện cảnh báo SmartScreen: chọn
-**More info → Run anyway**.
+Running it again with a version that's already *published* is rejected (bump the version); running it
+again while it's still a draft overwrites the old files. The app isn't code-signed, so Windows shows a
+SmartScreen warning: choose **More info → Run anyway**.
 
-### Cập nhật trong app
+### In-app updates
 
-App ([`update.rs`](desktop/src-tauri/src/update.rs)) hỏi `releases/latest` của repo trên GitHub 20 giây sau
-khi mở rồi cứ 6 tiếng một lần; nút **Kiểm tra bản mới** dưới dòng phiên bản trong Cài đặt thì hỏi ngay. Bản
-mới hơn (so theo số `x.y.z`) mà có file `*-setup.exe` thì Cài đặt hiện thẻ **Có bản mới** và một con pet
-nói một câu (mỗi bản một lần). Bấm **Cập nhật ngay**: tải bộ cài về `%TEMP%\TinyWorld-update`, kiểm tra đúng
-cỡ, thoát app như bấm Thoát, rồi chạy bộ cài với `/P /UPDATE /R` (chỉ hiện tiến trình, cài đè vào đúng thư
-mục đã cài, xong tự mở lại). Bản portable cập nhật thì thành bản cài đặt; hook NSIS tắt bản đang chạy và
-trỏ "Chạy cùng Windows" sang bản vừa cài.
+The app ([`update.rs`](desktop/src-tauri/src/update.rs)) asks GitHub for the repo's `releases/latest` 20
+seconds after starting and then every 6 hours; the **Check for updates** button under the version line in
+Settings asks right away. If there's a newer version (compared by `x.y.z`) with a `*-setup.exe` file,
+Settings shows a **Version x.y.z is available** card and one pet says a line (once per version). Clicking
+**Update now** downloads the installer to `%TEMP%\TinyWorld-update`, checks that its size is right, quits
+the app as if you clicked Quit, then runs the installer with `/P /UPDATE /R` (progress only, installs over
+the existing install folder, then reopens the app). A portable copy that updates becomes an installed
+copy; the NSIS hook closes the running copy and points "Start with Windows" at the newly installed one.
 
-- Chỉ release đã **Publish** mới được gợi ý: bản nháp và pre-release không có trong `releases/latest`.
-- Bản 1.5.0 trở về trước chưa có updater: người dùng phải cài đè tay bản đầu tiên có updater một lần.
-- Bấm đúp bộ cài mới hơn bản đang cài cũng đi đúng luồng này: hook trong
-  [`hooks.nsh`](desktop/src-tauri/windows/hooks.nsh) chạy lại bộ cài với `/P /UPDATE /R`, không qua trang
-  "Already Installed" (trang đó chọn sẵn gỡ bản cũ trước, có máy báo "Unable to uninstall!"). Bộ cài 1.6.0 chưa
-  có hook này.
-- Bản build từ `main`/`test` có version ≥ release mới nhất nên không bị gợi ý cập nhật về bản cũ.
-- Chạy dev không tự hỏi (đặt `TINYWORLD_CHECK_UPDATE` để bật) và không tự cài, vì bộ cài ghi đè bản đã cài
-  thật trong máy (đặt `TINYWORLD_INSTALL_UPDATE` để thử cả luồng).
-- Kiểm tra hỏi/tải với GitHub thật: `cargo test -- --ignored github_that` trong `desktop/src-tauri`.
+- Only **published** releases are offered: drafts and pre-releases aren't in `releases/latest`.
+- Version 1.5.0 and earlier have no updater: users have to install the first version with an updater over
+  them by hand, once.
+- Double-clicking an installer newer than the installed version goes through the same flow: the hook in
+  [`hooks.nsh`](desktop/src-tauri/windows/hooks.nsh) reruns the installer with `/P /UPDATE /R`, skipping
+  the "Already Installed" page (that page preselects uninstalling the old version first, and some machines
+  report "Unable to uninstall!"). The 1.6.0 installer doesn't have this hook yet.
+- Builds from `main`/`test` have a version ≥ the latest release, so they're never offered an "update" back
+  to an older version.
+- Dev runs don't check on their own (set `TINYWORLD_CHECK_UPDATE` to enable it) and don't install
+  updates, because the installer would overwrite the real installed copy on the machine (set
+  `TINYWORLD_INSTALL_UPDATE` to try the whole flow).
+- To test checking and downloading against the real GitHub: `cargo test -- --ignored github_that` in
+  `desktop/src-tauri`.
 
-## Trang giới thiệu
+## Landing page
 
-[`website/`](website/) là trang giới thiệu tĩnh (tiếng Việt ở `/`, tiếng Anh ở `/en/`): pet thật của app sống
-trên một màn hình thu nhỏ, demo thời tiết, bảng nhân vật, nút tải bản mới nhất.
-Sửa chữ và dựng lại (`pnpm prepare:website`): [website/README.md](website/README.md).
+[`website/`](website/) is a static landing page (Vietnamese at `/`, English at `/en/`): the app's real
+pets living on a miniature screen, a weather demo, the character lineup and a button to download the
+latest version. Editing the text and rebuilding it (`pnpm prepare:website`): [website/README.md](website/README.md).
 
-## Kiến trúc
+## Architecture
 
 ```
-Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pixel của overlay)
+Rust (cursor.rs) --GetCursorPos ~60 times/s--> event "cursor-moved" (overlay CSS pixels)
                                                       |
                                                       v
-                      overlay: con trỏ nằm trên phần có hình của pet? (theo alpha của sprite)
+                      overlay: is the cursor over a visible part of a pet? (by sprite alpha)
                                                       |
-                                invoke("set_click_through", { enabled })  (chỉ khi trạng thái đổi)
+                                invoke("set_click_through", { enabled })  (only when it changes)
                                                       |
                                                       v
-                      Rust: bật/tắt chuột đi xuyên overlay (set_ignore_cursor_events)
+                      Rust: turn mouse pass-through on/off for the overlay (set_ignore_cursor_events)
 ```
 
-- **Cửa sổ** (`src-tauri/src/window_list.rs`): Windows báo mỗi khi cửa sổ mở, đóng, di chuyển, đổi
-  thứ tự chồng (`SetWinEventHook`); luồng nền gom lại, đọc danh sách tối đa 30 lần/giây và chỉ gửi
-  event `windows-changed` khi có gì khác, không có gì đổi thì ngủ (2 giây đọc lại một lần phòng sót).
-  Chỉ lấy khung nhìn thấy (DWM, không tính viền trong suốt), thứ tự chồng và tên lớp để bỏ desktop,
-  taskbar; không đọc tiêu đề hay nội dung. Bỏ cửa sổ thu nhỏ, ẩn, ở desktop ảo khác, cửa sổ công cụ và
-  cửa sổ để chuột đi xuyên. Windows báo cả lúc con trỏ di chuyển (cùng event với cửa sổ di chuyển),
-  nên pet ngủ thì việc di chuyển chỉ theo dõi cửa sổ của explorer (taskbar) và 10 giây mới đọc lại;
-  overlay ẩn (app fullscreen) thì gỡ hẳn hook.
-- **Địa hình** (`packages/sim/src/terrain.ts`): mép trên cửa sổ là chỗ đứng, cạnh bên là tường để
-  leo, trừ phần bị cửa sổ nằm trên che. Pet đứng trên taskbar hoặc đang bay thì nằm trước mọi cửa sổ;
-  đứng hay leo trên cửa sổ nào thì phần bị cửa sổ nằm trên che không được vẽ (xoá trên canvas) và
-  không bắt chuột.
-- **Overlay** (`src-tauri/src/overlay.rs`): cửa sổ trong suốt, không viền, luôn trên cùng, không có
-  nút taskbar, phủ vùng làm việc (trừ taskbar) của một màn hình, lúc mở là màn hình chính. Không phủ
-  kín cả màn hình vì Windows sẽ coi đó là app fullscreen: tắt thông báo, và pet tự ẩn rồi hiện liên
-  tục. Toạ độ gửi cho frontend đều là CSS pixel của overlay; Rust đổi từ pixel vật lý theo DPI.
-- **Nhiều màn hình**: `screen_info` kèm vùng làm việc của các màn hình khác (`neighbors`), để pet biết
-  mép nào giáp màn hình khác. Pet bị kéo, bị ném hoặc tự đi ra khỏi mép thì frontend gọi
-  `move_overlay` với điểm nằm bên kia mép; điểm đó thuộc màn hình khác thì Rust chuyển overlay sang,
-  rồi gửi event `screen-changed` kèm cách đổi toạ độ cũ sang mới (`remap`). Cứ mỗi giây Rust đo lại
-  màn hình; độ phân giải, DPI, taskbar đổi hay màn hình bị rút thì đặt lại overlay và gửi cùng event đó.
-- **Con trỏ** (`src-tauri/src/cursor.rs`): Rust đọc con trỏ khoảng 60 lần/giây nhưng chỉ gửi
-  `cursor-moved` khi con trỏ ở trong vùng quanh một con mà frontend báo (`set_cursor_interest`, mỗi con
-  một vùng: con thức thì trong tầm nhìn theo 300 px, con ngủ thì chỉ quanh thân), lúc vừa ra khỏi vùng, lúc bấm/nhả chuột (click ở
-  đâu pet đang ngủ cũng dậy) và lúc vùng vừa đổi. Nhờ vậy chuột di chuyển ở xa pet không đánh thức
-  WebView. Pet chỉ dùng vị trí con trỏ để quay đầu nhìn theo và để bật/tắt click-through.
-- **Taskbar tự ẩn**: lúc trồi lên, taskbar che mép dưới overlay. Luồng theo dõi cửa sổ đọc khung
-  taskbar cùng lúc với danh sách cửa sổ và gửi mép trên của nó (`taskbarTop` trong `windows-changed`);
-  mép đó cao hơn mép dưới vùng làm việc thì frontend lấy nó làm mặt đất.
-- **Pet**: mỗi pet là một `<canvas>` nhỏ đúng bằng một frame, di chuyển bằng CSS transform, chỉ vẽ
-  lại khi đổi frame. Cả nhóm (tối đa 3 con) dùng chung một overlay, một vòng lặp; chỉ nạp sprite của
-  các nhân vật đang hiện, bớt nhân vật thì bỏ. Vòng lặp tối đa 30 fps, hẹn giờ rồi mới xin `requestAnimationFrame` (xin rAF liên
-  tục thì WebView thức dậy theo tần số màn hình, 60–144 lần/giây). Cả nhóm đứng yên hay ngồi mép thì chỉ
-  thức dậy lúc có con đổi frame (khoảng 7 lần/giây), cả nhóm ngủ thì dừng hẳn và Rust bảo WebView2 dùng ít RAM
-  (`MemoryUsageTargetLevel`), overlay ẩn cũng vậy. Mặt nạ alpha để bắt chuột lưu 1 bit mỗi pixel.
-- **Logic** (`packages/sim`): không phụ thuộc DOM hay Tauri, test bằng vitest. Bước thời gian cố
-  định nên hành vi không phụ thuộc fps; RNG có seed để test được hành vi ngẫu nhiên.
-- **Thời tiết** (`src-tauri/src/weather.rs`): chỉ Rust gọi mạng, webview không gọi. Đã chọn thành phố
-  thì hỏi Open-Meteo lúc mở app, lúc đổi thành phố, rồi 30 phút một lần, gửi event `weather-changed`;
-  lỗi thì chờ 1 phút, gấp đôi mỗi lần tới tối đa 30 phút, và chỉ gửi `weather-failed` ở lần lỗi đầu.
-  Tìm thành phố (`search_city`) cũng qua Rust. Overlay (`src/overlay/ambience.ts`) đổi thời tiết thành
-  hiệu ứng, ban đêm, câu của dịp lễ, con ma, theo giờ ở thành phố đã chọn (`wallClock`, múi giờ IANA);
-  âm lịch tính trên máy (`packages/sim/src/lunar.ts`). Mọi câu pet nói nằm ở `packages/sim/src/lines.ts`.
-- **Sức khoẻ** (`src-tauri/src/activity.rs`): luồng nền đọc mỗi giây thời điểm input cuối
-  (`GetLastInputInfo`) và vị trí con trỏ, không hook bàn phím. `Tracker` (thuần logic, có test) cộng giờ
-  ngồi máy theo khoảng giữa hai lần input, quyết định nhắc nghỉ, uống nước, nhắc khuya, gửi event `reminder`; có input
-  mà chuột đứng yên thì gửi `activity-changed` (đang gõ). Spam Ctrl+S đọc trong vòng con trỏ của
-  `cursor.rs`. Overlay chỉ cho pet nói (`Ambience.remind`).
-- **Chat** (`src-tauri/src/chat.rs`, `src-tauri/src/gemini.rs`, `src/chat/`): cửa sổ React riêng
-  (`chat.html`), chỉ tạo khi click chuột phải vào pet và huỷ khi đóng (Rust gửi `chat-closed` cho overlay
-  để con đang chat đi lại). Khung chat ghép câu gửi đi (tính cách nhân vật, giờ máy, 6 lượt gần nhất,
-  `prompt.ts`), Rust kiểm tra giới hạn gửi (`Limiter`) rồi gọi endpoint mà trang gemini.google.com dùng lúc
-  chưa đăng nhập (`gemini.rs`: chỉ gửi câu hỏi, không header, không giả trình duyệt, không đọc trang;
-  Google tự chọn model). Không chạy server, không mở cổng. Câu trả lời markdown được đọc thành khối
-  (`markdown.ts`) rồi vẽ bằng React, không dùng HTML thô.
-- **Ngôn ngữ** (`packages/core/src/i18n/`): mọi chữ người dùng thấy nằm trong `vi.json` và `en.json`, dùng
-  chung cho frontend (Cài đặt, khung chat, câu pet nói qua `packages/sim/src/lines.ts`) và Rust (`i18n.rs` nhúng
-  hai file lúc build: menu khay, tiêu đề khung chat, câu báo lỗi). Chỗ `{tên}` được điền lúc dùng. Thêm câu thì
-  thêm vào cả hai file; thiếu mục thì typecheck và test báo. Mặc định theo ngôn ngữ hiển thị của Windows (tiếng
-  Việt thì tiếng Việt, còn lại tiếng Anh); Rust tính ra `lang` gửi kèm cài đặt. Dịp có sẵn trong lịch sự kiện
-  mà chưa sửa tên hay câu nói (`preset`) thì hiện theo ngôn ngữ đang dùng.
-- **Cửa sổ cài đặt** (`src/settings/`, `src-tauri/src/settings.rs`): trang React riêng
-  (`settings.html`), chỉ tạo khi bấm **Cài đặt…** và huỷ khi đóng để đỡ tốn RAM. Overlay không kéo
-  React theo.
-- **Dữ liệu** trong `%APPDATA%\com.tinyworld.app\`, ghi ra file tạm rồi đổi tên:
-  - `world.json`: vị trí, hướng, đang ngủ hay không của từng con (id là tên thư mục pack). Lưu 30 giây một lần (chỉ khi có thay
-    đổi) và khi bấm **Thoát**; tắt máy ngang thì mất tối đa 30 giây.
-  - `settings.json`: các nhân vật đang hiện (`pets`, tên thư mục pack theo thứ tự chọn), cỡ nhân vật,
-    tốc độ, ngôn ngữ (`language`: `auto`, `vi`, `en`), thành phố (tên, toạ độ, múi giờ), các công tắc của tab
-    Thế giới, lịch sự kiện (`occasions`, tối đa 30 dịp). Sửa tay sai thì app kẹp về khoảng cho phép, bỏ tên trùng, quá 3 con thì bỏ bớt, bỏ dịp
-    có ngày không có thật; pack không còn thì bỏ qua, không còn pack nào thì dùng pack đầu tiên. File của
-    bản cũ (`pet`, một nhân vật; chưa có các mục của tab Thế giới) vẫn đọc được.
-  - `weather.json`: thời tiết lấy được gần nhất, mở app lúc mất mạng vẫn dùng được nếu chưa quá 3 giờ.
-  - `stats.json`: theo ngày, 30 ngày gần nhất: giờ ngồi máy, lượt ngồi liền lâu nhất (ms), số lần nghỉ;
-    chỉ có khi bật đếm giờ. Ghi mỗi phút (khi có thay đổi) và lúc thoát; nút xoá trong tab Sức khoẻ ghi đè thành rỗng.
-  - **Chạy cùng Windows** không lưu ở đây mà là giá trị `TinyWorld` trong
-    `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (trỏ tới exe đang chạy).
+- **Windows** (`src-tauri/src/window_list.rs`): Windows reports whenever a window opens, closes, moves or
+  changes stacking order (`SetWinEventHook`); a background thread batches these, reads the window list at
+  most 30 times a second and only sends a `windows-changed` event when something differs, sleeping when
+  nothing changes (it rereads every 2 seconds in case something was missed). It only takes the visible
+  frame (DWM, without the transparent border), the stacking order and the class name to skip the desktop
+  and taskbar; it never reads titles or content. Minimized and hidden windows, windows on another virtual
+  desktop, tool windows and click-through windows are skipped. Windows also reports cursor movement (the
+  same event as a window moving), so while the pets sleep it only tracks movement of explorer's windows
+  (the taskbar) and rereads every 10 seconds; while the overlay is hidden (fullscreen app) the hook is
+  removed entirely.
+- **Terrain** (`packages/sim/src/terrain.ts`): a window's top edge is ground to stand on and its sides are
+  walls to climb, except where a window on top covers them. A pet standing on the taskbar or in the air is
+  in front of every window; for a pet standing on or climbing a window, the part covered by windows on top
+  isn't drawn (it's erased on the canvas) and doesn't catch the mouse.
+- **Overlay** (`src-tauri/src/overlay.rs`): a transparent, borderless, always-on-top window with no
+  taskbar button, covering the work area (minus the taskbar) of one screen, the main screen at startup. It
+  doesn't cover the whole screen because Windows would then treat it as a fullscreen app: notifications
+  would be muted, and the pets would keep hiding and reappearing. Coordinates sent to the frontend are all
+  overlay CSS pixels; Rust converts them from physical pixels by DPI.
+- **Multiple monitors**: `screen_info` includes the work areas of the other screens (`neighbors`), so pets
+  know which edges border another screen. When a pet is dragged, thrown or walks off an edge, the frontend
+  calls `move_overlay` with a point just past that edge; if the point is on another screen, Rust moves the
+  overlay there, then sends a `screen-changed` event with how to map old coordinates to new ones
+  (`remap`). Rust re-measures the screens every second; if the resolution, DPI or taskbar changes or a
+  monitor is unplugged, it resets the overlay and sends the same event.
+- **Cursor** (`src-tauri/src/cursor.rs`): Rust reads the cursor about 60 times a second but only sends
+  `cursor-moved` while the cursor is inside an area around a pet that the frontend reported
+  (`set_cursor_interest`, one area per pet: within 300 px of sight for an awake pet, just around the body
+  for a sleeping one), right when it leaves that area, on mouse down/up (a click anywhere wakes sleeping
+  pets) and when an area changes. That way, moving the mouse far from the pets doesn't wake the WebView.
+  Pets only use the cursor position to turn their heads toward it and to switch click-through on and off.
+- **Auto-hiding taskbar**: when it slides up, the taskbar covers the bottom edge of the overlay. The
+  window-tracking thread reads the taskbar frame together with the window list and sends its top edge
+  (`taskbarTop` in `windows-changed`); if that edge is above the bottom of the work area, the frontend uses
+  it as the ground.
+- **Pets**: each pet is a small `<canvas>` the size of one frame, moved with CSS transforms and only
+  redrawn when its frame changes. The whole group (up to 3 pets) shares one overlay and one loop; only the
+  sprites of the characters on screen are loaded, and removed characters are dropped. The loop runs at
+  most 30 fps, setting a timer before asking for `requestAnimationFrame` (asking for rAF continuously wakes
+  the WebView at the display's refresh rate, 60–144 times a second). When the whole group stands still or
+  perches, it only wakes when a pet changes frame (about 7 times a second); when the whole group sleeps it
+  stops entirely and Rust tells WebView2 to use less RAM (`MemoryUsageTargetLevel`), and the same happens
+  while the overlay is hidden. The alpha mask used for hit-testing stores 1 bit per pixel.
+- **Logic** (`packages/sim`): no dependency on the DOM or Tauri, tested with vitest. A fixed time step
+  keeps behavior independent of fps; a seeded RNG makes random behavior testable.
+- **Weather** (`src-tauri/src/weather.rs`): only Rust goes online, never the webview. With a city chosen,
+  it asks Open-Meteo at startup, when the city changes and then every 30 minutes, and sends a
+  `weather-changed` event; on errors it waits 1 minute, doubling each time up to 30 minutes, and only sends
+  `weather-failed` on the first error. City search (`search_city`) also goes through Rust. The overlay
+  (`src/overlay/ambience.ts`) turns the weather into effects, and handles night time, holiday lines and the
+  ghost by the time in the chosen city (`wallClock`, IANA time zone); the lunar calendar is computed
+  locally (`packages/sim/src/lunar.ts`). Every pet line lives in `packages/sim/src/lines.ts`.
+- **Health** (`src-tauri/src/activity.rs`): a background thread reads the time of the last input
+  (`GetLastInputInfo`) and the cursor position every second, without a keyboard hook. `Tracker` (pure
+  logic, tested) adds up screen time from the gaps between inputs, decides on break, water and late-night
+  reminders, and sends a `reminder` event; input while the mouse stands still sends `activity-changed`
+  (typing). Ctrl+S spam is read in the cursor loop of `cursor.rs`. The overlay only makes the pets talk
+  (`Ambience.remind`).
+- **Chat** (`src-tauri/src/chat.rs`, `src-tauri/src/gemini.rs`, `src/chat/`): a separate React window
+  (`chat.html`), only created when you right-click a pet and destroyed when it closes (Rust sends
+  `chat-closed` to the overlay so the chatting pet walks again). The chat window builds the message to send
+  (the character's personality, the local time, the last 6 turns, `prompt.ts`); Rust checks the send
+  limits (`Limiter`), then calls the endpoint gemini.google.com uses when signed out (`gemini.rs`: sends
+  only the question, no headers, no browser impersonation, no page scraping; Google picks the model). No
+  server, no open ports. Markdown answers are parsed into blocks (`markdown.ts`) and drawn with React,
+  never as raw HTML.
+- **Language** (`packages/core/src/i18n/`): all user-facing text is in `vi.json` and `en.json`, shared by
+  the frontend (Settings, the chat window, pet lines via `packages/sim/src/lines.ts`) and Rust (`i18n.rs`
+  embeds both files at build time: tray menu, chat window title, error messages). `{name}` placeholders are
+  filled in when used. Add new text to both files; a missing entry fails typecheck and tests. By default
+  the app follows the Windows display language (Vietnamese for Vietnamese, English otherwise); Rust works
+  out `lang` and sends it with the settings. Built-in calendar events whose name and line haven't been
+  edited (`preset`) show in the current language.
+- **Settings window** (`src/settings/`, `src-tauri/src/settings.rs`): a separate React page
+  (`settings.html`), only created when you click **Settings…** and destroyed when it closes to save RAM.
+  The overlay doesn't pull in React.
+- **Data** lives in `%APPDATA%\com.tinyworld.app\`, written to a temp file and then renamed:
+  - `world.json`: each pet's position, facing and whether it's asleep (the id is the pack folder name).
+    Saved every 30 seconds (only when something changed) and on **Quit**; an abrupt shutdown loses at most
+    30 seconds.
+  - `settings.json`: the characters on screen (`pets`, pack folder names in the order they were picked),
+    pet size, speed, language (`language`: `auto`, `vi`, `en`), city (name, coordinates, time zone), the
+    World tab toggles and the event calendar (`occasions`, at most 30 events). If it's edited by hand with
+    bad values, the app clamps them to the allowed range, drops duplicate names, drops pets beyond 3 and
+    events on dates that don't exist; missing packs are skipped, and if none are left the first pack is
+    used. Files from older versions (`pet`, a single character; no World tab entries yet) still load.
+  - `weather.json`: the last weather fetched, so starting the app offline can still use it if it's less
+    than 3 hours old.
+  - `stats.json`: per day for the last 30 days: screen time, the longest stretch (ms) and the number of
+    breaks; only there when screen time tracking is on. Written every minute (when something changed) and
+    on quit; the clear button in the Health tab overwrites it with empty data.
+  - **Start with Windows** isn't stored here but as the `TinyWorld` value in
+    `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (pointing to the running exe).
 
-## Kiểm thử
+## Testing
 
 ```bash
 pnpm typecheck
-pnpm test                               # sprite pack, effect của Long, kéo thả/bấm đúp overlay, combo của Long, pet.json, file chữ vi/en, FSM, World/Pet, nhóm pet, địa hình cửa sổ, con trỏ, đổi màn hình, world.json, thời tiết, âm lịch, lịch sự kiện
-cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên cạnh, đổi toạ độ giữa hai màn hình, danh sách cửa sổ, lưu trạng thái, cài đặt, ngôn ngữ, lịch sự kiện, đọc kết quả Open-Meteo, giờ ngồi máy và lời nhắc, spam Ctrl+S, giới hạn gửi chat, vị trí cửa sổ chat, đọc câu trả lời Gemini, câu gợi ý, registry
+pnpm test                               # sprite packs, Long's effects, overlay drag/double-click, Long's combo, pet.json, vi/en text files, FSM, World/Pet, pet groups, window terrain, cursor, screen changes, world.json, weather, lunar calendar, event calendar
+cd desktop/src-tauri && cargo test      # DPI coordinates, neighboring screens, coordinate mapping between screens, window list, saved state, settings, language, event calendar, Open-Meteo parsing, screen time and reminders, Ctrl+S spam, chat send limits, chat window position, Gemini reply parsing, suggested questions, registry
 ```
 
-`pnpm test` gồm `pnpm test:sprites` (script chuẩn hoá sprite, `prepare-sprites.mjs --check` trên
-cả 22 pack và `prepare-aura.mjs --check` cho effect của Long), `pnpm test:overlay` (kéo thả, bấm đúp
-trên overlay, combo quật đuôi của Long, markdown và câu gửi của khung chat) và vitest của `packages/*`.
+`pnpm test` includes `pnpm test:sprites` (the sprite normalization script, `prepare-sprites.mjs --check`
+on all 22 packs and `prepare-aura.mjs --check` for Long's effects), `pnpm test:overlay` (drag and
+double-click on the overlay, Long's tail-whip combo, chat markdown and message building) and the vitest
+suites in `packages/*`.
