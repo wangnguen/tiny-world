@@ -271,10 +271,10 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
 - **Chat** (`src-tauri/src/chat.rs`, `src-tauri/src/gemini.rs`, `src/chat/`): cửa sổ React riêng
   (`chat.html`), chỉ tạo khi click chuột phải vào pet và huỷ khi đóng (Rust gửi `chat-closed` cho overlay
   để con đang chat đi lại). Khung chat ghép câu gửi đi (tính cách nhân vật, giờ máy, 6 lượt gần nhất,
-  `prompt.ts`), Rust kiểm tra giới hạn gửi (`Limiter`) rồi gọi Gemini như trang gemini.google.com lúc chưa
-  đăng nhập (`gemini.rs`: chọn Flash bằng header như trang, build label và mã model đọc từ trang `/app`,
-  chat tạm). Không chạy server, không mở cổng. Câu trả lời markdown được đọc thành khối (`markdown.ts`)
-  rồi vẽ bằng React, không dùng HTML thô.
+  `prompt.ts`), Rust kiểm tra giới hạn gửi (`Limiter`) rồi gọi endpoint mà trang gemini.google.com dùng lúc
+  chưa đăng nhập (`gemini.rs`: chỉ gửi câu hỏi, không header, không giả trình duyệt, không đọc trang;
+  Google tự chọn model). Không chạy server, không mở cổng. Câu trả lời markdown được đọc thành khối
+  (`markdown.ts`) rồi vẽ bằng React, không dùng HTML thô.
 - **Ngôn ngữ** (`packages/core/src/i18n/`): mọi chữ người dùng thấy nằm trong `vi.json` và `en.json`, dùng
   chung cho frontend (Cài đặt, khung chat, câu pet nói qua `packages/sim/src/lines.ts`) và Rust (`i18n.rs` nhúng
   hai file lúc build: menu khay, tiêu đề khung chat, câu báo lỗi). Chỗ `{tên}` được điền lúc dùng. Thêm câu thì
@@ -303,7 +303,7 @@ Rust (cursor.rs) --GetCursorPos ~60 lần/giây--> event "cursor-moved" (CSS pix
 ```bash
 pnpm typecheck
 pnpm test                               # sprite pack, effect của Long, kéo thả/bấm đúp overlay, combo của Long, pet.json, file chữ vi/en, FSM, World/Pet, nhóm pet, địa hình cửa sổ, con trỏ, đổi màn hình, world.json, thời tiết, âm lịch, lịch sự kiện
-cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên cạnh, đổi toạ độ giữa hai màn hình, danh sách cửa sổ, lưu trạng thái, cài đặt, ngôn ngữ, lịch sự kiện, đọc kết quả Open-Meteo, giờ ngồi máy và lời nhắc, spam Ctrl+S, giới hạn gửi chat, vị trí cửa sổ chat, đọc trang và câu trả lời Gemini, câu gợi ý, registry
+cd desktop/src-tauri && cargo test      # toạ độ theo DPI, màn hình bên cạnh, đổi toạ độ giữa hai màn hình, danh sách cửa sổ, lưu trạng thái, cài đặt, ngôn ngữ, lịch sự kiện, đọc kết quả Open-Meteo, giờ ngồi máy và lời nhắc, spam Ctrl+S, giới hạn gửi chat, vị trí cửa sổ chat, đọc câu trả lời Gemini, câu gợi ý, registry
 ```
 
 `pnpm test` gồm `pnpm test:sprites` (script chuẩn hoá sprite, `prepare-sprites.mjs --check` trên

@@ -299,15 +299,22 @@ Mục tiêu: hỏi nhanh, tra cứu vài thông tin hữu ích ngay trên deskto
   (đậm, gạch đầu dòng, code, link) vẽ thành chữ, không chèn HTML; link bấm được (Rust mở trình duyệt, chỉ
   http/https), nút Chép câu trả lời. Lịch sử chỉ giữ trong lúc cửa sổ còn mở. Tắt chat thì cửa sổ chat
   đóng luôn
-- Rust gọi Gemini như trang gemini.google.com lúc chưa đăng nhập (`gemini.rs`, tự viết, chỉ dùng `reqwest`
-  có sẵn): không cần key, cookie hay tài khoản, không chạy server, không mở cổng localhost. Webview không gọi
-  mạng. Gửi dạng chat tạm (không vào lịch sử Gemini)
-- Model: chọn bằng header `x-goog-ext-525001261-jspb` (mã model + loại Flash) như trang Gemini. Build label
-  và mã Flash đọc từ chính trang `/app` (6 tiếng một lần, chỉ khi có người chat; đọc lỗi thì dùng giá trị
-  dự phòng), nên Google lên bản Flash mới thì app tự theo, không cần cập nhật app
-  - Đã thử (10/2026): chưa đăng nhập thì Google trả lời bằng **3.6 Flash** (phản hồi có ghi tên model). Gửi
-    kiểu cũ của gemini-web2api (không có header) thì mọi model đều ra 3.5 Flash-Lite. Pro và 3.8 Flash (gói
-    AI Pro/Ultra) thì Google tự đổi về bản nhẹ hơn
+- Rust gọi endpoint `StreamGenerate` mà trang gemini.google.com dùng lúc chưa đăng nhập (`gemini.rs`, tự
+  viết, chỉ dùng `reqwest` có sẵn): không cần key, cookie hay tài khoản, không chạy server, không mở cổng
+  localhost. Webview không gọi mạng
+- Chỉ gửi phần tối thiểu: một POST, `f.req` = `[null,"[[câu hỏi],null,null]"]`. Không header, không tham
+  số URL, không User-Agent giả trình duyệt, không đọc trang `/app`. Những chỗ Google đổi được mà làm hỏng
+  app chỉ còn đường dẫn endpoint, kiểu body tối giản (có từ thời Bard) và cách đọc câu trả lời
+  - Đã thử 13/10/2026: bỏ từng thứ trang thật gửi (User-Agent, Origin, Referer, X-Same-Domain, build label
+    `bl`, `hl`, `_reqid`, `rt`, body 102 ô) thì Google vẫn trả lời như cũ, cả câu cần tra mạng
+  - Trước đây gửi như trang thật: build label đọc từ trang, header `x-goog-ext-525001261-jspb` chọn 3.6
+    Flash, body 102 ô (có cờ chat tạm). 13/10/2026 hỏng hai chỗ cùng lúc: header chọn model làm mọi câu
+    trả lời thành câu báo lỗi "Sorry, something went wrong. Please try your request again." (HTTP 200,
+    với bất kỳ mã model nào trên trang), và build label đổi tên server từ `boq_assistant-bard-web-server_`
+    sang `boq_gemini-web-uiserver_` nên không đọc được nữa
+- Model: không chọn, Google dùng model mặc định cho người chưa đăng nhập (13/10/2026 là **3.5 Flash-Lite**,
+  model này không gợi ý câu hỏi tiếp, hay tự chạy code để tính: `gemini.rs` bỏ khối code đó khỏi câu trả
+  lời)
   - Không hiện tên model ở đâu cả: người dùng chỉ cần biết đang chat với pet nào
 - Cửa sổ chat đặt sát cạnh pet (bên trái nếu đủ chỗ), ngang tầm giữa pet, tính cả viền và thanh tiêu đề
   để luôn nằm trọn trên taskbar. Con đang chat đứng yên quay mặt về phía khung chat (không ngủ, không bị con
