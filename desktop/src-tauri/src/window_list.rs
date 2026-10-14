@@ -221,7 +221,7 @@ pub fn spawn(app: AppHandle) {
             };
             app.state::<Windows>().set(&list);
             if let Err(e) = app.emit_to(overlay::LABEL, events::WINDOWS_CHANGED, &list) {
-                eprintln!("Không gửi được danh sách cửa sổ: {e}");
+                log!("Không gửi được danh sách cửa sổ: {e}");
             }
             sent = WindowList {
                 closed: Vec::new(),
@@ -321,7 +321,7 @@ mod win32 {
                     )
                 };
                 if hook.is_null() {
-                    eprintln!("Không theo dõi được cửa sổ (event {min:#x}–{max:#x}).");
+                    log!("Không theo dõi được cửa sổ (event {min:#x}–{max:#x}).");
                 } else {
                     hooks.push(hook);
                 }

@@ -219,6 +219,39 @@ body {
   padding-left: 20px;
 }
 
+/* Ảnh Google tìm được: một ảnh thì rộng hết khung, nhiều ảnh thì hai cột. */
+.msg__images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+  margin: 2px 0 6px;
+}
+
+.msg__image {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #304670;
+  border-radius: 8px;
+  background: #0f1930;
+  cursor: pointer;
+}
+
+.msg__image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.msg__image:hover {
+  border-color: #9cc0ff;
+}
+
+/* Câu bắt đầu lại không có nút Chép bên dưới. */
+.msg--pet > p:last-child {
+  margin-bottom: 0;
+}
+
 .msg--pet a {
   color: #9cc0ff;
 }
@@ -370,6 +403,7 @@ body {
 .composer__send:focus-visible,
 .chip:focus-visible,
 .msg__copy:focus-visible,
+.msg__image:focus-visible,
 .msg--pet a:focus-visible {
   outline: 2px solid #9cc0ff;
   outline-offset: 1px;

@@ -56,8 +56,9 @@ asleep if it was sleeping). Control it with the **TinyWorld** icon in the system
 | Item | What it does |
 |---|---|
 | **Pause** | Pets stand still and the mouse passes through them; click again to bring them back to life |
+| **Quiet** | For 30 minutes, 1 hour or until you turn it off: pets say nothing (chit-chat and reminders are skipped, weather, event and update notices wait until Quiet ends) and walk around much less. Click the ticked choice again to turn it off; it also ends on its own when the time is up |
 | **Show / hide pets** | Hides the pets completely (the app stops its loop and uses no CPU) |
-| **Settings…** | **Pets** tab: pick 1–3 characters, pet size (50–200%), walking speed, chat with pets (off by default), language (same as Windows, Vietnamese, English), start with Windows. **World** tab: city (real weather, local time there), toggles for weather around pets, the temperature label next to pets, chit-chat, the event calendar and the ghost at 2 a.m.; the Preview section lets pets meet a kind of weather right away (sunny, clear, cloudy, rain, storm, snow, fog, petals) and a temperature (hot 36°C, cold 8°C) for 30 seconds, or the ghost; the active button lights up with a countdown, click it again to stop; edit the event calendar. **Health** tab (all off by default): screen time today and over 7 days, break reminders, water reminders, bedtime reminders, Ctrl+S spam. Changes apply right away. The running version is shown under the title |
+| **Settings…** | **Pets** tab: pick 1–3 characters, pet size (50–200%), walking speed, chat with pets (off by default), language (same as Windows, Vietnamese, English), start with Windows. **World** tab: city (real weather, local time there), toggles for weather around pets, the temperature label next to pets, chit-chat, the event calendar and the ghost at 2 a.m.; the Preview section lets pets meet a kind of weather right away (sunny, clear, cloudy, rain, storm, snow, fog, petals) and a temperature (hot 36°C, cold 8°C) for 30 seconds, or the ghost; the active button lights up with a countdown, click it again to stop; edit the event calendar. **Health** tab (all off by default): screen time today and over 7 days, break reminders, water reminders, bedtime reminders, Ctrl+S spam. Changes apply right away. The running version is shown under the title; **Open log folder** at the bottom opens the folder with `tinyworld.log` |
 | **Quit** | Saves the pets' state, then quits |
 | **DevTools** | Dev only (the overlay lets the mouse pass through, so F12 can't reach it) |
 
@@ -85,7 +86,7 @@ Interacting with the pets:
 | With several pets, throw or drag one to another screen | The others run after it, coming in from the edge facing the old screen: the closest to that edge first, the farthest last; sleeping ones lie down right by that edge |
 | Click where two pets overlap | The one on top gets the click; the one just clicked or dragged goes on top of the others |
 | Double-click | That pet says the time, weekday, date, lunar date and the weather in the chosen city ("No internet :))" when offline) |
-| Right-click | Opens a chat window with that pet right next to it (turn on **Chat with pets** in Settings first); the pet stands still and waits until the chat closes. Ask quick questions about exchange rates, news, unit conversions... through Google Gemini, no account needed; the suggested questions change every day. Links in answers are clickable, and there's a Copy button. The app stops you from sending too fast (one message every 3 seconds, 30 an hour); when offline it shows "No internet" |
+| Right-click | Opens a chat window with that pet right next to it (turn on **Chat with pets** in Settings first); the pet stands still and waits until the chat closes. Ask quick questions about exchange rates, news, unit conversions... through Google Gemini, no account needed; the suggested questions change every day. Links in answers are clickable, and there's a Copy button. Ask for a picture and the pictures Google finds show under the answer; click one to open the page it comes from. The app stops you from sending too fast (one message every 3 seconds, 30 an hour); when offline it shows "No internet". If Google takes too long to answer mid-chat, the pet says the chat got too long and starts over, without the earlier turns |
 | Two pets meet | They stop and face each other, sometimes say hello or walk together for a while; at bedtime they sleep side by side |
 | No pet touched for 3 minutes | The whole group comes down to the taskbar (jumping or climbing down from windows) and falls asleep one by one: clicking or dragging any pet counts for the whole group. Clicking anywhere on the screen or dragging a pet wakes everyone up |
 | Hold **Ctrl** while clicking | The click goes through the pet to the app underneath |
@@ -195,7 +196,9 @@ The app ([`update.rs`](desktop/src-tauri/src/update.rs)) asks GitHub for the rep
 seconds after starting and then every 6 hours; the **Check for updates** button under the version line in
 Settings asks right away. If there's a newer version (compared by `x.y.z`) with a `*-setup.exe` file,
 Settings shows a **Version x.y.z is available** card and one pet says a line (once per version). Clicking
-**Update now** downloads the installer to `%TEMP%\TinyWorld-update`, checks that its size is right, quits
+**Update now** downloads the installer to `%TEMP%\TinyWorld-update`, checks its size and its SHA-256 against
+the `digest` GitHub lists for the file (catches a damaged or swapped download; it's no substitute for code
+signing; assets uploaded before GitHub had digests are only size-checked), quits
 the app as if you clicked Quit, then runs the installer with `/P /UPDATE /R` (progress only, installs over
 the existing install folder, then reopens the app). A portable copy that updates becomes an installed
 copy; the NSIS hook closes the running copy and points "Start with Windows" at the newly installed one.
@@ -326,6 +329,9 @@ Rust (cursor.rs) --GetCursorPos ~60 times/s--> event "cursor-moved" (overlay CSS
   - `stats.json`: per day for the last 30 days: screen time, the longest stretch (ms) and the number of
     breaks; only there when screen time tracking is on. Written every minute (when something changed) and
     on quit; the clear button in the Health tab overwrites it with empty data.
+  - `tinyworld.log`: errors from Rust (chat, weather, updates, Win32) and panics, one timestamped line
+    each, local time. Release builds have no console, so this is the only place they end up. Over 1 MB it is
+    renamed to `tinyworld.old.log` and a new file starts. It never leaves the computer.
   - **Start with Windows** isn't stored here but as the `TinyWorld` value in
     `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (pointing to the running exe).
 
@@ -333,11 +339,16 @@ Rust (cursor.rs) --GetCursorPos ~60 times/s--> event "cursor-moved" (overlay CSS
 
 ```bash
 pnpm typecheck
-pnpm test                               # sprite packs, Long's effects, overlay drag/double-click, Long's combo, pet.json, vi/en text files, FSM, World/Pet, pet groups, window terrain, cursor, screen changes, world.json, weather, lunar calendar, event calendar
-cd desktop/src-tauri && cargo test      # DPI coordinates, neighboring screens, coordinate mapping between screens, window list, saved state, settings, language, event calendar, Open-Meteo parsing, screen time and reminders, Ctrl+S spam, chat send limits, chat window position, Gemini reply parsing, suggested questions, registry
+pnpm test                               # sprite packs, Long's effects, overlay drag/double-click, Long's combo, pet.json, vi/en text files, FSM, World/Pet, pet groups and Quiet, window terrain, cursor, screen changes, world.json, weather, lunar calendar, event calendar
+cd desktop/src-tauri && cargo test      # DPI coordinates, neighboring screens, coordinate mapping between screens, window list, saved state, settings, language, event calendar, Open-Meteo parsing, screen time and reminders, Ctrl+S spam, chat send limits, chat window position, Gemini reply parsing, suggested questions, chat images, update parsing and installer SHA-256, log file, registry
 ```
 
 `pnpm test` includes `pnpm test:sprites` (the sprite normalization script, `prepare-sprites.mjs --check`
 on all 22 packs and `prepare-aura.mjs --check` for Long's effects), `pnpm test:overlay` (drag and
 double-click on the overlay, Long's tail-whip combo, chat markdown and message building) and the vitest
 suites in `packages/*`.
+
+To measure CPU and RAM over a long run (leak check) or on battery, start the app and run
+`powershell -ExecutionPolicy Bypass -File scripts/measure.ps1 -Minutes 480 -Every 60`: it adds up
+`tinyworld.exe` and its WebView2 processes, writes one CSV row per sample (with AC/battery and charge) and
+prints a summary at the end.

@@ -1,9 +1,10 @@
 //! Gợi ý cập nhật: hỏi GitHub bản phát hành mới nhất của TinyWorld (repo public, không cần token), mới hơn
 //! bản đang chạy thì báo Cài đặt và overlay (một con nói một câu, mỗi bản một lần). Người dùng bấm Cập nhật
-//! ngay thì tải bộ cài về thư mục tạm, kiểm tra đúng cỡ file, rồi thoát app như bấm Thoát (overlay lưu trạng
-//! thái); lúc app thoát hẳn (`launch_pending`) chạy bộ cài ở chế độ tự động: cài đè lên bản cũ, xong tự mở
-//! lại. Bản portable chạy bộ cài thì thành bản cài đặt. Bộ cài chưa ký số nên chỉ tải từ đúng trang release
-//! của repo.
+//! ngay thì tải bộ cài về thư mục tạm, kiểm tra đúng cỡ file và mã SHA-256 GitHub ghi cho file đó (`digest`
+//! của asset), rồi thoát app như bấm Thoát (overlay lưu trạng thái); lúc app thoát hẳn (`launch_pending`) chạy
+//! bộ cài ở chế độ tự động: cài đè lên bản cũ, xong tự mở lại. Bản portable chạy bộ cài thì thành bản cài đặt.
+//! Bộ cài chưa ký số nên chỉ tải từ đúng trang release của repo; mã SHA-256 bắt được file tải về bị hỏng hay bị
+//! tráo trên đường tải, không thay được chữ ký số.
 //!
 //! Bản dev (debug) có version 0.1.0 nên luôn thấy "có bản mới": không tự hỏi, trừ khi đặt biến môi trường
 //! `TINYWORLD_CHECK_UPDATE`. Nút Kiểm tra bản mới trong Cài đặt thì vẫn hỏi.
@@ -49,6 +50,9 @@ struct Release {
     setup_url: String,
     setup_name: String,
     setup_size: u64,
+    /// SHA-256 của bộ cài (64 chữ số hex thường) theo GitHub; asset tải lên trước khi GitHub có `digest` thì
+    /// `None`, chỉ kiểm tra cỡ file.
+    setup_sha256: Option<String>,
 }
 
 /// Event `update-available` và command `get_update`, khớp `UpdateInfo` trong packages/core.
@@ -133,6 +137,21 @@ struct AssetBody {
     name: String,
     size: u64,
     browser_download_url: String,
+    /// "sha256:<64 chữ số hex>".
+    #[serde(default)]
+    digest: Option<String>,
+}
+
+/// "sha256:ABC…" (64 chữ số hex) thành chữ hex thường; dạng khác thì `None`.
+fn parse_digest(digest: &str) -> Option<String> {
+    let hex = digest.strip_prefix("sha256:")?;
+    (hex.len() == 64 && hex.bytes().all(|c| c.is_ascii_hexdigit())).then(|| hex.to_ascii_lowercase())
+}
+
+/// SHA-256 của `data`, chữ hex thường.
+fn sha256_hex(data: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(data).iter().map(|b| format!("{b:02x}")).collect()
 }
 
 /// Đọc bản phát hành mới nhất từ GitHub; `None` nếu không mới hơn `current` hay không có bộ cài dùng được.
@@ -155,6 +174,7 @@ fn parse_release(body: &str, current: &str) -> AppResult<Option<Release>> {
         version: format!("{}.{}.{}", latest.0, latest.1, latest.2),
         page: body.html_url,
         setup_url: setup.browser_download_url,
+        setup_sha256: setup.digest.as_deref().and_then(parse_digest),
         setup_name: setup.name,
         setup_size: setup.size,
     }))
@@ -202,7 +222,7 @@ async fn check(app: &AppHandle) -> AppResult<Option<UpdateInfo>> {
     *lock(&app.state::<Updater>().latest) = release;
     if let Some(found) = &found {
         if let Err(e) = app.emit(events::UPDATE_AVAILABLE, found) {
-            eprintln!("Không báo được bản mới: {e}");
+            log!("Không báo được bản mới: {e}");
         }
     }
     Ok(found)
@@ -224,7 +244,7 @@ pub fn spawn(app: AppHandle) {
             let wait = match check(&app).await {
                 Ok(_) => RECHECK,
                 Err(e) => {
-                    eprintln!("Không hỏi được bản mới, thử lại sau: {e}");
+                    log!("Không hỏi được bản mới, thử lại sau: {e}");
                     RETRY
                 }
             };
@@ -253,7 +273,7 @@ pub async fn check_update(app: AppHandle) -> AppResult<Option<UpdateInfo>> {
     Ok(found)
 }
 
-/// Nút Cập nhật ngay: tải bộ cài (báo tiến độ qua `update-progress`), kiểm tra cỡ file, rồi thoát app; bộ
+/// Nút Cập nhật ngay: tải bộ cài (báo tiến độ qua `update-progress`), kiểm tra cỡ file và SHA-256, rồi thoát app; bộ
 /// cài chạy lúc app thoát hẳn (`launch_pending`).
 ///
 /// Bản dev không cài: bộ cài ghi đè bản TinyWorld đã cài thật trong máy chứ không phải bản đang chạy thử.
@@ -288,13 +308,13 @@ async fn download(app: &AppHandle, release: &Release) -> AppResult<PathBuf> {
     let dir = std::env::temp_dir().join(DOWNLOAD_DIR);
     download_to(release, &dir, |progress| {
         if let Err(e) = app.emit(events::UPDATE_PROGRESS, progress) {
-            eprintln!("Không báo được tiến độ tải: {e}");
+            log!("Không báo được tiến độ tải: {e}");
         }
     })
     .await
 }
 
-/// Tải bộ cài vào `dir` (bộ cài cũ trong đó bị xoá trước), đúng cỡ GitHub báo thì giữ. `progress` được gọi
+/// Tải bộ cài vào `dir` (bộ cài cũ trong đó bị xoá trước), đúng cỡ và SHA-256 GitHub báo thì giữ. `progress` được gọi
 /// mỗi `PROGRESS_STEP` phần trăm và lúc xong.
 async fn download_to(
     release: &Release,
@@ -326,6 +346,15 @@ async fn download_to(
     }
     if data.len() as u64 != total {
         return Err(AppError::offline(i18n::t("errors.updateCut")));
+    }
+    if let Some(expected) = &release.setup_sha256 {
+        let actual = sha256_hex(&data);
+        if &actual != expected {
+            log!("Bộ cài tải về sai SHA-256: GitHub ghi {expected}, tải về {actual}");
+            return Err(AppError::internal(i18n::t("errors.updateHash")));
+        }
+    } else {
+        log!("Bộ cài {} không có SHA-256 trên GitHub, chỉ kiểm tra cỡ file", release.setup_name);
     }
     // Bộ cài của lần cập nhật trước (đã chạy xong) không cần nữa.
     let _ = std::fs::remove_dir_all(dir);
@@ -359,7 +388,7 @@ pub fn launch_pending(app: &AppHandle) {
         return;
     };
     if let Err(e) = std::process::Command::new(&path).args(INSTALLER_ARGS).spawn() {
-        eprintln!("Không chạy được bộ cài {}: {e}", path.display());
+        log!("Không chạy được bộ cài {}: {e}", path.display());
     }
 }
 
@@ -373,7 +402,7 @@ mod tests {
         )
     }
 
-    const SETUP: &str = r#"{"name":"TinyWorld_1.6.0_x64-setup.exe","size":5000000,"browser_download_url":"https://github.com/wangnguen/tiny-world/releases/download/v1.6.0/TinyWorld_1.6.0_x64-setup.exe"}"#;
+    const SETUP: &str = r#"{"name":"TinyWorld_1.6.0_x64-setup.exe","size":5000000,"browser_download_url":"https://github.com/wangnguen/tiny-world/releases/download/v1.6.0/TinyWorld_1.6.0_x64-setup.exe","digest":"sha256:7CD1D4CB00F451A0CFFEE95548C3E0677B8D5588669AAD8F2944641529606FE4"}"#;
     const PORTABLE: &str = r#"{"name":"TinyWorld_1.6.0_x64-portable.exe","size":9000000,"browser_download_url":"https://github.com/wangnguen/tiny-world/releases/download/v1.6.0/TinyWorld_1.6.0_x64-portable.exe"}"#;
 
     #[test]
@@ -394,6 +423,10 @@ mod tests {
         assert_eq!(found.version, "1.6.0");
         assert_eq!(found.setup_name, "TinyWorld_1.6.0_x64-setup.exe");
         assert_eq!(found.setup_size, 5_000_000);
+        assert_eq!(
+            found.setup_sha256.as_deref(),
+            Some("7cd1d4cb00f451a0cffee95548c3e0677b8d5588669aad8f2944641529606fe4")
+        );
         assert!(found.page.starts_with(PAGE_PREFIX));
     }
 
@@ -408,6 +441,17 @@ mod tests {
         let elsewhere = SETUP.replace("github.com/wangnguen", "example.com/wangnguen");
         assert_eq!(parse_release(&release("v1.6.0", &elsewhere), "1.5.0").unwrap(), None);
         assert!(parse_release("{}", "1.5.0").is_err());
+    }
+
+    #[test]
+    fn ma_sha256_cua_github() {
+        assert_eq!(parse_digest("sha256:abc"), None);
+        assert_eq!(parse_digest(&format!("md5:{}", "a".repeat(64))), None);
+        assert_eq!(parse_digest(&format!("sha256:{}", "g".repeat(64))), None);
+        // Asset cũ không có `digest`: vẫn cập nhật được, chỉ kiểm tra cỡ file.
+        let old = SETUP.replace(r#","digest":"sha256:7CD1D4CB00F451A0CFFEE95548C3E0677B8D5588669AAD8F2944641529606FE4""#, "");
+        assert_eq!(parse_release(&release("v1.6.0", &old), "1.5.0").unwrap().unwrap().setup_sha256, None);
+        assert_eq!(sha256_hex(b"abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     }
 
     #[test]
@@ -429,6 +473,8 @@ mod tests {
             assert!(release.setup_url.starts_with(DOWNLOAD_PREFIX), "{}", release.setup_url);
             assert!(release.page.starts_with(PAGE_PREFIX), "{}", release.page);
             assert!(parse_version(&release.version).is_some());
+            // GitHub ghi SHA-256 cho asset; `download_to` tải xong thì so khớp.
+            assert!(release.setup_sha256.is_some());
 
             let dir = std::env::temp_dir().join("TinyWorld-update-test");
             let mut last = None;

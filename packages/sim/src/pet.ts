@@ -48,6 +48,8 @@ export interface PetEnv {
   readonly pets: readonly Pet[];
   /** Đang là ban đêm: đi lại chậm hơn, buồn ngủ sớm hơn. */
   readonly night: boolean;
+  /** Người dùng bật Im lặng (tray): ít tự đi lại hơn (`TUNING.quietCalm`), không nói câu cho vui. */
+  readonly quiet: boolean;
   /**
    * `pet` nói một câu cho vui (chào nhau, thời tiết). Cả nhóm có giới hạn tần suất, người dùng đang gõ
    * phím thì thôi; trả về `true` nếu đã nói.
@@ -741,10 +743,10 @@ function nextActivity(pet: Pet): PetState | undefined {
     if (x !== null) return walkTo(pet, x);
   }
   const { rng } = pet.env;
-  // Vừa chào con khác xong, nó vẫn đứng cạnh: rủ đi cùng một đoạn.
+  // Vừa chào con khác xong, nó vẫn đứng cạnh: rủ đi cùng một đoạn (Im lặng thì thôi).
   const buddy = pet.buddy;
   pet.buddy = null;
-  if (buddy && buddy.state === "idle" && neighbors(pet, buddy, TUNING.meetReach * 1.5)) {
+  if (buddy && !pet.env.quiet && buddy.state === "idle" && neighbors(pet, buddy, TUNING.meetReach * 1.5)) {
     const dir: Facing = rng.chance(0.5) ? 1 : -1;
     const time = rng.range(...TUNING.strollTime);
     buddy.stroll(dir, time);
@@ -757,7 +759,7 @@ function nextActivity(pet: Pet): PetState | undefined {
   const movers = pet.env.pets.filter(
     (other) => other !== pet && other.vanished === 0 && MOVING.has(other.state),
   ).length;
-  const keep = Math.max(0, 1 - TUNING.groupCalm * movers);
+  const keep = Math.max(0, 1 - TUNING.groupCalm * movers) * (pet.env.quiet ? TUNING.quietCalm : 1);
   // Chỉ bốc số ngẫu nhiên khi có chỗ để nhảy / leo, để không có cửa sổ thì pet sống y như Phase 1.
   const jumps = jumpTargets(pet);
   if (jumps.length > 0 && rng.chance(TUNING.jumpChance * keep)) return startJump(pet, rng.pick(jumps));

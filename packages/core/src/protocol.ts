@@ -10,6 +10,8 @@ export const EVENTS = {
   overlayVisibility: "overlay-visibility",
   /** `boolean`: tray bật/tắt Tạm dừng. */
   paused: "pet-paused",
+  /** `boolean`, chỉ gửi cho overlay: tray bật Im lặng (pet không nói, ít đi lại) hoặc vừa hết Im lặng. */
+  quiet: "pet-quiet",
   /** `Settings`: người dùng vừa đổi cài đặt. */
   settingsChanged: "settings-changed",
   /** Không có payload: tray bấm Thoát, overlay lưu trạng thái rồi gọi command `quit`. */

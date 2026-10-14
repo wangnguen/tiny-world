@@ -23,6 +23,7 @@ pub fn run() {
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
+            crate::log::init(&data_dir, &app.package_info().version.to_string());
             let settings = SettingsStore::load(&data_dir);
             i18n::set(settings.get().lang);
             app.manage(Activity::load(&data_dir, &settings.get()));
@@ -73,6 +74,7 @@ pub fn run() {
             commands::chat_target,
             commands::send_chat,
             commands::open_link,
+            commands::open_log_folder,
             commands::get_autostart,
             commands::set_autostart,
             commands::quit,

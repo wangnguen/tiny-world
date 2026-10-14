@@ -35,6 +35,8 @@ export const TUNING = {
    * phần; 2 con kia đang đi thì con này chỉ còn 30% khả năng đi như bình thường.
    */
   groupCalm: 0.35,
+  /** Im lặng (tray): xác suất tự đi lại (đi, chạy, leo, nhảy) chỉ còn chừng này phần. */
+  quietCalm: 0.25,
 
   // Ngày/đêm.
   /** Ban đêm đi lại chậm hơn: tốc độ nhân với chừng này. */

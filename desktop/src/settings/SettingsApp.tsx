@@ -210,6 +210,14 @@ export function SettingsApp() {
         <footer className="note">
           <InfoIcon />
           {m.settings.applied}
+          <button
+            type="button"
+            className="note__link"
+            title={m.settings.openLogHint}
+            onClick={() => api.openLogFolder().catch((e: unknown) => setError(errorMessage(e)))}
+          >
+            {m.settings.openLog}
+          </button>
           {/* Nằm trong footer để luôn ở góc dưới cùng của trang, kể cả khi trang dài phải cuộn. */}
           <CornerDecor />
         </footer>

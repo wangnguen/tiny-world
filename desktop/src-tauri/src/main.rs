@@ -1,6 +1,9 @@
 // Ẩn cửa sổ console khi build release trên Windows.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[macro_use]
+mod log;
+
 mod activity;
 mod app;
 mod app_icon;

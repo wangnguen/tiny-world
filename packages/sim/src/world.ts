@@ -33,6 +33,8 @@ export class World implements PetEnv {
   busy = false;
   /** Cho pet nói câu cho vui (Settings): tắt thì `chat` không nói gì. */
   chatter = true;
+  /** Im lặng (tray): không nói câu cho vui, ít tự đi lại (`PetEnv.quiet`). */
+  quiet = false;
   /** Số giây (lúc vòng lặp chạy) kể từ câu nói cho vui gần nhất của cả nhóm. Mở app thì chờ nửa `chatGap`. */
   private sinceChat = TUNING.chatGap / 2;
 
@@ -75,11 +77,11 @@ export class World implements PetEnv {
 
   /**
    * `pet` nói một câu cho vui: cả nhóm `TUNING.chatGap` giây mới nói một câu (tối đa 4 câu mỗi giờ), không
-   * nói lúc người dùng đang gõ phím, lúc pet đang ngủ hay đang biến mất, lúc tắt `chatter`. Trả về `true`
-   * nếu đã nói.
+   * nói lúc người dùng đang gõ phím, lúc pet đang ngủ hay đang biến mất, lúc tắt `chatter`, lúc Im lặng. Trả
+   * về `true` nếu đã nói.
    */
   chat(pet: Pet, text: string): boolean {
-    if (!this.chatter || this.busy || this.sinceChat < TUNING.chatGap) return false;
+    if (!this.chatter || this.quiet || this.busy || this.sinceChat < TUNING.chatGap) return false;
     if (pet.state === "sleep" || pet.vanished > 0) return false;
     this.sinceChat = 0;
     pet.say(text);

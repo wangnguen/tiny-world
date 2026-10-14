@@ -40,6 +40,7 @@ số 1: **nhẹ**.
 | 4 | Vui nhẹ | Pet chơi với nhau, ngày/đêm, thời tiết thật quanh pet (theo thành phố tự chọn), lịch sự kiện, bấm đúp xem giờ/ngày/thời tiết; không làm phiền lúc làm việc | Xong phần code, test pass; đang chạy thử bản dev |
 | 5 | Sức khoẻ & công việc | Giờ ngồi máy, nhắc nghỉ, nhắc uống nước, nhắc khuya, spam Ctrl+S (chỉ trên máy, tự bật) | Xong phần code, test pass (`cargo test`, sim); đã thử lời nhắc trên bản dev bằng event giả. Chưa đối chiếu giờ ngồi máy cả ngày |
 | 6 | Chat với pet | Click pet để chat, hỏi đáp và tra cứu nhanh qua Gemini, đỡ phải mở trình duyệt (tuỳ chọn) | Xong phần code, test pass; đã gửi thật: chưa đăng nhập Google trả lời bằng 3.6 Flash trong khoảng 3 giây |
+| 7 | Ổn định & dùng hằng ngày | Log ra file, không phá cuộc họp video, Im lặng có hẹn giờ, updater kiểm tra SHA-256, script đo CPU/RAM; trả các bài thử còn nợ | Xong phần code (7a–7e), test pass; còn các bài thử tay ở Phase 7 |
 
 TinyWorld không phải game: không làm chỉ số tính cách, quan hệ giữa các pet, nhu cầu, xây nhà, tài
 nguyên, tiến hoá, trứng nở hay trao đổi pet.
@@ -316,6 +317,10 @@ Mục tiêu: hỏi nhanh, tra cứu vài thông tin hữu ích ngay trên deskto
   model này không gợi ý câu hỏi tiếp, hay tự chạy code để tính: `gemini.rs` bỏ khối code đó khỏi câu trả
   lời)
   - Không hiện tên model ở đâu cả: người dùng chỉ cần biết đang chat với pet nào
+- Ảnh Google tìm được (hỏi "cho xem ảnh…"; người chưa đăng nhập không tạo ảnh được): đọc ở ô 12 của câu
+  trả lời, tối đa 4 ảnh. Rust chỉ tải ảnh thu nhỏ trên máy chủ ảnh của Google (`encrypted-tbn*.gstatic.com`,
+  tối đa 1 MB, chờ 8 giây), không tải từ trang có ảnh, rồi gửi khung chat dạng `data:` (CSP không cho tải
+  ảnh trên mạng). Bấm vào ảnh thì mở trang có ảnh bằng trình duyệt
 - Cửa sổ chat đặt sát cạnh pet (bên trái nếu đủ chỗ), ngang tầm giữa pet, tính cả viền và thanh tiêu đề
   để luôn nằm trọn trên taskbar. Con đang chat đứng yên quay mặt về phía khung chat (không ngủ, không bị con
   khác rủ đi) tới khi đóng khung chat
@@ -334,9 +339,57 @@ Mục tiêu: hỏi nhanh, tra cứu vài thông tin hữu ích ngay trên deskto
 - Gửi kèm: tên và tính cách ngắn của nhân vật (`desktop/src/chat/prompt.ts`), ngày giờ máy. Không gửi gì
   khác (không thành phố, không cửa sổ đang mở)
 - Mất mạng thì khung chat ghi "Mất mạng", không dùng câu mẫu
+- Hết giờ chờ giữa đoạn chat thì pet nói đoạn chat dài quá, mình nói lại từ đầu (Rust trả mã `TIMEOUT`);
+  câu sau không gửi kèm các lượt trước đó nữa. Hết giờ chờ ở câu đầu tiên thì vẫn ghi "Lâu quá Google chưa
+  trả lời, gửi lại thử nhé"
 
 **Xong khi:** chat được từ pet, câu trả lời về trong vài giây; hỏi thông tin mới (tỉ giá, tin tức) thì trả
 lời được; gửi dồn dập thì app chặn trước, không để Google chặn; rút mạng thì khung chat ghi "Mất mạng".
+
+### Phase 7 — Ổn định & dùng hằng ngày
+
+Từ bản đánh giá kế hoạch (10/2026): việc làm được trong code thì làm; việc phải thử trên máy thật thì ghi
+lại chờ thử tay; việc chưa đáng làm thì ghi lý do. Vẫn giữ hướng cũ: nhẹ, không phiền, không thành game.
+
+| Bước | Nội dung | Trạng thái |
+|---|---|---|
+| 7a | Log ra file `tinyworld.log` trong thư mục dữ liệu (`log.rs`, macro `log!` thay `eprintln!`): mỗi dòng kèm giờ máy, ghi cả panic, quá 1 MB thì đổi tên thành `tinyworld.old.log` rồi ghi file mới. Bản release không có console nên trước đây lỗi mất hết. Nút Mở thư mục log ở chân trang Cài đặt; không gửi đi đâu | Xong, test pass (`cargo test`) |
+| 7b | Họp video: Google Meet đen khi chạm, kéo pet hay mở chat. Overlay giữ `WS_EX_TOOLWINDOW` (xem Rủi ro) | Xong; đã kiểm tra style trên máy thật (giữ được cả khi tao ghi đè ex-style), chưa thử lại trong cuộc họp |
+| 7c | Im lặng từ tray (30 phút, 1 giờ, tới khi tắt; bấm lại mục đang chọn là tắt, hết giờ tự tắt): không nói câu cho vui, lời nhắc tới thì bỏ, thông báo (thời tiết, dịp, bản mới) chờ tới lúc hết Im lặng; tự đi lại còn khoảng 1/3 (`quietCalm`, không rủ nhau đi dạo). Câu người dùng tự hỏi (bấm đúp) vẫn nói. Không lưu: mở lại app là hết Im lặng | Xong, test sim |
+| 7d | Updater kiểm tra SHA-256 của bộ cài theo `digest` GitHub ghi cho asset (`sha2`, có sẵn qua Tauri). Bắt được file hỏng hay bị tráo trên đường tải, không thay được chữ ký số. Asset tải lên trước khi GitHub có `digest` thì chỉ kiểm tra cỡ | Xong, test pass; đã thử với GitHub thật (bản 1.7.1) |
+| 7e | `scripts/measure.ps1`: cộng CPU/RAM của tinyworld.exe và các tiến trình WebView2 con, ghi CSV mỗi lần đo kèm cắm sạc hay chạy pin, cuối in tóm tắt | Xong, đã chạy thử trên bản dev |
+
+Còn phải thử tay trên máy thật (không tự động được):
+
+- Chạy liên tục 8–24 giờ (còn nợ từ Phase 1): bản release, `measure.ps1 -Minutes 480`; RAM private lúc cuối
+  không được tăng đều so với lúc đầu
+- 3c: 3 pet trên 2 màn hình, kéo và ném một con sang màn hình kia
+- DPI 125% và 150%: code đã tính DPI và có test, chưa từng thử trên máy
+- Phase 5: đối chiếu giờ ngồi máy cả ngày với thời gian thật
+- Đo trên pin (`measure.ps1` có cột `power`): tốn hơn hẳn lúc cắm sạc thì mới làm chế độ tiết kiệm pin
+- Rút mạng giữa lúc chat, Gemini lỗi hay chậm: khung chat chỉ ghi một dòng (hay pet nói đoạn chat dài quá),
+  pet vẫn đi lại
+- Trong cuộc họp thật: chạm, kéo pet, mở chat mà video người khác chia sẻ không đen
+
+Chưa làm (lý do):
+
+- Ẩn pet khi chia sẻ màn hình: không làm được lúc này. `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)` trên
+  overlay báo lỗi 8 (`ERROR_NOT_ENOUGH_MEMORY`), gọi lúc mở app hay 3 giây sau đều vậy, bỏ `WS_EX_TOOLWINDOW`
+  cũng vậy (Windows 10 build 19045). Cửa sổ Win32 mẫu cùng kiểu (layered, chuột đi xuyên, DWM blur-behind
+  rỗng như tao, có cửa sổ con của process khác) thì gọi được, nên vướng ở WebView2. Tauri
+  `set_content_protected` gọi đúng hàm này nên cũng không được. Đã bỏ công tắc trong Cài đặt để không có
+  tuỳ chọn bấm mà không có tác dụng; thử lại khi WebView2 hay tao đổi
+
+- Chế độ tiết kiệm pin: app đã giới hạn 30 fps, dừng vòng lặp khi cả nhóm ngủ, hạ RAM WebView2; chờ số đo
+  trên pin
+- Phụ kiện (nơ, khăn): đặt đồ lên đầu bằng đo tự động đã thử ở Phase 4, lệch ở nhiều nhân vật
+- Sao lưu/khôi phục cài đặt: `settings.json` chép tay được
+- Tự mở lại sau crash: cần một tiến trình canh riêng; dữ liệu ghi file tạm rồi đổi tên nên không hỏng, panic
+  đã có trong log
+- Hướng dẫn lần chạy đầu: mặc định đã dùng được ngay, mọi thứ nhạy cảm đều tắt sẵn
+- Gemini API bằng khoá riêng: ngược nguyên tắc không cần key; làm khi endpoint hiện tại hỏng hẳn
+- Phím tắt toàn cục ẩn/hiện, mở chat từ tray, vuốt ve pet, chào khi người dùng quay lại máy, tuỳ chọn giảm
+  chuyển động: để sau bản ổn định
 
 ## Rủi ro kỹ thuật
 
@@ -347,6 +400,7 @@ lời được; gửi dồn dập thì app chặn trước, không để Google 
 | Overlay trong suốt phủ màn hình tốn GPU khi vẽ liên tục | Giới hạn fps, chỉ vẽ lại canvas của pet khi đổi frame, dừng vòng lặp khi không có gì chuyển động |
 | Overlay đè lên video/game fullscreen | Tự ẩn khi app đang dùng chiếm trọn màn hình (Phase 1); cửa sổ phóng to còn thanh tiêu đề không tính (Phase 2) |
 | Overlay luôn trên mà che kín màn hình bị Windows coi là app fullscreen: tắt thông báo (Focus Assist), pet tự ẩn/hiện mỗi giây | Overlay chỉ phủ vùng làm việc; taskbar tự ẩn (vùng làm việc trùng màn hình) thì thấp đi 1 pixel. Phase 2 giữ quy tắc này: pet đứng trên mép taskbar, không vẽ lên taskbar; taskbar tự ẩn trồi lên thì pet đứng lên trên nó |
+| Con trỏ nằm trên pet thì overlay tắt click-through, thành cửa sổ đục phủ vùng làm việc: Chrome/Edge tưởng cửa sổ của nó bị che kín, ẩn trang, Google Meet tắt video người khác chia sẻ (màn hình đen) | Overlay luôn là cửa sổ công cụ (`WS_EX_TOOLWINDOW`, Chromium không tính là che); tao ghi đè ex-style mỗi lần đổi click-through nên overlay.rs thêm lại cờ ở `WM_STYLECHANGING` |
 | Theo dõi bàn phím dễ bị antivirus nghi ngờ | Không hook bàn phím: chỉ đọc trạng thái Ctrl và S bằng `GetAsyncKeyState` trong luồng đọc con trỏ có sẵn; tuỳ chọn riêng, mặc định tắt |
 | 3 pet cùng thức tốn CPU gấp mấy lần 1 con | Một vòng lặp chung, ngủ chung, đo ở bước 3b; cao quá thì giới hạn số con đi lại cùng lúc |
 | Mỗi lượt sinh lại sprite bằng AI có thể làm mất hoặc đổi màu tay chân mà `--check` không bắt được | Soát từng frame so với atlas gốc trước khi nhận sheet mới; lỗi nhỏ sửa bằng tuỳ chọn trong `PETS` của script thay vì sinh lại |

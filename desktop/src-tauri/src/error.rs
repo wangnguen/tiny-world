@@ -44,6 +44,11 @@ impl AppError {
     pub fn unavailable(message: impl Into<String>) -> Self {
         Self::new("UNAVAILABLE", message)
     }
+
+    /// Dịch vụ bên ngoài không trả lời kịp (chat): đang giữa đoạn chat thì pet nói đoạn chat dài quá.
+    pub fn timeout(message: impl Into<String>) -> Self {
+        Self::new("TIMEOUT", message)
+    }
 }
 
 impl fmt::Display for AppError {

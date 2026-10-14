@@ -11,6 +11,8 @@ pub const SCREEN_CHANGED: &str = "screen-changed";
 pub const OVERLAY_VISIBILITY: &str = "overlay-visibility";
 /// `bool`: tray bật/tắt Tạm dừng.
 pub const PAUSED: &str = "pet-paused";
+/// `bool` (tray.rs), chỉ gửi cho overlay: tray bật Im lặng (pet không nói, ít đi lại) hoặc vừa hết Im lặng.
+pub const QUIET: &str = "pet-quiet";
 /// `Settings`: người dùng vừa đổi cài đặt.
 pub const SETTINGS_CHANGED: &str = "settings-changed";
 /// Không có payload: tray bấm Thoát, overlay lưu trạng thái rồi gọi command `quit`.

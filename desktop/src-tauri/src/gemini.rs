@@ -8,7 +8,8 @@
 //! server. Không chọn model thì Google dùng model mặc định cho người chưa đăng nhập (lúc viết là 3.5
 //! Flash-Lite).
 //!
-//! Mỗi lần `chat` gửi đúng một request, không tự thử lại: `chat.rs` lo giới hạn tần suất.
+//! Mỗi lần `chat` gửi đúng một request, không tự thử lại: `chat.rs` lo giới hạn tần suất. Câu trả lời có ảnh
+//! Google tìm được thì `thumbnail` tải ảnh thu nhỏ từ máy chủ ảnh của Google, không tải từ trang có ảnh.
 
 use serde::Serialize;
 use std::time::Duration;
@@ -26,6 +27,13 @@ const TAG_MAX: usize = 4096;
 const FOLLOW_UP_MAX: usize = 4;
 const LABEL_MAX_CHARS: usize = 80;
 const QUERY_MAX_CHARS: usize = 1000;
+/// Ảnh kèm câu trả lời: tối đa chừng này ảnh, tiêu đề tối đa chừng này ký tự; tải ảnh thu nhỏ chờ tối đa
+/// chừng này, lớn tối đa chừng này byte, chỉ nhận các kiểu này.
+const IMAGE_MAX: usize = 4;
+const TITLE_MAX_CHARS: usize = 120;
+const IMAGE_TIMEOUT: Duration = Duration::from_secs(8);
+const IMAGE_MAX_BYTES: usize = 1024 * 1024;
+const IMAGE_TYPES: [&str; 4] = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 /// Vì sao không có câu trả lời.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,13 +74,27 @@ impl From<reqwest::Error> for GeminiError {
     }
 }
 
-/// Câu trả lời, câu hỏi tiếp trang Gemini gợi ý và tên model Google đã dùng (như trang Gemini ghi, ví dụ
-/// "3.5 Flash-Lite").
+/// Câu trả lời, câu hỏi tiếp trang Gemini gợi ý, ảnh Google tìm được và tên model Google đã dùng (như trang
+/// Gemini ghi, ví dụ "3.5 Flash-Lite").
 #[derive(Debug, Clone, PartialEq)]
 pub struct Reply {
     pub text: String,
     pub follow_ups: Vec<FollowUp>,
+    pub images: Vec<Image>,
     pub model: Option<String>,
+}
+
+/// Ảnh Google tìm được cho câu trả lời (trang Gemini vẽ ảnh vào chỗ link `lmdx_content` mà `clean` bỏ đi).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Image {
+    /// Ảnh thu nhỏ trên máy chủ ảnh của Google (`https://encrypted-tbn….gstatic.com/…`) và cỡ của nó.
+    pub thumbnail: String,
+    pub width: u32,
+    pub height: u32,
+    pub title: String,
+    /// Trang có ảnh (http/https) và tên trang ("wikiHow"; không có thì là tên miền).
+    pub page: String,
+    pub site: String,
 }
 
 /// Câu hỏi tiếp trang Gemini gợi ý dưới câu trả lời (thẻ `<Elicitation>`): nút ghi `label`, bấm thì gửi
@@ -83,6 +105,7 @@ pub struct FollowUp {
     pub query: String,
 }
 
+#[derive(Clone)]
 pub struct Gemini {
     http: reqwest::Client,
 }
@@ -91,7 +114,7 @@ impl Gemini {
     /// `timeout`: chờ Google trả lời tối đa chừng này.
     pub fn new(timeout: Duration) -> Self {
         let http = reqwest::Client::builder().timeout(timeout).build().unwrap_or_else(|e| {
-            eprintln!("Không tạo được HTTP client cho chat: {e}");
+            log!("Không tạo được HTTP client cho chat: {e}");
             reqwest::Client::new()
         });
         Self { http }
@@ -118,6 +141,22 @@ impl Gemini {
         }
         Ok(reply)
     }
+
+    /// Tải ảnh thu nhỏ của `image`: trả về kiểu ảnh ("image/jpeg") và nội dung; lỗi, lớn quá hay không phải
+    /// ảnh thì `None`.
+    pub async fn thumbnail(&self, image: &Image) -> Option<(&'static str, Vec<u8>)> {
+        let response = self.http.get(&image.thumbnail).timeout(IMAGE_TIMEOUT).send().await.ok()?;
+        if !response.status().is_success() || response.content_length().is_some_and(|n| n > IMAGE_MAX_BYTES as u64) {
+            return None;
+        }
+        let kind = {
+            let header = response.headers().get(reqwest::header::CONTENT_TYPE)?.to_str().ok()?;
+            let mime = header.split(';').next().unwrap_or_default().trim();
+            IMAGE_TYPES.into_iter().find(|t| mime.eq_ignore_ascii_case(t))?
+        };
+        let bytes = response.bytes().await.ok()?;
+        (bytes.len() <= IMAGE_MAX_BYTES).then(|| (kind, bytes.to_vec()))
+    }
 }
 
 /// Giá trị `f.req`: `[null, "[[câu hỏi],null,null]"]`, kiểu gửi tối giản có từ thời Bard.
@@ -127,10 +166,11 @@ fn request_body(prompt: &str) -> String {
 }
 
 /// Câu trả lời trong body của StreamGenerate: các mục `wrb.fr` gửi dần câu trả lời dài dần, lấy bản dài
-/// nhất. Tên model Google đã dùng ở ô 42. Đọc mọi mục trên mọi dòng, nên Google gửi mỗi dòng một mục (kiểu
-/// `rt=c`) hay cả mảng một dòng đều đọc được.
+/// nhất. Ảnh ở ô 12 của câu trả lời (lấy danh sách gửi sau cùng), tên model Google đã dùng ở ô 42. Đọc mọi
+/// mục trên mọi dòng, nên Google gửi mỗi dòng một mục (kiểu `rt=c`) hay cả mảng một dòng đều đọc được.
 fn parse_reply(raw: &str) -> Reply {
     let mut text = String::new();
+    let mut images = Vec::new();
     let mut model = None;
     let entries = raw
         .lines()
@@ -148,10 +188,15 @@ fn parse_reply(raw: &str) -> Reply {
         if let Some(name) = inner.get(42).and_then(|v| v.as_str()) {
             model = Some(name.to_string());
         }
-        let candidates = inner.get(4).and_then(|v| v.as_array()).into_iter().flatten();
-        for part in candidates.filter_map(|c| c.get(1)?.as_array()).flatten() {
-            if let Some(s) = part.as_str().filter(|s| s.len() > text.len()) {
-                text = s.to_string();
+        for candidate in inner.get(4).and_then(|v| v.as_array()).into_iter().flatten() {
+            for part in candidate.get(1).and_then(|v| v.as_array()).into_iter().flatten() {
+                if let Some(s) = part.as_str().filter(|s| s.len() > text.len()) {
+                    text = s.to_string();
+                }
+            }
+            let found = parse_images(candidate.get(12));
+            if !found.is_empty() {
+                images = found;
             }
         }
     }
@@ -159,8 +204,71 @@ fn parse_reply(raw: &str) -> Reply {
     Reply {
         text,
         follow_ups,
+        images,
         model,
     }
+}
+
+/// Ảnh ở ô 12 của câu trả lời: `[null, [ảnh, …]]`, mỗi ảnh `[[[link gốc], null, rộng, cao], [[trang], tiêu
+/// đề, _, _, _, tên trang], null, [[link thu nhỏ], null, rộng, cao], _, _, _, [_, _, chữ thay ảnh]]`. Chỉ lấy
+/// ảnh có ảnh thu nhỏ trên máy chủ ảnh của Google và trang http/https, bỏ ảnh trùng.
+fn parse_images(cell: Option<&serde_json::Value>) -> Vec<Image> {
+    fn link(v: Option<&serde_json::Value>) -> Option<&str> {
+        v?.get(0)?.get(0)?.as_str()
+    }
+    fn text(v: Option<&serde_json::Value>) -> Option<&str> {
+        v?.as_str().map(str::trim).filter(|s| !s.is_empty())
+    }
+    let mut out: Vec<Image> = Vec::new();
+    for item in cell.and_then(|c| c.get(1)).and_then(|v| v.as_array()).into_iter().flatten() {
+        let (thumb, source) = (item.get(3), item.get(1));
+        let Some(thumbnail) = link(thumb).filter(|url| is_google_thumbnail(url)) else {
+            continue;
+        };
+        let Some((page, host)) = link(source).and_then(|url| Some((url, web_host(url)?))) else {
+            continue;
+        };
+        if out.iter().any(|known| known.thumbnail == thumbnail) {
+            continue;
+        }
+        let size = |i: usize| thumb.and_then(|t| t.get(i)?.as_u64()).and_then(|n| u32::try_from(n).ok()).unwrap_or(0);
+        let title = text(source.and_then(|s| s.get(1)))
+            .or_else(|| text(item.get(7).and_then(|t| t.get(2))))
+            .unwrap_or_default();
+        out.push(Image {
+            thumbnail: thumbnail.to_string(),
+            width: size(2),
+            height: size(3),
+            title: title.chars().take(TITLE_MAX_CHARS).collect(),
+            page: page.to_string(),
+            site: text(source.and_then(|s| s.get(5)))
+                .unwrap_or_else(|| host.strip_prefix("www.").unwrap_or(host))
+                .to_string(),
+        });
+        if out.len() == IMAGE_MAX {
+            break;
+        }
+    }
+    out
+}
+
+/// Ảnh thu nhỏ trên máy chủ ảnh của Google: `https://encrypted-tbn0.gstatic.com/images?q=…`.
+fn is_google_thumbnail(url: &str) -> bool {
+    let Some(rest) = url.strip_prefix("https://") else {
+        return false;
+    };
+    let host = &rest[..rest.find(['/', '?', '#']).unwrap_or(rest.len())];
+    host.starts_with("encrypted-tbn")
+        && host.ends_with(".gstatic.com")
+        && host.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'.' || c == b'-')
+}
+
+/// Tên miền của link http/https ("www.wikihow.com"); không phải link http/https thì `None`.
+fn web_host(url: &str) -> Option<&str> {
+    let rest = url.strip_prefix("https://").or_else(|| url.strip_prefix("http://"))?;
+    let host = &rest[..rest.find(['/', '?', '#']).unwrap_or(rest.len())];
+    let ok = !host.is_empty() && host.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'.' || c == b'-');
+    ok.then_some(host)
 }
 
 /// Bỏ chỗ trang Gemini chèn link nội bộ thay cho thẻ (bản đồ, ảnh...): người dùng không mở được. Bỏ cả thẻ
@@ -401,6 +509,7 @@ mod tests {
         let reply = Reply {
             text: "Xin chào! Xem  nhé".into(),
             follow_ups: Vec::new(),
+            images: Vec::new(),
             model: Some("3.5 Flash-Lite".into()),
         };
         assert_eq!(parse_reply(&raw), reply);
@@ -412,6 +521,50 @@ mod tests {
         ]);
         assert_eq!(parse_reply(&format!(")]}}'\n\n{one_line}\n")), reply);
         assert_eq!(parse_reply("<html>").text, "");
+    }
+
+    #[test]
+    fn lay_anh_thu_nho_cua_google_kem_trang_co_anh() {
+        use serde_json::json;
+        // Một ảnh trong ô 12, như trang Gemini nhận (14/10/2026).
+        let image = |thumb: &str, page: &str, site: serde_json::Value| {
+            json!([
+                [["https://www.wikihow.com/images/3/33/Chiikawa.jpg"], null, 3200, 3073],
+                [[page], "Chiikawa Characters Guide", 7, null, null, site],
+                null,
+                [[thumb], null, 565, 543],
+                null, null, null,
+                ["http://googleusercontent.com/image_agent_tag_1", null, "Chiikawa and friends"]
+            ])
+        };
+        let tbn = "https://encrypted-tbn0.gstatic.com/images?q=tbn:abc&s=10";
+        let mut inner = json!([null, ["c_1", "r_1"], null, null, [["rc_1", ["Đây nè:\n\nhttp://googleusercontent.com/lmdx_content/x"]]]]);
+        let candidate = &mut inner[4][0];
+        candidate.as_array_mut().unwrap().resize(13, serde_json::Value::Null);
+        candidate[12] = json!([null, [
+            image(tbn, "https://www.wikihow.com/Chiikawa-Characters", json!("wikiHow")),
+            // Trùng ảnh thu nhỏ, ảnh thu nhỏ không phải của Google, trang không phải http/https: bỏ.
+            image(tbn, "https://example.com/a", json!("Khác")),
+            image("https://evil.com@encrypted-tbn0.gstatic.com/x", "https://example.com/b", json!(null)),
+            image("https://encrypted-tbn1.gstatic.com/images?q=2", "javascript:alert(1)", json!(null)),
+            // Không có tên trang thì lấy tên miền.
+            image("https://encrypted-tbn1.gstatic.com/images?q=3", "https://www.example.com/c", json!(null)),
+        ]]);
+        let raw = serde_json::json!([["wrb.fr", null, inner.to_string()]]).to_string();
+        let reply = parse_reply(&raw);
+        assert_eq!(reply.text, "Đây nè:");
+        let images: Vec<_> = reply.images.iter().map(|i| (i.thumbnail.as_str(), i.page.as_str(), i.site.as_str())).collect();
+        assert_eq!(
+            images,
+            [
+                (tbn, "https://www.wikihow.com/Chiikawa-Characters", "wikiHow"),
+                ("https://encrypted-tbn1.gstatic.com/images?q=3", "https://www.example.com/c", "example.com"),
+            ]
+        );
+        assert_eq!((reply.images[0].width, reply.images[0].height), (565, 543));
+        assert_eq!(reply.images[0].title, "Chiikawa Characters Guide");
+        assert!(!is_google_thumbnail("http://encrypted-tbn0.gstatic.com/images?q=1"));
+        assert!(!is_google_thumbnail("https://encrypted-tbn0.gstatic.com.evil.com/x"));
     }
 
     #[test]
@@ -500,6 +653,13 @@ mod tests {
             // Câu cần tra mạng.
             let reply = gemini.chat("Tỷ giá USD/VND hôm nay bao nhiêu? Trả lời một câu.").await.unwrap();
             println!("{:?} | {} | {:?}", reply.model, reply.text, reply.follow_ups);
+            // Câu xin ảnh: Google thường kèm ảnh tìm được.
+            let reply = gemini.chat("Show me a picture of a red panda.").await.unwrap();
+            println!("{} | {:?}", reply.text, reply.images);
+            for image in &reply.images {
+                let (kind, bytes) = gemini.thumbnail(image).await.unwrap();
+                println!("{kind} {} byte", bytes.len());
+            }
         });
     }
 }

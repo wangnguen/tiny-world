@@ -94,7 +94,7 @@ pub fn spawn(app: AppHandle) {
                 let now = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
                 if down && !saving && activity.save_pressed(now) {
                     if let Err(e) = app.emit_to(overlay::LABEL, events::REMINDER, Reminder::SaveSpam) {
-                        eprintln!("Không báo được spam Ctrl+S: {e}");
+                        log!("Không báo được spam Ctrl+S: {e}");
                     }
                 }
                 saving = down;
@@ -124,7 +124,7 @@ pub fn spawn(app: AppHandle) {
                 pressed,
             };
             if let Err(e) = app.emit_to(overlay::LABEL, events::CURSOR_MOVED, info) {
-                eprintln!("Không gửi được vị trí con trỏ: {e}");
+                log!("Không gửi được vị trí con trỏ: {e}");
             }
         }
     });

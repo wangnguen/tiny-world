@@ -268,6 +268,7 @@ pub fn setup(app: &AppHandle) -> AppResult<()> {
     }
     let geometry = Geometry::new(&primary, &all);
     place(&window, geometry.window)?;
+    keep_tool_window(&window);
     window.set_ignore_cursor_events(true)?;
     window.show()?;
     app.manage(Overlay {
@@ -281,12 +282,59 @@ pub fn setup(app: &AppHandle) -> AppResult<()> {
     Ok(())
 }
 
+/// Giữ overlay là cửa sổ công cụ (`WS_EX_TOOLWINDOW`). Lúc con trỏ nằm trên pet (kéo pet, click chuột phải
+/// để chat), overlay tắt click-through và thành cửa sổ đục phủ hết vùng làm việc: Chrome, Edge tính là cửa
+/// sổ của nó bị che kín nên ẩn trang, Google Meet thấy trang ẩn thì tắt video người khác chia sẻ (màn hình
+/// đen). Chromium không tính cửa sổ công cụ là che. tao ghi đè cả ex-style mỗi lần đổi click-through, nên
+/// thêm cờ này ở `WM_STYLECHANGING`, trước mỗi lần đổi. Phải gọi trên luồng tạo cửa sổ (main thread).
+#[cfg(windows)]
+fn keep_tool_window(window: &WebviewWindow) {
+    use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+    use windows_sys::Win32::UI::Shell::{DefSubclassProc, SetWindowSubclass};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, STYLESTRUCT, WM_STYLECHANGING, WS_EX_TOOLWINDOW,
+    };
+
+    unsafe extern "system" fn subclass(
+        hwnd: HWND,
+        msg: u32,
+        wparam: WPARAM,
+        lparam: LPARAM,
+        _id: usize,
+        _data: usize,
+    ) -> LRESULT {
+        if msg == WM_STYLECHANGING && wparam as i32 == GWL_EXSTYLE {
+            // SAFETY: với WM_STYLECHANGING, `lparam` trỏ tới STYLESTRUCT mà Windows cho sửa trước khi áp dụng.
+            let style = unsafe { &mut *(lparam as *mut STYLESTRUCT) };
+            style.styleNew |= WS_EX_TOOLWINDOW;
+        }
+        // SAFETY: chuyển tiếp nguyên message cho thủ tục cửa sổ phía sau.
+        unsafe { DefSubclassProc(hwnd, msg, wparam, lparam) }
+    }
+
+    let Ok(hwnd) = window.hwnd() else {
+        return;
+    };
+    let hwnd = hwnd.0 as HWND;
+    // SAFETY: `hwnd` là overlay còn sống, tạo trên luồng đang chạy; `subclass` không giữ con trỏ nào.
+    unsafe {
+        if SetWindowSubclass(hwnd, Some(subclass), 1, 0) == 0 {
+            log!("Không giữ được overlay là cửa sổ công cụ, Google Meet có thể bị đen khi chạm vào pet.");
+            return;
+        }
+        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, GetWindowLongPtrW(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW as isize);
+    }
+}
+
+#[cfg(not(windows))]
+fn keep_tool_window(_window: &WebviewWindow) {}
+
 /// Đo lại màn hình mỗi giây, có gì đổi thì đặt lại overlay (`refit`).
 pub fn watch(app: AppHandle) {
     thread::spawn(move || loop {
         thread::sleep(WATCH_INTERVAL);
         if let Err(e) = refit(&app) {
-            eprintln!("Không đặt lại được overlay theo màn hình: {e}");
+            log!("Không đặt lại được overlay theo màn hình: {e}");
         }
     });
 }
@@ -378,7 +426,7 @@ pub fn toggle_paused(app: &AppHandle) -> bool {
     };
     let paused = !overlay.paused.fetch_xor(true, Ordering::Relaxed);
     if let Err(e) = app.emit_to(LABEL, events::PAUSED, paused) {
-        eprintln!("Không báo được trạng thái tạm dừng cho overlay: {e}");
+        log!("Không báo được trạng thái tạm dừng cho overlay: {e}");
     }
     paused
 }
@@ -413,11 +461,11 @@ fn apply_visibility(app: &AppHandle, overlay: &Overlay) {
     let visible = overlay.is_visible();
     let result = if visible { window.show() } else { window.hide() };
     if let Err(e) = result {
-        eprintln!("Không đổi được trạng thái ẩn/hiện của overlay: {e}");
+        log!("Không đổi được trạng thái ẩn/hiện của overlay: {e}");
     }
     // Cửa sổ ẩn nhưng trang vẫn chạy như đang hiện, báo để frontend dừng vòng lặp vẽ.
     if let Err(e) = app.emit_to(LABEL, events::OVERLAY_VISIBILITY, visible) {
-        eprintln!("Không báo được trạng thái ẩn/hiện cho overlay: {e}");
+        log!("Không báo được trạng thái ẩn/hiện cho overlay: {e}");
     }
     // Lúc ẩn luồng theo dõi cửa sổ gỡ hook; hiện lại thì đánh thức để nó gắn lại và đọc ngay.
     if visible {
@@ -446,7 +494,7 @@ pub fn set_resting(app: &AppHandle, resting: bool) {
 fn apply_memory_level(window: &WebviewWindow, overlay: &Overlay) {
     let low = overlay.resting.load(Ordering::Relaxed) || !overlay.is_visible();
     if let Err(e) = memory::set_low(window, low) {
-        eprintln!("Không đổi được mức dùng RAM của WebView2: {e}");
+        log!("Không đổi được mức dùng RAM của WebView2: {e}");
     }
 }
 
@@ -476,7 +524,7 @@ mod memory {
                     .and_then(|core| core.SetMemoryUsageTargetLevel(level))
             };
             if let Err(e) = result {
-                eprintln!("WebView2 không hỗ trợ đổi mức dùng RAM: {e}");
+                log!("WebView2 không hỗ trợ đổi mức dùng RAM: {e}");
             }
         })
     }

@@ -144,6 +144,8 @@ export class Ambience {
   private ghostReported = false;
   /** Vừa chọn thành phố mới: lấy được thời tiết ở đó thì một con báo luôn, để biết là đã chạy. */
   private announce = false;
+  /** Im lặng (tray): thông báo chờ tới lúc hết Im lặng, lời nhắc thì bỏ. */
+  private quiet = false;
 
   constructor(
     private readonly host: AmbienceHost,
@@ -284,7 +286,7 @@ export class Ambience {
     }
 
     const notice = this.notices[0];
-    if (notice && !residents.some((r) => r.pet.speech)) {
+    if (notice && !this.quiet && !residents.some((r) => r.pet.speech)) {
       const speaker = pickAwake(residents) ?? (notice.urgent ? (residents[0] ?? null) : null);
       if (speaker) {
         this.notices.shift();
@@ -349,8 +351,19 @@ export class Ambience {
     });
   }
 
+  /**
+   * Im lặng (tray): pet không nói câu cho vui (`World.quiet`), thông báo (thời tiết, dịp, bản mới) chờ tới lúc
+   * hết Im lặng, lời nhắc tới trong lúc đó thì bỏ. Câu người dùng tự hỏi (bấm đúp) vẫn nói.
+   */
+  setQuiet(quiet: boolean): void {
+    this.quiet = quiet;
+    this.host.world.quiet = quiet;
+    if (!quiet) this.host.wake();
+  }
+
   /** Rust nhắc (activity.rs): nhắc nghỉ, uống nước, nhắc khuya, spam Ctrl+S. Không qua giới hạn câu nói cho vui. */
   remind(reminder: Reminder): void {
+    if (this.quiet) return;
     if (reminder.kind === "saveSpam") {
       this.notices.push({ text: saveSpamLine(), urgent: true });
     } else {

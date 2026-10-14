@@ -118,7 +118,7 @@ pub fn preview_ghost(app: AppHandle, overlay: State<'_, Overlay>) -> AppResult<(
 pub fn report_preview(app: AppHandle, preview: State<'_, Preview>, state: PreviewState) {
     preview.set(state);
     if let Err(e) = app.emit_to(settings::WINDOW_LABEL, events::PREVIEW_CHANGED, state) {
-        eprintln!("Không báo được trạng thái xem thử cho Cài đặt: {e}");
+        log!("Không báo được trạng thái xem thử cho Cài đặt: {e}");
     }
 }
 

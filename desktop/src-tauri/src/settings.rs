@@ -338,12 +338,12 @@ impl SettingsStore {
         let path = data_dir.join("settings.json");
         let settings = match fs::read(&path) {
             Ok(bytes) => serde_json::from_slice::<Settings>(&bytes).unwrap_or_else(|e| {
-                eprintln!("settings.json hỏng, dùng cài đặt mặc định: {e}");
+                log!("settings.json hỏng, dùng cài đặt mặc định: {e}");
                 Settings::default()
             }),
             Err(e) if e.kind() == ErrorKind::NotFound => Settings::default(),
             Err(e) => {
-                eprintln!("Không đọc được settings.json, dùng cài đặt mặc định: {e}");
+                log!("Không đọc được settings.json, dùng cài đặt mặc định: {e}");
                 Settings::default()
             }
         };
@@ -374,7 +374,7 @@ pub fn open_window(app: &AppHandle) {
     let app = app.clone();
     std::thread::spawn(move || {
         if let Err(e) = show_or_create(&app) {
-            eprintln!("Không mở được cửa sổ cài đặt: {e}");
+            log!("Không mở được cửa sổ cài đặt: {e}");
         }
     });
 }

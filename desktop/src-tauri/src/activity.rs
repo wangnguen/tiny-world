@@ -364,7 +364,7 @@ impl Activity {
         }
         match Self::write(&self.path, &tracker) {
             Ok(()) => tracker.dirty = false,
-            Err(e) => eprintln!("Không lưu được stats.json: {e}"),
+            Err(e) => log!("Không lưu được stats.json: {e}"),
         }
     }
 
@@ -405,12 +405,12 @@ pub fn spawn(app: AppHandle) {
             });
             if let Some(busy) = fx.busy {
                 if let Err(e) = app.emit_to(overlay::LABEL, events::ACTIVITY_CHANGED, busy) {
-                    eprintln!("Không báo được đang gõ phím: {e}");
+                    log!("Không báo được đang gõ phím: {e}");
                 }
             }
             if let Some(reminder) = fx.reminder {
                 if let Err(e) = app.emit_to(overlay::LABEL, events::REMINDER, reminder) {
-                    eprintln!("Không gửi được lời nhắc: {e}");
+                    log!("Không gửi được lời nhắc: {e}");
                 }
             }
             if now.saturating_sub(last_save) >= SAVE_EVERY_MS {
