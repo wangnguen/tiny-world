@@ -1,24 +1,36 @@
 import { Fragment, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { errorMessage, fill, isAppError, messages, type ChatTarget, type FollowUp, type Lang } from "@tinyworld/core";
+import {
+  errorMessage,
+  fill,
+  isAppError,
+  messages,
+  type ChatImage,
+  type ChatTarget,
+  type FollowUp,
+  type Lang,
+} from "@tinyworld/core";
 import { api } from "../api";
 import { LangContext, guessLang, useMessages } from "../i18n";
 import { loadThumbnail } from "../overlay/sprites";
 import { ChatScene, HILL_FOOT } from "./ChatScene";
 import { parseReply, type Inline } from "./markdown";
-import { MESSAGE_MAX, buildPrompt, dayKey, dayText, personaOf, pickSuggestions, type Turn } from "./prompt";
+import { MESSAGE_MAX, buildPrompt, dayKey, dayText, personaOf, pickSuggestions, turnsOf, type Line } from "./prompt";
 
 /** Chiều cao frame của pet ở đầu khung chat (CSS pixel); frame có chừa khoảng trống quanh nhân vật. */
 const AVATAR_HEIGHT = 76;
 /** Chữ "Đã chép" hiện chừng này ms. */
 const COPIED_MS = 1500;
 
-/** Một dòng trong khung chat: câu của người dùng, câu của pet, hoặc ghi chú (mất mạng, gửi nhanh quá...). */
-interface Entry {
+/**
+ * Một dòng trong khung chat: câu của người dùng, câu của pet, ghi chú (mất mạng, gửi nhanh quá...), hoặc câu
+ * pet nói khi Google trả lời lâu quá giữa đoạn chat (`restart`, xem `turnsOf`).
+ */
+interface Entry extends Line {
   id: number;
-  kind: Turn["from"] | "note";
-  text: string;
   /** Câu hỏi tiếp Gemini gợi ý (chỉ câu của pet), hiện thành nút khi đây là lượt chat mới nhất. */
   followUps?: FollowUp[];
+  /** Ảnh Google tìm được (chỉ câu của pet), hiện dưới câu trả lời. */
+  images?: ChatImage[];
 }
 
 /**
@@ -97,13 +109,13 @@ export function ChatApp() {
     end.current?.scrollIntoView({ block: "end" });
   }, [entries, sending]);
 
-  const add = (kind: Entry["kind"], text: string, followUps?: FollowUp[]) =>
-    setEntries((list) => [...list, { id: nextId.current++, kind, text, followUps }]);
+  const add = (kind: Entry["kind"], text: string, extra?: Pick<Entry, "followUps" | "images">) =>
+    setEntries((list) => [...list, { id: nextId.current++, kind, text, ...extra }]);
 
   const send = async (text: string) => {
     const message = text.trim().slice(0, MESSAGE_MAX);
     if (!target || sending || !message) return;
-    const history = entries.flatMap((e): Turn[] => (e.kind === "note" ? [] : [{ from: e.kind, text: e.text }]));
+    const history = turnsOf(entries);
     const prompt = buildPrompt(personaOf(target.pet, target.name, m), history, message, new Date(), m);
     const id = nextId.current++;
     setEntries((list) => [...list, { id, kind: "user", text: message }]);
@@ -111,14 +123,19 @@ export function ChatApp() {
     setSending(true);
     try {
       const reply = await api.sendChat(prompt);
-      add("pet", reply.text, reply.followUps);
+      add("pet", reply.text, { followUps: reply.followUps, images: reply.images });
     } catch (e) {
       if (isAppError(e) && e.code === "BUSY") {
         // Chưa gửi đi: trả lại câu vào ô nhập để gửi lại sau.
         setEntries((list) => list.filter((entry) => entry.id !== id));
         setInput(message);
       }
-      add("note", isAppError(e) && e.code === "OFFLINE" ? m.chat.offline : errorMessage(e));
+      if (isAppError(e) && e.code === "TIMEOUT" && history.length > 0) {
+        // Gửi kèm đoạn chat mà Google trả lời lâu quá: pet nói đoạn chat dài quá, lần sau bắt đầu lại.
+        add("restart", m.chat.restart);
+      } else {
+        add("note", isAppError(e) && e.code === "OFFLINE" ? m.chat.offline : errorMessage(e));
+      }
     } finally {
       setSending(false);
       box.current?.focus();
@@ -230,11 +247,19 @@ export function ChatApp() {
   );
 }
 
-/** Một câu trong đoạn chat; câu của pet có tên pet phía trên và nút Chép. */
+/** Một câu trong đoạn chat; câu của pet có tên pet phía trên và nút Chép (câu bắt đầu lại thì không). */
 function Message({ entry, name }: { entry: Entry; name: string }) {
   const m = useMessages();
   const [copied, setCopied] = useState(false);
   if (entry.kind === "user") return <div className="msg msg--user">{entry.text}</div>;
+  if (entry.kind === "restart") {
+    return (
+      <div className="msg msg--pet">
+        <span className="msg__name">{name}</span>
+        <p>{entry.text}</p>
+      </div>
+    );
+  }
   const copy = () => {
     navigator.clipboard
       .writeText(entry.text)
@@ -248,6 +273,23 @@ function Message({ entry, name }: { entry: Entry; name: string }) {
     <div className="msg msg--pet">
       <span className="msg__name">{name}</span>
       <Reply text={entry.text} />
+      {entry.images && entry.images.length > 0 && (
+        <div className="msg__images">
+          {entry.images.map((image) => (
+            <button
+              key={image.src}
+              type="button"
+              className="msg__image"
+              title={fill(m.chat.imageSource, { title: image.title, site: image.site }).trim()}
+              onClick={() =>
+                api.openLink(image.page).catch((e: unknown) => console.warn("Không mở được link:", errorMessage(e)))
+              }
+            >
+              <img src={image.src} alt={image.title} width={image.width || undefined} height={image.height || undefined} />
+            </button>
+          ))}
+        </div>
+      )}
       <button type="button" className="msg__copy" onClick={copy}>
         {copied ? m.chat.copied : m.chat.copy}
       </button>

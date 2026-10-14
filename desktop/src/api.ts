@@ -87,6 +87,8 @@ export const api = {
   sendChat: (prompt: string) => invoke<ChatReply>("send_chat", { prompt }),
   /** Mở link http/https bằng trình duyệt. */
   openLink: (url: string) => invoke<void>("open_link", { url }),
+  /** Mở thư mục chứa `tinyworld.log` bằng Explorer (log.rs). */
+  openLogFolder: () => invoke<void>("open_log_folder"),
   /** Bản mới theo lần hỏi GitHub gần nhất; `null` là chưa thấy (update.rs). */
   getUpdate: () => invoke<UpdateInfo | null>("get_update"),
   /** Hỏi GitHub ngay; `null` là đang dùng bản mới nhất, mất mạng thì lỗi `OFFLINE`. */
@@ -114,6 +116,7 @@ export const api = {
     listen<boolean>(EVENTS.overlayVisibility, (event) => callback(event.payload)),
   onPaused: (callback: (paused: boolean) => void) =>
     listen<boolean>(EVENTS.paused, (event) => callback(event.payload)),
+  onQuiet: (callback: (quiet: boolean) => void) => listen<boolean>(EVENTS.quiet, (event) => callback(event.payload)),
   onSettingsChanged: (callback: (settings: Settings) => void) =>
     listen<Settings>(EVENTS.settingsChanged, (event) => callback(event.payload)),
   onQuitRequested: (callback: () => void) => listen(EVENTS.quitRequested, () => callback()),

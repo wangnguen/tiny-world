@@ -11,7 +11,7 @@ async function load(file) {
   return import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
 }
 const { parseInline, parseReply } = await load("markdown.ts");
-const { buildPrompt, dayKey, dayText, personaOf, pickSuggestions, HISTORY_TURNS, PROMPT_MAX } = await load("prompt.ts");
+const { buildPrompt, dayKey, dayText, personaOf, pickSuggestions, turnsOf, HISTORY_TURNS, PROMPT_MAX } = await load("prompt.ts");
 // Chữ của khung chat theo ngôn ngữ (file chữ dùng chung, packages/core/src/i18n).
 const words = (lang) =>
   JSON.parse(readFileSync(new URL(`../packages/core/src/i18n/${lang}.json`, import.meta.url), "utf8"));
@@ -99,4 +99,24 @@ test("câu gợi ý: bốc ngẫu nhiên không trùng, ngày gửi Rust theo gi
   assert.equal(dayKey(day), "2026-10-01");
   assert.equal(dayText(day, vi), "Thứ Năm 01/10/2026");
   assert.equal(dayText(day, en), "Thursday, October 1, 2026");
+});
+
+test("lượt gửi kèm: bỏ ghi chú, Google trả lời lâu quá thì bỏ các lượt trước đó", () => {
+  const lines = [
+    { kind: "user", text: "Chiikawa là ai?" },
+    { kind: "pet", text: "Là nhân vật của Nagano." },
+    { kind: "note", text: "Mất mạng" },
+    { kind: "user", text: "Cho xem ảnh" },
+  ];
+  assert.deepEqual(turnsOf(lines), [
+    { from: "user", text: "Chiikawa là ai?" },
+    { from: "pet", text: "Là nhân vật của Nagano." },
+    { from: "user", text: "Cho xem ảnh" },
+  ]);
+  const restarted = [...lines, { kind: "restart", text: vi.chat.restart }];
+  assert.deepEqual(turnsOf(restarted), []);
+  assert.deepEqual(turnsOf([...restarted, { kind: "user", text: "Tỉ giá USD?" }, { kind: "pet", text: "25.000" }]), [
+    { from: "user", text: "Tỉ giá USD?" },
+    { from: "pet", text: "25.000" },
+  ]);
 });

@@ -577,6 +577,30 @@ h2 {
   font-size: 13px;
 }
 
+/* Nút nhỏ "Mở thư mục log" ngay sau dòng chữ ở chân trang (góc phải có hình trang trí), kiểu như nút "Kiểm tra bản mới". */
+.note__link {
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.note__link:hover {
+  color: var(--text-2);
+}
+
+.note__link:focus-visible {
+  outline: 2px solid #9cc0ff;
+  outline-offset: 2px;
+}
+
 .page__decor {
   position: absolute;
   right: -22px;

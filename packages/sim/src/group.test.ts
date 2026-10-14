@@ -98,6 +98,30 @@ describe("nhiều pet", () => {
     }
   });
 
+  it("Im lặng: ít tự đi lại hơn hẳn, không nói câu cho vui", () => {
+    const moving = (quiet: boolean) => {
+      let frames = 0;
+      for (let seed = 1; seed <= 5; seed++) {
+        const { world } = setup([150, 500, 850], seed);
+        world.quiet = quiet;
+        for (let t = 0; t < 120; t += DT) {
+          world.step(DT);
+          frames += world.pets.filter((p) => p.state === "walk" || p.state === "run").length;
+        }
+      }
+      return frames;
+    };
+    expect(moving(true)).toBeLessThan(moving(false) * 0.5);
+    const { world, pets } = setup([200, 500]);
+    world.quiet = true;
+    run(world, TUNING.chatGap + 1);
+    // Chờ lâu thì cả nhóm đã ngủ: đánh thức để chỉ còn Im lặng chặn.
+    world.wakeAll();
+    expect(world.chat(pets[0], "Chào")).toBe(false);
+    world.quiet = false;
+    expect(world.chat(pets[0], "Chào")).toBe(true);
+  });
+
   it("từ 2 con trở lên thì không tự đi sang màn hình khác", () => {
     for (let seed = 1; seed <= 10; seed++) {
       const { world } = setup([850, 950], seed);

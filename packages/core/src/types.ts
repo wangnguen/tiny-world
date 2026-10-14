@@ -177,11 +177,25 @@ export interface FollowUp {
   query: string;
 }
 
+/** Ảnh Google tìm được kèm câu trả lời, khớp `ChatImage` trong chat.rs. */
+export interface ChatImage {
+  /** Ảnh thu nhỏ dạng `data:` và cỡ của nó. */
+  src: string;
+  width: number;
+  height: number;
+  title: string;
+  /** Trang có ảnh (bấm vào ảnh thì mở) và tên trang ("wikiHow"). */
+  page: string;
+  site: string;
+}
+
 /** Câu trả lời của pet, khớp `ChatReply` trong chat.rs. */
 export interface ChatReply {
   text: string;
   /** Câu hỏi tiếp gợi ý, thường rỗng. */
   followUps: FollowUp[];
+  /** Ảnh kèm theo, thường rỗng. */
+  images: ChatImage[];
 }
 
 /** Khoảng chọn được của `Settings.breakMinutes`, khớp `BREAK_MINUTES` trong settings.rs. */
@@ -302,7 +316,8 @@ export interface AppError {
 
 /** `OFFLINE`: mất mạng hoặc máy chủ không trả lời (thời tiết, chat). */
 /** `BUSY`: app tự chặn để không gửi dồn dập; `UNAVAILABLE`: dịch vụ bên ngoài lỗi hay đang chặn. */
-export type ErrorCode = "BAD_REQUEST" | "NO_WINDOW" | "INTERNAL" | "OFFLINE" | "BUSY" | "UNAVAILABLE";
+/** `TIMEOUT`: dịch vụ bên ngoài không trả lời kịp (chat). */
+export type ErrorCode = "BAD_REQUEST" | "NO_WINDOW" | "INTERNAL" | "OFFLINE" | "BUSY" | "UNAVAILABLE" | "TIMEOUT";
 
 export function isAppError(value: unknown): value is AppError {
   return (

@@ -1,6 +1,10 @@
 {
   "tray": {
     "pause": "Pause",
+    "quiet": "Quiet",
+    "quiet30": "30 minutes",
+    "quiet60": "1 hour",
+    "quietOn": "Until I turn it off",
     "toggle": "Show / hide pets",
     "settings": "Settings…",
     "quit": "Quit"
@@ -23,6 +27,7 @@
     "chatTimeout": "Google is taking too long, try sending again",
     "badLink": "Invalid link.",
     "browser": "Couldn't open the browser.",
+    "logFolder": "Couldn't open the log folder.",
     "httpClient": "Couldn't create the HTTP client: {error}",
     "weatherOffline": "No internet, or the weather server isn't responding.",
     "weatherFailed": "Couldn't get the weather: {error}",
@@ -37,6 +42,7 @@
     "updateBadLink": "Invalid download link for the new version.",
     "updateTooBig": "The downloaded installer is bigger than GitHub said.",
     "updateCut": "The download was interrupted, please try again.",
+    "updateHash": "The downloaded installer doesn't match GitHub's checksum (it may have been damaged on the way), please try again.",
     "updateFolder": "Couldn't create the download folder: {error}",
     "updateSave": "Couldn't save the installer: {error}",
     "previewTemperature": "Invalid temperature.",
@@ -111,6 +117,8 @@
     "version": "Version {version}",
     "versionBuild": "Version {version} · build {build}",
     "applied": "Changes apply right away.",
+    "openLog": "Open log folder",
+    "openLogHint": "App errors are written to tinyworld.log in this folder and stay on this computer. Attach it when reporting a bug.",
     "tabs": { "pet": "Pets", "world": "World", "health": "Health" },
     "size": "Pet size",
     "speed": "Walking speed",
@@ -271,7 +279,9 @@
     "sendTitle": "Send (Enter)",
     "copy": "Copy",
     "copied": "Copied",
+    "imageSource": "{title}\nClick to open the page with this image ({site})",
     "offline": "No internet",
+    "restart": "This chat has gotten so long I lost track :(( Let's start over, ask me again :)",
     "title": "Chat with {name}"
   },
   "prompt": {

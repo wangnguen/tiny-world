@@ -487,6 +487,8 @@ async function start(): Promise<void> {
     refreshClickThrough();
     if (!paused) wake();
   });
+  // Im lặng (tray, có hẹn giờ): pet không nói gì, ít tự đi lại hơn.
+  await api.onQuiet((value) => ambience.setQuiet(value));
   // Cửa sổ mở, đóng, di chuyển: dựng lại địa hình. Đăng ký trước rồi mới lấy danh sách hiện tại, để
   // không lỡ thay đổi nào ở giữa; đã nhận event thì danh sách lấy về (cũ hơn) bỏ đi.
   let windowsSeen = false;

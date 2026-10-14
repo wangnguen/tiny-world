@@ -9,7 +9,7 @@
 
 use crate::error::{AppError, AppResult};
 use crate::events;
-use crate::gemini::{FollowUp, Gemini, GeminiError};
+use crate::gemini::{FollowUp, Gemini, GeminiError, Image};
 use crate::i18n::{self, Lang};
 use crate::overlay::{self, Overlay, ScreenInfo};
 use crate::settings::SettingsStore;
@@ -71,6 +71,22 @@ pub struct ChatReply {
     pub text: String,
     /// Câu hỏi tiếp Gemini gợi ý, khung chat vẽ thành nút dưới câu trả lời.
     pub follow_ups: Vec<FollowUp>,
+    /// Ảnh Google tìm được, khung chat vẽ dưới câu trả lời.
+    pub images: Vec<ChatImage>,
+}
+
+/// Ảnh kèm câu trả lời, khớp `ChatImage` trong packages/core.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatImage {
+    /// Ảnh thu nhỏ dạng `data:` (khung chat không tự tải ảnh trên mạng) và cỡ của nó.
+    pub src: String,
+    pub width: u32,
+    pub height: u32,
+    pub title: String,
+    /// Trang có ảnh, bấm vào ảnh thì mở; tên trang ("wikiHow").
+    pub page: String,
+    pub site: String,
 }
 
 /// Vì sao chưa cho gửi.
@@ -273,22 +289,63 @@ impl Chat {
             Err(GeminiError::Offline | GeminiError::Timeout) => Outcome::Offline,
             Err(_) => Outcome::Failed,
         };
-        let mut limiter = self.limiter.lock().unwrap_or_else(|e| e.into_inner());
-        limiter.finish(Instant::now(), outcome);
+        let blocked_until = {
+            let mut limiter = self.limiter.lock().unwrap_or_else(|e| e.into_inner());
+            limiter.finish(Instant::now(), outcome);
+            limiter.blocked_until
+        };
         match result {
             Ok(reply) => Ok(ChatReply {
                 text: reply.text,
                 follow_ups: reply.follow_ups,
+                images: self.images(reply.images).await,
             }),
             Err(GeminiError::Offline) => Err(AppError::offline(lang.t("errors.chatOffline"))),
-            Err(GeminiError::Timeout) => Err(AppError::unavailable(lang.t("errors.chatTimeout"))),
+            Err(GeminiError::Timeout) => Err(AppError::timeout(lang.t("errors.chatTimeout"))),
             Err(e) => {
-                eprintln!("Chat lỗi: {e}");
-                let wait = limiter.blocked_until.map(|until| until.saturating_duration_since(Instant::now()));
+                log!("Chat lỗi: {e}");
+                let wait = blocked_until.map(|until| until.saturating_duration_since(Instant::now()));
                 Err(wait_error(Wait::Backoff(wait.unwrap_or(BACKOFF_START)), lang))
             }
         }
     }
+
+    /// Tải ảnh thu nhỏ của `images` cùng lúc, giữ thứ tự; ảnh tải lỗi thì bỏ.
+    async fn images(&self, images: Vec<Image>) -> Vec<ChatImage> {
+        let tasks: Vec<_> = images
+            .into_iter()
+            .map(|image| {
+                let gemini = self.gemini.clone();
+                tauri::async_runtime::spawn(async move {
+                    let Some((kind, bytes)) = gemini.thumbnail(&image).await else {
+                        log!("Không tải được ảnh thu nhỏ: {}", image.thumbnail);
+                        return None;
+                    };
+                    Some(ChatImage {
+                        src: data_url(kind, &bytes),
+                        width: image.width,
+                        height: image.height,
+                        title: image.title,
+                        page: image.page,
+                        site: image.site,
+                    })
+                })
+            })
+            .collect();
+        let mut out = Vec::new();
+        for task in tasks {
+            if let Ok(Some(image)) = task.await {
+                out.push(image);
+            }
+        }
+        out
+    }
+}
+
+/// `data:image/jpeg;base64,…` cho ảnh kiểu `kind`.
+fn data_url(kind: &str, bytes: &[u8]) -> String {
+    use base64::Engine;
+    format!("data:{kind};base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes))
 }
 
 /// Câu nhờ Gemini viết câu gợi ý cho ngày `date` ("Thứ Năm 01/10/2026", "Thursday, October 1, 2026") bằng
@@ -337,7 +394,7 @@ pub fn open(app: &AppHandle, mut target: ChatTarget, pet: PetBox) -> AppResult<i
     // Tạo webview trong command trên Windows có thể treo (như cửa sổ Cài đặt), nên chạy ở luồng riêng.
     std::thread::spawn(move || {
         if let Err(e) = show_or_create(&app, &target, pet, side) {
-            eprintln!("Không mở được cửa sổ chat: {e}");
+            log!("Không mở được cửa sổ chat: {e}");
         }
     });
     Ok(side)
@@ -400,7 +457,7 @@ fn show_or_create(app: &AppHandle, target: &ChatTarget, pet: PetBox, side: i8) -
             handle.state::<Chat>().set_target(None);
             // Pet đang chat lại đi lại như thường.
             if let Err(e) = handle.emit_to(overlay::LABEL, events::CHAT_CLOSED, ()) {
-                eprintln!("Không báo được đã đóng chat: {e}");
+                log!("Không báo được đã đóng chat: {e}");
             }
         }
     });
@@ -414,7 +471,7 @@ pub fn retitle(app: &AppHandle) {
         return;
     };
     if let Err(e) = window.set_title(&title(&target.name)) {
-        eprintln!("Không đổi được tiêu đề cửa sổ chat: {e}");
+        log!("Không đổi được tiêu đề cửa sổ chat: {e}");
     }
 }
 
@@ -433,16 +490,21 @@ pub fn open_link(url: &str) -> AppResult<()> {
     if !ok {
         return Err(AppError::bad_request(i18n::t("errors.badLink")));
     }
-    shell_open(url)
+    if shell_open(url) {
+        Ok(())
+    } else {
+        Err(AppError::internal(i18n::t("errors.browser")))
+    }
 }
 
+/// Mở `target` (link, thư mục) bằng chương trình mặc định của Windows; mở được thì `true`.
 #[cfg(windows)]
-fn shell_open(url: &str) -> AppResult<()> {
+pub(crate) fn shell_open(target: &str) -> bool {
     use windows_sys::Win32::UI::Shell::ShellExecuteW;
     use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
 
     let wide = |s: &str| s.encode_utf16().chain(std::iter::once(0)).collect::<Vec<u16>>();
-    let (verb, target) = (wide("open"), wide(url));
+    let (verb, target) = (wide("open"), wide(target));
     // SAFETY: các chuỗi kết thúc bằng 0 và sống tới hết lời gọi; không cần cửa sổ cha.
     let result = unsafe {
         ShellExecuteW(
@@ -455,16 +517,12 @@ fn shell_open(url: &str) -> AppResult<()> {
         )
     };
     // Theo tài liệu ShellExecute: giá trị > 32 là thành công.
-    if result as isize > 32 {
-        Ok(())
-    } else {
-        Err(AppError::internal(i18n::t("errors.browser")))
-    }
+    result as isize > 32
 }
 
 #[cfg(not(windows))]
-fn shell_open(_url: &str) -> AppResult<()> {
-    Err(AppError::internal("Chỉ hỗ trợ Windows."))
+pub(crate) fn shell_open(_target: &str) -> bool {
+    false
 }
 
 #[cfg(test)]
@@ -576,6 +634,11 @@ mod tests {
         );
         assert!(suggest_prompt("Thứ Năm 01/10/2026", Lang::Vi).starts_with("Hôm nay là Thứ Năm 01/10/2026."));
         assert!(suggest_prompt("Thursday, October 1, 2026", Lang::En).starts_with("Today is Thursday, October 1, 2026."));
+    }
+
+    #[test]
+    fn anh_gui_khung_chat_dang_data_url() {
+        assert_eq!(data_url("image/png", b"\x89PNG"), "data:image/png;base64,iVBORw==");
     }
 
     #[test]

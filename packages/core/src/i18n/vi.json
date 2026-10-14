@@ -1,6 +1,10 @@
 {
   "tray": {
     "pause": "Tạm dừng",
+    "quiet": "Im lặng",
+    "quiet30": "30 phút",
+    "quiet60": "1 giờ",
+    "quietOn": "Tới khi tắt",
     "toggle": "Ẩn / hiện pet",
     "settings": "Cài đặt…",
     "quit": "Thoát"
@@ -23,6 +27,7 @@
     "chatTimeout": "Lâu quá Google chưa trả lời, gửi lại thử nhé",
     "badLink": "Link không hợp lệ.",
     "browser": "Không mở được trình duyệt.",
+    "logFolder": "Không mở được thư mục log.",
     "httpClient": "Không tạo được HTTP client: {error}",
     "weatherOffline": "Mất mạng hoặc máy chủ thời tiết không trả lời.",
     "weatherFailed": "Lỗi khi hỏi thời tiết: {error}",
@@ -37,6 +42,7 @@
     "updateBadLink": "Link tải bản mới không hợp lệ.",
     "updateTooBig": "Bộ cài tải về to hơn GitHub báo.",
     "updateCut": "Tải bản mới bị đứt giữa chừng, thử lại nhé.",
+    "updateHash": "Bộ cài tải về không khớp mã kiểm tra của GitHub (có thể bị hỏng trên đường tải), thử lại nhé.",
     "updateFolder": "Không tạo được thư mục tải: {error}",
     "updateSave": "Không lưu được bộ cài: {error}",
     "previewTemperature": "Nhiệt độ không hợp lệ.",
@@ -111,6 +117,8 @@
     "version": "Phiên bản {version}",
     "versionBuild": "Phiên bản {version} · build {build}",
     "applied": "Thay đổi được áp dụng ngay.",
+    "openLog": "Mở thư mục log",
+    "openLogHint": "Lỗi của app được ghi vào tinyworld.log trong thư mục này, chỉ nằm trên máy. Gửi kèm file khi báo lỗi.",
     "tabs": { "pet": "Pet", "world": "Thế giới", "health": "Sức khoẻ" },
     "size": "Cỡ nhân vật",
     "speed": "Tốc độ đi lại",
@@ -271,7 +279,9 @@
     "sendTitle": "Gửi (Enter)",
     "copy": "Chép",
     "copied": "Đã chép",
+    "imageSource": "{title}\nBấm để mở trang có ảnh ({site})",
     "offline": "Mất mạng",
+    "restart": "Đoạn chat này dài quá, mình rối hết cả lên rồi :(( Mình nói lại từ đầu nhé, hỏi lại mình đi :)",
     "title": "Chat với {name}"
   },
   "prompt": {

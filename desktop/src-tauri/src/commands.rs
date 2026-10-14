@@ -163,6 +163,17 @@ pub fn open_link(url: String) -> AppResult<()> {
     chat::open_link(&url)
 }
 
+/// Nút Mở thư mục log trong Cài đặt: mở thư mục chứa `tinyworld.log` (log.rs) bằng Explorer.
+#[tauri::command]
+pub fn open_log_folder() -> AppResult<()> {
+    let opened = crate::log::dir().is_some_and(|dir| chat::shell_open(&dir.to_string_lossy()));
+    if opened {
+        Ok(())
+    } else {
+        Err(AppError::internal(i18n::t("errors.logFolder")))
+    }
+}
+
 /// Giờ ngồi máy đã lưu (tab Sức khoẻ trong Cài đặt).
 #[tauri::command]
 pub fn get_stats(activity: State<'_, Activity>) -> StatsView {

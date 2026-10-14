@@ -113,10 +113,10 @@ impl Weather {
         match serde_json::to_vec_pretty(&report) {
             Ok(bytes) => {
                 if let Err(e) = write_atomic(&self.path, &bytes) {
-                    eprintln!("Không lưu được weather.json: {e}");
+                    log!("Không lưu được weather.json: {e}");
                 }
             }
-            Err(e) => eprintln!("Không lưu được weather.json: {e}"),
+            Err(e) => log!("Không lưu được weather.json: {e}"),
         }
         if let Ok(mut current) = self.report.lock() {
             *current = Some(report);
@@ -149,7 +149,7 @@ pub fn spawn(app: AppHandle) {
         let client = match client() {
             Ok(client) => client,
             Err(e) => {
-                eprintln!("{e}");
+                log!("{e}");
                 return;
             }
         };
@@ -171,19 +171,19 @@ pub fn spawn(app: AppHandle) {
                                 retry = None;
                                 weather.set(report.clone());
                                 if let Err(e) = app.emit(events::WEATHER_CHANGED, Some(&report)) {
-                                    eprintln!("Không gửi được thời tiết: {e}");
+                                    log!("Không gửi được thời tiết: {e}");
                                 }
                                 Some(REFRESH)
                             }
                             Err(e) => {
-                                eprintln!("Không lấy được thời tiết, thử lại sau: {e}");
+                                log!("Không lấy được thời tiết, thử lại sau: {e}");
                                 // Chỉ báo ở lần lỗi đầu của mỗi đợt, không báo lại mỗi lần thử.
                                 if retry.is_none() {
                                     let failure = Failure {
                                         offline: e.code == "OFFLINE",
                                     };
                                     if let Err(e) = app.emit(events::WEATHER_FAILED, failure) {
-                                        eprintln!("Không báo được lỗi thời tiết: {e}");
+                                        log!("Không báo được lỗi thời tiết: {e}");
                                     }
                                 }
                                 let wait = next_retry(retry);

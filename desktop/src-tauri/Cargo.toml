@@ -15,6 +15,10 @@ serde_json = "1"
 # Thời tiết thật (weather.rs) và chat với pet (gemini.rs): HTTPS bằng TLS của Windows (SChannel), không
 # kéo OpenSSL.
 reqwest = { version = "0.12", default-features = false, features = ["native-tls"] }
+# Đã có sẵn qua Tauri: ảnh kèm câu trả lời gửi khung chat dạng `data:` (chat.rs).
+base64 = "0.22"
+# Đã có sẵn qua Tauri: kiểm tra SHA-256 của bộ cài bản mới (update.rs).
+sha2 = "0.10"
 # Đã có sẵn qua Tauri; bật thêm hẹn giờ và `select!` cho vòng hỏi thời tiết, Mutex async cho gemini.rs.
 tokio = { version = "1", features = ["time", "sync", "macros"] }
 

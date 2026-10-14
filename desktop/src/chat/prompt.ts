@@ -16,6 +16,20 @@ export interface Turn {
   text: string;
 }
 
+/** Một dòng trong khung chat: lượt chat, ghi chú (`note`), hoặc chỗ bắt đầu lại sau khi Google trả lời lâu quá (`restart`). */
+export interface Line {
+  kind: Turn["from"] | "note" | "restart";
+  text: string;
+}
+
+/** Các lượt chat để gửi kèm: bỏ ghi chú, chỉ lấy sau lần bắt đầu lại gần nhất. */
+export function turnsOf(lines: readonly Line[]): Turn[] {
+  const fresh = lines.slice(lines.map((line) => line.kind).lastIndexOf("restart") + 1);
+  return fresh.flatMap((line): Turn[] =>
+    line.kind === "user" || line.kind === "pet" ? [{ from: line.kind, text: line.text }] : [],
+  );
+}
+
 /** Nhân vật: tên ngắn và vài chữ mô tả, để Gemini trả lời theo giọng nhân vật. */
 export interface Persona {
   name: string;
