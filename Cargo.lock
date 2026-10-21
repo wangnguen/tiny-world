@@ -3937,8 +3937,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "image",
+ "jiff",
  "serde",
  "serde_json",
+ "tinyworld-backend",
  "windows",
  "windows-numerics",
 ]

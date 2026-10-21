@@ -83,10 +83,31 @@ impl Lang {
 
     /// Như `t`, thay `{tên}` trong chữ bằng giá trị trong `params`.
     pub fn tf(self, key: &str, params: &[(&str, &dyn Display)]) -> String {
-        params
-            .iter()
-            .fold(self.t(key), |text, (name, value)| text.replace(&format!("{{{name}}}"), &value.to_string()))
+        fill(self.t(key), params)
     }
+
+    /// Cả mục `key` (chữ, danh sách hay nhóm chữ), `Value::Null` nếu thiếu.
+    pub fn value(self, key: &str) -> &'static Value {
+        key.split('.').fold(self.messages(), |node, part| &node[part])
+    }
+
+    /// Danh sách chữ ở mục `key` (ví dụ "pet.greetings"). Thiếu mục thì như `t`: bản debug dừng luôn.
+    pub fn list(self, key: &str) -> Vec<String> {
+        let items: Vec<String> = self
+            .value(key)
+            .as_array()
+            .map(|items| items.iter().filter_map(|item| item.as_str().map(str::to_owned)).collect())
+            .unwrap_or_default();
+        debug_assert!(!items.is_empty(), "thiếu danh sách chữ {key} ({self:?})");
+        items
+    }
+}
+
+/// Thay `{tên}` trong `text` bằng giá trị trong `params`; tên không có thì giữ nguyên.
+pub fn fill(text: String, params: &[(&str, &dyn Display)]) -> String {
+    params
+        .iter()
+        .fold(text, |text, (name, value)| text.replace(&format!("{{{name}}}"), &value.to_string()))
 }
 
 /// `true` là tiếng Anh. Đặt lúc mở app và mỗi lần đổi cài đặt (`set`).

@@ -25,6 +25,22 @@ pub enum Sky {
     Petals,
 }
 
+impl Sky {
+    /// Tên như trong packages/core ("rain"), cũng là tên mục trong file chữ.
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Sunny => "sunny",
+            Self::Clear => "clear",
+            Self::Cloudy => "cloudy",
+            Self::Fog => "fog",
+            Self::Rain => "rain",
+            Self::Snow => "snow",
+            Self::Storm => "storm",
+            Self::Petals => "petals",
+        }
+    }
+}
+
 /// Thời tiết xem thử, khớp `WeatherPreview` trong packages/core: `None` là theo trời thật, cả hai `None` là
 /// thôi xem thử.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
