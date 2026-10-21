@@ -1,0 +1,50 @@
+# PoC overlay vẽ bằng DirectComposition (không WebView2): một cửa sổ trong suốt, mỗi pet một visual. Dùng để đo
+# RAM/CPU/GPU so với overlay Tauri trước khi chuyển hẳn (xem README.md).
+[package]
+name = "tinyworld-native"
+version = "0.1.0"
+description = "TinyWorld desktop pet (DirectComposition overlay PoC)"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1"
+# Chỉ giải mã WebP (sprite).
+image = { version = "0.25", default-features = false, features = ["webp"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+windows-numerics = "0.3"
+
+[dependencies.windows]
+version = "0.62"
+features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct2D",
+    "Win32_Graphics_Direct2D_Common",
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_DirectComposition",
+    "Win32_Graphics_Dwm",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_UI_HiDpi",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+]
+
+# Chưa vào chung workspace với desktop/src-tauri.
+[workspace]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+
+# Bản debug không tối ưu thì giải mã WebP lúc mở app chậm thấy rõ.
+[profile.dev.package.image-webp]
+opt-level = 3
