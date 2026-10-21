@@ -144,6 +144,8 @@ pub fn call(app: &mut App, id: u64, name: &str, args: Value, writer: Writer) {
         "debug_pet" => app.debug_pet(&args),
         #[cfg(debug_assertions)]
         "debug_open" => app.debug_open(&args),
+        #[cfg(debug_assertions)]
+        "debug_rebuild" => app.debug_rebuild(),
         other => Err(AppError::bad_request(format!("Không có command {other}."))),
     };
     writer.reply(id, result);

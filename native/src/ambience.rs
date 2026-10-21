@@ -243,6 +243,13 @@ impl Ambience {
         self.wake = true;
     }
 
+    /// Thiết bị GPU vừa tạo lại (`App::recreate_graphics`): lớp con ma, nhãn nhiệt độ mới; vẽ lại theo trời hiện tại.
+    pub fn rebuild(&mut self, ctx: &mut Ctx, ghost: Ghost, tag: TemperatureTag) {
+        self.ghost = ghost;
+        self.tag = tag;
+        self.refresh(ctx, true);
+    }
+
     /// Con mới hiện ra (đổi nhân vật): theo thời tiết như cả nhóm.
     pub fn adopt(&self, member: &mut Member) {
         member.effect.set_sky(self.sky.flatten());

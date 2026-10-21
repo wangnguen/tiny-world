@@ -85,7 +85,7 @@ pub struct Gfx {
     dwrite: IDWriteFactory,
     device: IDCompositionDesktopDevice,
     root: IDCompositionVisual2,
-    _target: IDCompositionTarget,
+    target: Option<IDCompositionTarget>,
     _d3d: ID3D11Device,
 }
 
@@ -103,7 +103,7 @@ impl Gfx {
             let root = device.CreateVisual()?;
             target.SetRoot(&root)?;
             device.Commit()?;
-            Ok(Self { dc, factory, dwrite, device, root, _target: target, _d3d: d3d })
+            Ok(Self { dc, factory, dwrite, device, root, target: Some(target), _d3d: d3d })
         }
     }
 
@@ -136,6 +136,18 @@ impl Gfx {
             }
             sink.Close()?;
             Ok(path.cast()?)
+        }
+    }
+
+    /// Bỏ cây visual khỏi cửa sổ: một cửa sổ chỉ có một target DirectComposition, nên phải gọi trước khi tạo `Gfx`
+    /// mới cho cùng cửa sổ (`is_device_lost`).
+    pub fn release(&mut self) {
+        unsafe {
+            let _ = self.root.RemoveAllVisuals();
+        }
+        self.target = None;
+        unsafe {
+            let _ = self.device.Commit();
         }
     }
 
@@ -239,6 +251,18 @@ impl Gfx {
         unsafe { self.device.Commit()? };
         Ok(())
     }
+}
+
+/// Lỗi `error` là do mất thiết bị GPU (driver cập nhật hay khởi động lại, đổi card màn hình): phải tạo lại `Gfx`
+/// và mọi lớp vẽ.
+pub fn is_device_lost(error: &anyhow::Error) -> bool {
+    use windows::Win32::Foundation::D2DERR_RECREATE_TARGET;
+    use windows::Win32::Graphics::Dxgi::{DXGI_ERROR_DEVICE_REMOVED, DXGI_ERROR_DEVICE_RESET};
+    error.chain().any(|cause| {
+        cause.downcast_ref::<windows::core::Error>().is_some_and(|e| {
+            [DXGI_ERROR_DEVICE_REMOVED, DXGI_ERROR_DEVICE_RESET, D2DERR_RECREATE_TARGET].contains(&e.code())
+        })
+    })
 }
 
 fn d3d_device() -> Result<ID3D11Device> {

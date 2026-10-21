@@ -216,6 +216,8 @@ pub struct App {
     remaps: Vec<tinyworld_backend::geometry::Remap>,
     timer: HANDLE,
     quitting: bool,
+    /// Lỗi lần trước của vòng lặp, để không ghi log lặp lại mỗi lượt.
+    last_error: Option<String>,
 }
 
 impl App {
@@ -349,6 +351,7 @@ impl App {
             remaps: Vec::new(),
             timer,
             quitting: false,
+            last_error: None,
         };
         app.sync_pets(&sprites::resolve_packs(&current_settings.pets))?;
         app.restoring.clear();
@@ -379,7 +382,20 @@ impl App {
             if !pump() {
                 break;
             }
-            self.tick()?;
+            // Lỗi vẽ (driver GPU, thiếu bộ nhớ) không làm tắt app: ghi log một lần, lượt sau thử lại.
+            if let Err(e) = self.tick() {
+                let message = format!("{e:#}");
+                if self.last_error.as_deref() != Some(message.as_str()) {
+                    log!("Overlay lỗi: {message}");
+                    self.last_error = Some(message);
+                }
+                if crate::gfx::is_device_lost(&e) {
+                    if let Err(e) = self.recreate_graphics() {
+                        log!("Không tạo lại được thiết bị GPU: {e:#}");
+                    }
+                }
+                self.next_frame = Instant::now() + FRAME;
+            }
             if self.quitting {
                 unsafe {
                     let _ = DestroyWindow(self.hwnd);
@@ -1032,6 +1048,37 @@ impl App {
         Ok(())
     }
 
+    /// Mất thiết bị GPU (driver cập nhật hay khởi động lại): tạo thiết bị mới và vẽ lại mọi con ở đúng chỗ cũ. Mô
+    /// phỏng không đổi gì.
+    fn recreate_graphics(&mut self) -> Result<()> {
+        if let Some(mut combo) = self.combo.take() {
+            combo.stop(&mut self.stage());
+        }
+        // Gỡ hết visual cũ khỏi cây rồi mới bỏ: còn treo trong cây thì cả thiết bị cũ không được giải phóng.
+        let old: Vec<(Option<String>, u32)> = (self.members.drain(..))
+            .map(|m| {
+                m.destroy(&self.gfx);
+                (m.pack.clone(), m.uid)
+            })
+            .collect();
+        self.gfx.release();
+        self.gfx = Gfx::new(self.hwnd)?;
+        let ghost = Ghost::new(self.gfx.layer(None)?)?;
+        let tag = TemperatureTag::new(self.gfx.layer(None)?)?;
+        for (pack, uid) in old {
+            let sprite = sprites::load(pack.as_deref());
+            let mut member = Member::new(&self.gfx, pack, sprite, self.size, self.px())?;
+            member.uid = uid;
+            self.ambience.adopt(&mut member);
+            self.members.push(member);
+        }
+        self.with_ambience(|ambience, ctx| ambience.rebuild(ctx, ghost, tag));
+        self.last_error = None;
+        self.redraw()?;
+        self.wake();
+        Ok(())
+    }
+
     // Nhân vật.
 
     /// Chỗ đứng cho con mới: từ góc phải dọc theo mặt đất, chỗ đầu tiên không đứng sát con nào.
@@ -1338,6 +1385,13 @@ impl App {
         if let Some(point) = center {
             self.context_menu(point).map_err(tinyworld_backend::error::AppError::internal)?;
         }
+        Ok(self.debug_state())
+    }
+
+    /// Bản dev: tạo lại thiết bị GPU như lúc mất thiết bị.
+    #[cfg(debug_assertions)]
+    pub(crate) fn debug_rebuild(&mut self) -> tinyworld_backend::error::AppResult<Value> {
+        self.recreate_graphics().map_err(tinyworld_backend::error::AppError::internal)?;
         Ok(self.debug_state())
     }
 
