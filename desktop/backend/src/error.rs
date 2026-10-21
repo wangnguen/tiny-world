@@ -71,6 +71,7 @@ impl From<serde_json::Error> for AppError {
     }
 }
 
+#[cfg(feature = "tauri")]
 impl From<tauri::Error> for AppError {
     fn from(e: tauri::Error) -> Self {
         Self::internal(e)

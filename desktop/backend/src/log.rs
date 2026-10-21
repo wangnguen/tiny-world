@@ -24,6 +24,7 @@ struct LogFile {
 static LOG: Mutex<Option<LogFile>> = Mutex::new(None);
 
 /// Ghi một dòng như `eprintln!`, kèm giờ máy.
+#[macro_export]
 macro_rules! log {
     ($($arg:tt)*) => {
         $crate::log::write(format_args!($($arg)*))

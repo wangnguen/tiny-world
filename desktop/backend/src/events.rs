@@ -1,4 +1,62 @@
-//! Tên event Rust gửi cho frontend, khớp `EVENTS` trong packages/core/src/protocol.ts.
+//! Tên event Rust gửi cho frontend, khớp `EVENTS` trong packages/core/src/protocol.ts, và `Host`: nơi các
+//! luồng nền (thời tiết, giờ ngồi máy, cập nhật, danh sách cửa sổ) gửi event tới.
+
+use crate::activity::Reminder;
+use crate::update::{UpdateInfo, UpdateProgress};
+use crate::weather::{Failure, Report};
+use crate::window_list::WindowList;
+use serde_json::Value;
+
+/// Event một luồng nền gửi đi.
+#[derive(Debug, Clone)]
+pub enum Event {
+    WeatherChanged(Option<Report>),
+    WeatherFailed(Failure),
+    ActivityChanged(bool),
+    Reminder(Reminder),
+    UpdateAvailable(UpdateInfo),
+    UpdateProgress(UpdateProgress),
+    WindowsChanged(WindowList),
+}
+
+impl Event {
+    /// Tên event phía frontend.
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::WeatherChanged(_) => WEATHER_CHANGED,
+            Self::WeatherFailed(_) => WEATHER_FAILED,
+            Self::ActivityChanged(_) => ACTIVITY_CHANGED,
+            Self::Reminder(_) => REMINDER,
+            Self::UpdateAvailable(_) => UPDATE_AVAILABLE,
+            Self::UpdateProgress(_) => UPDATE_PROGRESS,
+            Self::WindowsChanged(_) => WINDOWS_CHANGED,
+        }
+    }
+
+    /// Chỉ overlay cần (giờ ngồi máy, lời nhắc, cửa sổ); còn lại gửi mọi cửa sổ (Cài đặt cũng hiện).
+    pub fn overlay_only(&self) -> bool {
+        matches!(self, Self::ActivityChanged(_) | Self::Reminder(_) | Self::WindowsChanged(_))
+    }
+
+    /// Payload dạng JSON như frontend nhận.
+    pub fn payload(&self) -> Value {
+        let value = match self {
+            Self::WeatherChanged(report) => serde_json::to_value(report),
+            Self::WeatherFailed(failure) => serde_json::to_value(failure),
+            Self::ActivityChanged(busy) => serde_json::to_value(busy),
+            Self::Reminder(reminder) => serde_json::to_value(reminder),
+            Self::UpdateAvailable(info) => serde_json::to_value(info),
+            Self::UpdateProgress(progress) => serde_json::to_value(progress),
+            Self::WindowsChanged(list) => serde_json::to_value(list),
+        };
+        value.unwrap_or(Value::Null)
+    }
+}
+
+/// Nơi nhận event của các luồng nền: shell Tauri gửi tiếp cho webview, overlay native đưa vào vòng lặp chính.
+pub trait Host: Send + Sync + 'static {
+    fn emit(&self, event: Event);
+}
 
 /// `CursorInfo`, chỉ gửi khi con trỏ di chuyển hoặc phím Ctrl đổi trạng thái.
 pub const CURSOR_MOVED: &str = "cursor-moved";

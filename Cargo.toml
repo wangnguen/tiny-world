@@ -1,0 +1,15 @@
+# Rust của TinyWorld: shell Tauri (desktop/src-tauri), phần dùng chung (desktop/backend) và overlay vẽ bằng
+# DirectComposition (native). Một Cargo.lock, một thư mục target/ ở đây.
+[workspace]
+resolver = "2"
+members = ["desktop/src-tauri", "desktop/backend", "native"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+
+# Bản debug không tối ưu thì giải mã WebP lúc mở app chậm thấy rõ.
+[profile.dev.package.image-webp]
+opt-level = 3

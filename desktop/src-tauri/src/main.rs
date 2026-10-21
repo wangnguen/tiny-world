@@ -2,28 +2,23 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 #[macro_use]
-mod log;
+extern crate tinyworld_backend;
 
-mod activity;
+// Phần không dính tới Tauri nằm ở desktop/backend; đặt tên ở đây để các module dùng `crate::weather`... như cũ.
+use tinyworld_backend::{
+    activity, autostart, error, events, fullscreen, geometry, i18n, log, storage, weather, window_list,
+};
+
 mod app;
 mod app_icon;
-mod autostart;
 mod chat;
 mod commands;
 mod cursor;
-mod error;
-mod events;
-mod fullscreen;
-mod gemini;
-mod i18n;
 mod overlay;
 mod preview;
 mod settings;
-mod storage;
 mod tray;
 mod update;
-mod weather;
-mod window_list;
 
 fn main() {
     app::run();

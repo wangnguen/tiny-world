@@ -645,7 +645,8 @@ mod tests {
     #[test]
     #[ignore = "cần mạng, gọi Gemini thật"]
     fn gemini_that() {
-        tauri::async_runtime::block_on(async {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        runtime.block_on(async {
             let gemini = Gemini::new(Duration::from_secs(60));
             let reply = gemini.chat("What is 2 + 3? Answer with just the number.").await.unwrap();
             println!("{:?} | {}", reply.model, reply.text);

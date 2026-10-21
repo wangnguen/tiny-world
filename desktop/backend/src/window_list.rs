@@ -6,15 +6,14 @@
 //! gom các lần báo lại, đọc danh sách tối đa 30 lần/giây và chỉ gửi cho overlay khi có gì khác. Không
 //! có gì thay đổi thì luồng ngủ; cứ 2 giây đọc lại một lần phòng khi sót.
 
-use crate::events;
-use crate::overlay::{self, Geometry, Overlay, PhysicalRect, Rect};
+use crate::events::{Event, Host};
+use crate::geometry::{Geometry, Overlay, PhysicalRect, Rect};
 #[cfg(test)]
-use crate::overlay::Display;
+use crate::geometry::Display;
 use serde::Serialize;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Emitter, Manager};
 
 /// Khoảng cách tối thiểu giữa hai lần đọc khi cửa sổ đang thay đổi liên tục (kéo cửa sổ).
 const MIN_INTERVAL: Duration = Duration::from_millis(33);
@@ -160,12 +159,9 @@ pub fn refresh() {
     win32::wake();
 }
 
-pub fn spawn(app: AppHandle) {
-    // Bỏ chính overlay: nó phủ cả vùng làm việc, lúc con trỏ nằm trên pet thì không còn click-through.
-    let overlay_hwnd = app
-        .get_webview_window(overlay::LABEL)
-        .and_then(|window| window.hwnd().ok())
-        .map_or(0, |hwnd| hwnd.0 as isize);
+/// Theo dõi cửa sổ trên màn hình overlay đang phủ, gửi `Event::WindowsChanged` khi có gì khác. `overlay_hwnd`: chính
+/// overlay, bỏ khỏi danh sách (nó phủ cả vùng làm việc, lúc con trỏ nằm trên pet thì không còn click-through).
+pub fn spawn(overlay: Arc<Overlay>, current: Arc<Windows>, overlay_hwnd: isize, host: Arc<dyn Host>) {
     thread::spawn(move || {
         win32::init();
         let mut hooks: Option<win32::Hooks> = None;
@@ -175,7 +171,6 @@ pub fn spawn(app: AppHandle) {
         loop {
             // Overlay ẩn (app fullscreen, tray): không có pet để đứng trên cửa sổ. Gỡ hook để game hay video
             // không đánh thức luồng này mỗi lần chuột hay cửa sổ đổi; hiện lại thì gắn lại và đọc ngay.
-            let overlay = app.state::<Overlay>();
             if !overlay.is_visible() {
                 hooks = None;
                 win32::wait(HIDDEN_WAIT);
@@ -207,7 +202,7 @@ pub fn spawn(app: AppHandle) {
             // Xoá cờ trước khi đọc: cửa sổ đổi trong lúc đang đọc thì lần sau đọc lại.
             win32::clear_dirty();
             last_read = Some(now);
-            let geometry = app.state::<Overlay>().geometry();
+            let geometry = overlay.geometry();
             let windows = to_overlay(&win32::list(overlay_hwnd), &geometry);
             let taskbar = taskbar_top(&win32::taskbars(), &geometry);
             let closed = departures.update(&sent.windows, &windows, win32::alive, now);
@@ -219,10 +214,8 @@ pub fn spawn(app: AppHandle) {
                 closed,
                 taskbar_top: taskbar,
             };
-            app.state::<Windows>().set(&list);
-            if let Err(e) = app.emit_to(overlay::LABEL, events::WINDOWS_CHANGED, &list) {
-                log!("Không gửi được danh sách cửa sổ: {e}");
-            }
+            current.set(&list);
+            host.emit(Event::WindowsChanged(list.clone()));
             sent = WindowList {
                 closed: Vec::new(),
                 ..list
@@ -234,7 +227,7 @@ pub fn spawn(app: AppHandle) {
 #[cfg(windows)]
 mod win32 {
     use super::RawWindow;
-    use crate::overlay::PhysicalRect;
+    use crate::geometry::PhysicalRect;
     use std::ffi::c_void;
     use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
     use std::time::Duration;
@@ -525,7 +518,7 @@ mod win32 {
 #[cfg(not(windows))]
 mod win32 {
     use super::RawWindow;
-    use crate::overlay::PhysicalRect;
+    use crate::geometry::PhysicalRect;
     use std::time::Duration;
 
     pub fn dirty() -> bool {

@@ -13,7 +13,7 @@ use crate::events;
 use crate::overlay::{self, Overlay, Rect};
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
@@ -75,7 +75,7 @@ pub fn spawn(app: AppHandle) {
         let mut saving = false;
         let start = Instant::now();
         loop {
-            let overlay = app.state::<Overlay>();
+            let overlay = app.state::<Arc<Overlay>>();
             let interest = app.state::<CursorInterest>();
             if !overlay.is_visible() {
                 shown = false;
@@ -88,7 +88,7 @@ pub fn spawn(app: AppHandle) {
             };
             let pass_through = ctrl_pressed();
             let pressed = mouse_pressed();
-            let activity = app.state::<Activity>();
+            let activity = app.state::<Arc<Activity>>();
             if activity.save_spam_enabled() {
                 let down = pass_through && s_pressed();
                 let now = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);

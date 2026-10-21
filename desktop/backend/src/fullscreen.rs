@@ -4,14 +4,13 @@
 //! (maximize) còn thanh tiêu đề không bị coi là fullscreen → pet vẫn hiện, kể cả khi nó phủ kín màn hình
 //! (taskbar tự ẩn, màn hình phụ không có taskbar).
 
-use crate::overlay;
 use std::thread;
 use std::time::Duration;
-use tauri::AppHandle;
 
 const POLL_INTERVAL: Duration = Duration::from_secs(1);
 
-pub fn spawn(app: AppHandle) {
+/// Mỗi giây xem lại; có app fullscreen thì gọi `changed(true)`, hết thì `changed(false)`.
+pub fn spawn(mut changed: impl FnMut(bool) + Send + 'static) {
     thread::spawn(move || {
         let mut last = false;
         loop {
@@ -19,7 +18,7 @@ pub fn spawn(app: AppHandle) {
             let busy = fullscreen_app_active();
             if busy != last {
                 last = busy;
-                overlay::set_auto_hidden(&app, busy);
+                changed(busy);
             }
         }
     });

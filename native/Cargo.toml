@@ -35,16 +35,3 @@ features = [
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_WindowsAndMessaging",
 ]
-
-# Chưa vào chung workspace với desktop/src-tauri.
-[workspace]
-
-[profile.release]
-codegen-units = 1
-lto = true
-opt-level = "s"
-strip = true
-
-# Bản debug không tối ưu thì giải mã WebP lúc mở app chậm thấy rõ.
-[profile.dev.package.image-webp]
-opt-level = 3

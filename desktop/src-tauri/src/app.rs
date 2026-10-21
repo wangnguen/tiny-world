@@ -1,18 +1,43 @@
 use crate::activity::{self, Activity};
 use crate::chat::Chat;
 use crate::cursor::CursorInterest;
-use crate::preview::{self, Preview};
-use crate::update::{self, Updater};
+use crate::events::{Event, Host};
+use crate::overlay::Overlay;
+use crate::preview;
 use crate::settings::SettingsStore;
 use crate::storage::Storage;
+use crate::update::{self, Updater};
 use crate::weather::{self, Weather};
 use crate::window_list::{self, Windows};
 use crate::{commands, cursor, events, fullscreen, i18n, overlay, tray};
+use std::sync::Arc;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
+use tinyworld_backend::preview::Preview;
 
 /// Overlay có chừng này thời gian để lưu trạng thái trước khi app tự thoát.
 const QUIT_TIMEOUT: Duration = Duration::from_millis(1500);
+
+/// Event của các luồng nền (backend) gửi tiếp cho webview: overlay, hoặc mọi cửa sổ.
+pub struct TauriHost(AppHandle);
+
+impl Host for TauriHost {
+    fn emit(&self, event: Event) {
+        let (name, payload) = (event.name(), event.payload());
+        let result = if event.overlay_only() {
+            self.0.emit_to(overlay::LABEL, name, payload)
+        } else {
+            self.0.emit(name, payload)
+        };
+        if let Err(e) = result {
+            log!("Không gửi được event {name}: {e}");
+        }
+    }
+}
+
+pub fn host(app: &AppHandle) -> TauriHost {
+    TauriHost(app.clone())
+}
 
 pub fn run() {
     tauri::Builder::default()
@@ -24,26 +49,34 @@ pub fn run() {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
             crate::log::init(&data_dir, &app.package_info().version.to_string());
-            let settings = SettingsStore::load(&data_dir);
+            let settings = Arc::new(SettingsStore::load(&data_dir));
             i18n::set(settings.get().lang);
-            app.manage(Activity::load(&data_dir, &settings.get()));
-            app.manage(settings);
-            app.manage(Weather::load(&data_dir));
+            let activity = Arc::new(Activity::load(&data_dir, &settings.get()));
+            let weather = Arc::new(Weather::load(&data_dir));
+            let updater = Arc::new(Updater::new(app.package_info().version.to_string()));
+            let windows = Arc::new(Windows::default());
+            app.manage(activity.clone());
+            app.manage(settings.clone());
+            app.manage(weather.clone());
             app.manage(Storage::new(data_dir));
-            app.manage(Windows::default());
+            app.manage(windows.clone());
             app.manage(CursorInterest::default());
             app.manage(Chat::default());
             app.manage(Preview::default());
-            app.manage(Updater::default());
+            app.manage(updater.clone());
             overlay::setup(app.handle())?;
             overlay::watch(app.handle().clone());
             tray::setup(app.handle())?;
             cursor::spawn(app.handle().clone());
-            fullscreen::spawn(app.handle().clone());
-            window_list::spawn(app.handle().clone());
-            weather::spawn(app.handle().clone());
-            activity::spawn(app.handle().clone());
-            update::spawn(app.handle().clone());
+            let handle = app.handle().clone();
+            fullscreen::spawn(move |busy| overlay::set_auto_hidden(&handle, busy));
+            let host: Arc<dyn Host> = Arc::new(host(app.handle()));
+            let overlay_state = app.state::<Arc<Overlay>>().inner().clone();
+            window_list::spawn(overlay_state, windows, overlay::hwnd(app.handle()), host.clone());
+            let runtime = tauri::async_runtime::handle();
+            weather::spawn(runtime.inner(), weather, settings, host.clone());
+            activity::spawn(activity, host.clone());
+            update::spawn(runtime.inner(), updater, host);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -92,7 +125,7 @@ pub fn run() {
 /// Tray bấm Thoát: nhờ overlay lưu trạng thái, overlay lưu xong thì gọi command `quit`. Overlay không
 /// trả lời (trang lỗi...) thì vẫn thoát sau `QUIT_TIMEOUT`.
 pub fn request_quit(app: &AppHandle) {
-    app.state::<Activity>().flush();
+    app.state::<Arc<Activity>>().flush();
     if app.emit_to(overlay::LABEL, events::QUIT_REQUESTED, ()).is_err() {
         app.exit(0);
         return;

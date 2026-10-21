@@ -138,7 +138,7 @@ Things that happen without you doing anything (each can be turned off in the **W
 
 ```bash
 pnpm icons:desktop   # regenerate the icons if you just replaced assets/icon.png
-pnpm build:desktop   # NSIS installer in desktop/src-tauri/target/release/bundle/nsis
+pnpm build:desktop   # NSIS installer in target/release/bundle/nsis
 ```
 
 The source logo is [`assets/icon.png`](assets/icon.png), shared by the app, the system tray, the installer

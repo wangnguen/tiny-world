@@ -12,10 +12,11 @@ use crate::storage::Storage;
 use crate::weather::{self, CityResult, Report, Weather};
 use crate::window_list::{WindowList, Windows};
 use serde_json::Value;
+use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
 
 #[tauri::command]
-pub fn screen_info(overlay: State<'_, Overlay>) -> ScreenInfo {
+pub fn screen_info(overlay: State<'_, Arc<Overlay>>) -> ScreenInfo {
     overlay.geometry().screen
 }
 
@@ -29,7 +30,7 @@ pub async fn move_overlay(app: AppHandle, x: f64, y: f64) -> AppResult<()> {
 
 /// Các cửa sổ đang hiện (danh sách gửi lần gần nhất), để overlay vừa mở không phải chờ thay đổi.
 #[tauri::command]
-pub fn list_windows(windows: State<'_, Windows>) -> WindowList {
+pub fn list_windows(windows: State<'_, Arc<Windows>>) -> WindowList {
     windows.current()
 }
 
@@ -67,7 +68,7 @@ pub fn save_state(storage: State<'_, Storage>, state: Value) -> AppResult<()> {
 }
 
 #[tauri::command]
-pub fn get_settings(store: State<'_, SettingsStore>) -> Settings {
+pub fn get_settings(store: State<'_, Arc<SettingsStore>>) -> Settings {
     store.get()
 }
 
@@ -77,9 +78,9 @@ pub fn get_settings(store: State<'_, SettingsStore>) -> Settings {
 #[tauri::command]
 pub fn set_settings(
     app: AppHandle,
-    store: State<'_, SettingsStore>,
-    weather: State<'_, Weather>,
-    activity: State<'_, Activity>,
+    store: State<'_, Arc<SettingsStore>>,
+    weather: State<'_, Arc<Weather>>,
+    activity: State<'_, Arc<Activity>>,
     settings: Settings,
 ) -> AppResult<Settings> {
     let before = store.get();
@@ -106,7 +107,7 @@ pub fn set_settings(
 
 /// Thời tiết gần nhất của thành phố đang chọn; `null` nếu chưa chọn thành phố hoặc chưa lấy được lần nào.
 #[tauri::command]
-pub fn get_weather(store: State<'_, SettingsStore>, weather: State<'_, Weather>) -> Option<Report> {
+pub fn get_weather(store: State<'_, Arc<SettingsStore>>, weather: State<'_, Arc<Weather>>) -> Option<Report> {
     weather.current(store.get().city.as_ref())
 }
 
@@ -128,7 +129,7 @@ pub fn open_chat(app: AppHandle, pet: String, name: String, x: f64, y: f64, widt
 #[tauri::command]
 pub async fn chat_suggestions(
     chat: State<'_, Chat>,
-    store: State<'_, SettingsStore>,
+    store: State<'_, Arc<SettingsStore>>,
     today: String,
     date: String,
 ) -> AppResult<Vec<String>> {
@@ -148,7 +149,7 @@ pub fn chat_target(chat: State<'_, Chat>) -> Option<ChatTarget> {
 #[tauri::command]
 pub async fn send_chat(
     chat: State<'_, Chat>,
-    store: State<'_, SettingsStore>,
+    store: State<'_, Arc<SettingsStore>>,
     prompt: String,
 ) -> AppResult<ChatReply> {
     if !store.get().chat {
@@ -176,13 +177,13 @@ pub fn open_log_folder() -> AppResult<()> {
 
 /// Giờ ngồi máy đã lưu (tab Sức khoẻ trong Cài đặt).
 #[tauri::command]
-pub fn get_stats(activity: State<'_, Activity>) -> StatsView {
+pub fn get_stats(activity: State<'_, Arc<Activity>>) -> StatsView {
     activity.stats()
 }
 
 /// Xoá hết giờ ngồi máy đã lưu.
 #[tauri::command]
-pub fn clear_stats(activity: State<'_, Activity>) -> AppResult<()> {
+pub fn clear_stats(activity: State<'_, Arc<Activity>>) -> AppResult<()> {
     activity.clear()
 }
 
@@ -204,7 +205,7 @@ pub fn set_autostart(enabled: bool) -> AppResult<()> {
 
 /// Overlay gọi sau khi đã lưu trạng thái (xem `app::request_quit`).
 #[tauri::command]
-pub fn quit(app: AppHandle, activity: State<'_, Activity>) {
+pub fn quit(app: AppHandle, activity: State<'_, Arc<Activity>>) {
     activity.flush();
     app.exit(0);
 }

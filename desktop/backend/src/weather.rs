@@ -7,16 +7,16 @@
 //! Hạn mức miễn phí dưới 10.000 lần/ngày; app chỉ gọi khoảng 50 lần/ngày.
 
 use crate::error::{AppError, AppResult};
-use crate::events;
+use crate::events::{Event, Host};
 use crate::i18n::{self, Lang};
 use crate::settings::{City, SettingsStore};
 use crate::storage::write_atomic;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Emitter, Manager};
+use tokio::runtime::Handle;
 use tokio::sync::Notify;
 
 const FORECAST_URL: &str = "https://api.open-meteo.com/v1/forecast";
@@ -143,9 +143,9 @@ fn next_retry(previous: Option<Duration>) -> Duration {
     previous.map_or(RETRY_FIRST, |d| (d * 2).min(REFRESH))
 }
 
-/// Vòng hỏi thời tiết chạy nền suốt đời app.
-pub fn spawn(app: AppHandle) {
-    tauri::async_runtime::spawn(async move {
+/// Vòng hỏi thời tiết chạy nền suốt đời app, trên runtime `runtime`.
+pub fn spawn(runtime: &Handle, weather: Arc<Weather>, settings: Arc<SettingsStore>, host: Arc<dyn Host>) {
+    runtime.spawn(async move {
         let client = match client() {
             Ok(client) => client,
             Err(e) => {
@@ -155,8 +155,7 @@ pub fn spawn(app: AppHandle) {
         };
         let mut retry: Option<Duration> = None;
         loop {
-            let weather = app.state::<Weather>();
-            let city = app.state::<SettingsStore>().get().city;
+            let city = settings.get().city;
             let wait = match &city {
                 // Chưa chọn thành phố: không gọi mạng, chờ người dùng chọn.
                 None => None,
@@ -170,9 +169,7 @@ pub fn spawn(app: AppHandle) {
                             Ok(report) => {
                                 retry = None;
                                 weather.set(report.clone());
-                                if let Err(e) = app.emit(events::WEATHER_CHANGED, Some(&report)) {
-                                    log!("Không gửi được thời tiết: {e}");
-                                }
+                                host.emit(Event::WeatherChanged(Some(report)));
                                 Some(REFRESH)
                             }
                             Err(e) => {
@@ -182,9 +179,7 @@ pub fn spawn(app: AppHandle) {
                                     let failure = Failure {
                                         offline: e.code == "OFFLINE",
                                     };
-                                    if let Err(e) = app.emit(events::WEATHER_FAILED, failure) {
-                                        log!("Không báo được lỗi thời tiết: {e}");
-                                    }
+                                    host.emit(Event::WeatherFailed(failure));
                                 }
                                 let wait = next_retry(retry);
                                 retry = Some(wait);

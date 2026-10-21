@@ -7,8 +7,7 @@
 //! `stats.json`.
 
 use crate::error::AppResult;
-use crate::events;
-use crate::overlay;
+use crate::events::{Event, Host};
 use crate::settings::Settings;
 use crate::storage::write_atomic;
 use serde::{Deserialize, Serialize};
@@ -16,10 +15,9 @@ use std::collections::{BTreeMap, VecDeque};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Emitter, Manager};
 
 const TICK: Duration = Duration::from_secs(1);
 /// Hai lần input cách nhau từ chừng này trở lên thì khoảng giữa là vắng, không tính ngồi máy.
@@ -376,7 +374,8 @@ impl Activity {
     }
 }
 
-pub fn spawn(app: AppHandle) {
+/// Mỗi giây đọc input cuối, gửi `Event::ActivityChanged` lúc bắt đầu/thôi gõ phím và `Event::Reminder` lúc tới giờ nhắc.
+pub fn spawn(activity: Arc<Activity>, host: Arc<dyn Host>) {
     thread::spawn(move || {
         let start = Instant::now();
         let mut last_tick = None;
@@ -393,7 +392,6 @@ pub fn spawn(app: AppHandle) {
             last_cursor = cursor;
             let input = last_tick.is_some_and(|t| t != tick);
             last_tick = Some(tick);
-            let activity = app.state::<Activity>();
             let (date, minute) = local_time();
             let fx = activity.lock().tick(&Sample {
                 now,
@@ -404,14 +402,10 @@ pub fn spawn(app: AppHandle) {
                 minute,
             });
             if let Some(busy) = fx.busy {
-                if let Err(e) = app.emit_to(overlay::LABEL, events::ACTIVITY_CHANGED, busy) {
-                    log!("Không báo được đang gõ phím: {e}");
-                }
+                host.emit(Event::ActivityChanged(busy));
             }
             if let Some(reminder) = fx.reminder {
-                if let Err(e) = app.emit_to(overlay::LABEL, events::REMINDER, reminder) {
-                    log!("Không gửi được lời nhắc: {e}");
-                }
+                host.emit(Event::Reminder(reminder));
             }
             if now.saturating_sub(last_save) >= SAVE_EVERY_MS {
                 last_save = now;
