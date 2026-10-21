@@ -1,8 +1,9 @@
 # TinyWorld
 
-Desktop pets for Windows: a **Tauri v2 + Vite + TypeScript** app with a Rust backend. The pets are drawn
-on a transparent overlay window that always stays on top and lets the mouse pass through except where it
-points at a pet. Roadmap and settled decisions: [PLAN.md](PLAN.md).
+Desktop pets for Windows, written in Rust. The pets live on a transparent overlay window drawn with
+**DirectComposition** (Direct2D, no browser engine) that always stays on top and lets the mouse pass
+through except where it points at a pet. The Settings and chat windows are **Tauri v2 + React**, started
+only while one of them is open. Roadmap and settled decisions: [PLAN.md](PLAN.md).
 
 The other docs in this repo (PLAN.md, CREATE_PET.md, AGENTS.md, the READMEs under `assets/` and
 `website/`) and the code comments are in Vietnamese.
@@ -14,11 +15,13 @@ desktop-pet/
 │   ├── sprites/          # sprite packs the app runs: <pack>/pet.json + WebP
 │   └── sprite-sources/   # source atlases and prompts for each character, plus an animation viewer
 ├── packages/
-│   ├── core/             # types shared by Rust and TS, event names, reading/validating pet.json
-│   └── sim/              # pure TS simulation engine: FSM, fixed time step, seeded RNG
-├── desktop/              # Tauri v2
-│   ├── src/              # overlay (draws pets on a canvas, plain TS) and src/settings/ (settings window, React)
-│   └── src-tauri/        # Rust: overlay, click-through, cursor tracking, tray, settings, saved state
+│   ├── core/             # types shared by Rust and TS, event names, the vi/en text files, reading pet.json
+│   └── sim/              # TS helpers for Settings and the landing page: weather, lunar calendar, pet lines
+├── native/               # the overlay: pet simulation (src/sim), DirectComposition drawing, mouse, tray
+├── desktop/
+│   ├── backend/          # Rust without UI: settings, saved state, weather, screen time, chat, updates, window list
+│   ├── src/              # Settings and chat windows (React)
+│   └── src-tauri/        # tinyworld.exe: starts the overlay; `--ui` runs the Tauri process for those windows
 └── scripts/              # normalize sprites from source atlases, generate icons
 ```
 
@@ -40,7 +43,7 @@ character: [CREATE_PET.md](CREATE_PET.md).
 - Node.js 22+, pnpm 11+ (pnpm 10 switches itself to the version in `packageManager`)
 - Rust (`x86_64-pc-windows-msvc` toolchain) and Visual Studio Build Tools (C++). The
   `x86_64-pc-windows-gnu` toolchain also builds, but the linker warns about merging manifests; CI uses MSVC.
-- WebView2 Runtime (preinstalled on recent Windows 10/11)
+- WebView2 Runtime for the Settings and chat windows (preinstalled on recent Windows 10/11)
 
 ## Running in dev
 
@@ -60,12 +63,14 @@ asleep if it was sleeping). Control it with the **TinyWorld** icon in the system
 | **Show / hide pets** | Hides the pets completely (the app stops its loop and uses no CPU) |
 | **Settings…** | **Pets** tab: pick 1–3 characters, pet size (50–200%), walking speed, chat with pets (off by default), language (same as Windows, Vietnamese, English), start with Windows. **World** tab: city (real weather, local time there), toggles for weather around pets, the temperature label next to pets, chit-chat, the event calendar and the ghost at 2 a.m.; the Preview section lets pets meet a kind of weather right away (sunny, clear, cloudy, rain, storm, snow, fog, petals) and a temperature (hot 36°C, cold 8°C) for 30 seconds, or the ghost; the active button lights up with a countdown, click it again to stop; edit the event calendar. **Health** tab (all off by default): screen time today and over 7 days, break reminders, water reminders, bedtime reminders, Ctrl+S spam. Changes apply right away. The running version is shown under the title; **Open log folder** at the bottom opens the folder with `tinyworld.log` |
 | **Quit** | Saves the pets' state, then quits |
-| **DevTools** | Dev only (the overlay lets the mouse pass through, so F12 can't reach it) |
 
-While running in dev, `window.__tinyworld` in DevTools lets you inspect and tweak the pets (`pet` is the
-first one, `members` the whole group), e.g. `__tinyworld.world.pets.forEach((p) => (p.sinceInteraction = 1e6))`
-sends the whole group to sleep right away. Turning on **Start with Windows** while running in dev records
-the path of the debug exe, so remember to turn it off again.
+A dev build keeps its data in `%APPDATA%\com.tinyworld.app.dev\` and can run next to an installed copy.
+`cargo run -p tinyworld-native` starts only the overlay, which compiles much faster than the whole app
+(Settings and chat open if `tinyworld.exe` has been built next to it). A dev overlay writes the port and
+key of its local connection to `ipc.json` in that folder, so a script can call the same commands as the
+Settings window plus `debug_state` (every pet's state and position) and `debug_pet` (poke, drag, make a pet
+talk or sleepy). Turning on **Start with Windows** while running in dev records the path of the debug exe,
+so remember to turn it off again.
 
 Interacting with the pets:
 
@@ -192,7 +197,7 @@ SmartScreen warning: choose **More info → Run anyway**.
 
 ### In-app updates
 
-The app ([`update.rs`](desktop/src-tauri/src/update.rs)) asks GitHub for the repo's `releases/latest` 20
+The app ([`update.rs`](desktop/backend/src/update.rs)) asks GitHub for the repo's `releases/latest` 20
 seconds after starting and then every 6 hours; the **Check for updates** button under the version line in
 Settings asks right away. If there's a newer version (compared by `x.y.z`) with a `*-setup.exe` file,
 Settings shows a **Version x.y.z is available** card and one pet says a line (once per version). Clicking
@@ -215,8 +220,8 @@ copy; the NSIS hook closes the running copy and points "Start with Windows" at t
 - Dev runs don't check on their own (set `TINYWORLD_CHECK_UPDATE` to enable it) and don't install
   updates, because the installer would overwrite the real installed copy on the machine (set
   `TINYWORLD_INSTALL_UPDATE` to try the whole flow).
-- To test checking and downloading against the real GitHub: `cargo test -- --ignored github_that` in
-  `desktop/src-tauri`.
+- To test checking and downloading against the real GitHub: `cargo test -p tinyworld-backend -- --ignored
+  github_that`.
 
 ## Landing page
 
@@ -227,93 +232,90 @@ latest version. Editing the text and rebuilding it (`pnpm prepare:website`): [we
 ## Architecture
 
 ```
-Rust (cursor.rs) --GetCursorPos ~60 times/s--> event "cursor-moved" (overlay CSS pixels)
-                                                      |
-                                                      v
-                      overlay: is the cursor over a visible part of a pet? (by sprite alpha)
-                                                      |
-                                invoke("set_click_through", { enabled })  (only when it changes)
-                                                      |
-                                                      v
-                      Rust: turn mouse pass-through on/off for the overlay (set_ignore_cursor_events)
+tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (only while Settings or chat is open)
+  native/: simulation, DirectComposition, mouse, tray  <-- local connection (127.0.0.1) -->  Tauri + React windows
+  desktop/backend/: settings, weather, screen time, chat, updates, window list
 ```
 
-- **Windows** (`src-tauri/src/window_list.rs`): Windows reports whenever a window opens, closes, moves or
-  changes stacking order (`SetWinEventHook`); a background thread batches these, reads the window list at
-  most 30 times a second and only sends a `windows-changed` event when something differs, sleeping when
-  nothing changes (it rereads every 2 seconds in case something was missed). It only takes the visible
-  frame (DWM, without the transparent border), the stacking order and the class name to skip the desktop
-  and taskbar; it never reads titles or content. Minimized and hidden windows, windows on another virtual
-  desktop, tool windows and click-through windows are skipped. Windows also reports cursor movement (the
-  same event as a window moving), so while the pets sleep it only tracks movement of explorer's windows
-  (the taskbar) and rereads every 10 seconds; while the overlay is hidden (fullscreen app) the hook is
-  removed entirely.
-- **Terrain** (`packages/sim/src/terrain.ts`): a window's top edge is ground to stand on and its sides are
+- **Two processes, one exe**: `tinyworld.exe` without arguments is the overlay. It owns the tray, the
+  settings and every background thread. Opening Settings or a chat starts `tinyworld.exe --ui`, a Tauri
+  process that only shows those React windows and exits once both are closed, taking WebView2 with it. Every
+  command the windows call (`api.ts`) goes through one Tauri command `call` to the overlay over a local TCP
+  connection (random port, a secret key passed to the child at start); events (settings changed, weather,
+  updates, preview state) come back the same way. The overlay is single instance; opening the app again
+  shows hidden pets.
+- **Drawing** (`native/src/gfx.rs`, `view.rs`): one transparent window without its own bitmap
+  (`WS_EX_NOREDIRECTIONBITMAP`); DWM composes a tree of DirectComposition visuals straight onto the screen.
+  Each pet has a few small visuals (sprite, dizzy stars, weather around it, speech bubble, Long's effects)
+  whose surfaces are redrawn with Direct2D only when they change: a new frame, a new line of text. Walking
+  only moves a visual. Frames are uploaded to the GPU once (shrunk beforehand when the pet is drawn smaller
+  than the frame, so thin lines don't break up); only the 1-bit alpha masks used for hit-testing stay in RAM.
+  Text uses DirectWrite, the weather icon on the temperature tag is an SVG drawn by Direct2D, and a bubble
+  fades in with a DirectComposition animation. Sprites and Long's effect frames are embedded in the exe at
+  build time.
+- **Loop** (`native/src/app.rs`): one thread handles window messages, reads the cursor about 60 times a
+  second (`GetCursorPos`, plus Ctrl and the mouse buttons) and steps the simulation 30 times a second
+  (`FixedStep`). Walking pets are drawn at 30 fps; while one is flying or dragged the loop follows the display
+  (`DwmFlush`) and draws between two steps (`StepBlend`). When the whole group stands still it only wakes
+  when a pet changes frame; when everyone sleeps it stops drawing entirely and only the cursor is read.
+- **Click-through**: the window lets the mouse pass (`WS_EX_TRANSPARENT`) except while the cursor is over a
+  visible part of a pet (by sprite alpha, not while Ctrl is held) or a pet is being dragged; then it takes
+  clicks without taking focus. `WS_EX_TOOLWINDOW` keeps Chrome and Edge from treating the overlay as a
+  window covering the page (Google Meet would turn off shared video).
+- **Windows** (`desktop/backend/src/window_list.rs`): Windows reports whenever a window opens, closes, moves
+  or changes stacking order (`SetWinEventHook`); a background thread batches these, reads the window list at
+  most 30 times a second and only passes it on when something differs, sleeping when nothing changes (it
+  rereads every 2 seconds in case something was missed). It only takes the visible frame (DWM, without the
+  transparent border), the stacking order and the class name to skip the desktop and taskbar; it never
+  reads titles or content. Minimized and hidden windows, windows on another virtual desktop, tool windows
+  and click-through windows are skipped. Windows also reports cursor movement (the same event as a window
+  moving), so while the pets sleep it only tracks movement of explorer's windows (the taskbar) and rereads
+  every 10 seconds; while the overlay is hidden (fullscreen app) the hook is removed entirely.
+- **Terrain** (`native/src/sim/terrain.rs`): a window's top edge is ground to stand on and its sides are
   walls to climb, except where a window on top covers them. A pet standing on the taskbar or in the air is
   in front of every window; for a pet standing on or climbing a window, the part covered by windows on top
-  isn't drawn (it's erased on the canvas) and doesn't catch the mouse.
-- **Overlay** (`src-tauri/src/overlay.rs`): a transparent, borderless, always-on-top window with no
-  taskbar button, covering the work area (minus the taskbar) of one screen, the main screen at startup. It
-  doesn't cover the whole screen because Windows would then treat it as a fullscreen app: notifications
-  would be muted, and the pets would keep hiding and reappearing. Coordinates sent to the frontend are all
-  overlay CSS pixels; Rust converts them from physical pixels by DPI.
-- **Multiple monitors**: `screen_info` includes the work areas of the other screens (`neighbors`), so pets
-  know which edges border another screen. When a pet is dragged, thrown or walks off an edge, the frontend
-  calls `move_overlay` with a point just past that edge; if the point is on another screen, Rust moves the
-  overlay there, then sends a `screen-changed` event with how to map old coordinates to new ones
-  (`remap`). Rust re-measures the screens every second; if the resolution, DPI or taskbar changes or a
-  monitor is unplugged, it resets the overlay and sends the same event.
-- **Cursor** (`src-tauri/src/cursor.rs`): Rust reads the cursor about 60 times a second but only sends
-  `cursor-moved` while the cursor is inside an area around a pet that the frontend reported
-  (`set_cursor_interest`, one area per pet: within 300 px of sight for an awake pet, just around the body
-  for a sleeping one), right when it leaves that area, on mouse down/up (a click anywhere wakes sleeping
-  pets) and when an area changes. That way, moving the mouse far from the pets doesn't wake the WebView.
-  Pets only use the cursor position to turn their heads toward it and to switch click-through on and off.
+  isn't drawn and doesn't catch the mouse.
+- **Overlay window**: transparent, borderless, always on top, no taskbar button, covering the work area
+  (minus the taskbar) of one screen, the main screen at startup. It doesn't cover the whole screen because
+  Windows would then treat it as a fullscreen app: notifications would be muted, and the pets would keep
+  hiding and reappearing. The simulation works in CSS pixels of the overlay (physical pixels divided by the
+  DPI scale).
+- **Multiple monitors**: the simulation knows the work areas of the other screens, so pets know which
+  edges border another screen. When a pet is dragged, thrown or walks off an edge to a point on another
+  screen, the overlay moves there and maps the old coordinates to the new ones (`Remap`). The screens are
+  re-measured every second; if the resolution, DPI or taskbar changes or a monitor is unplugged, the
+  overlay is reset the same way.
 - **Auto-hiding taskbar**: when it slides up, the taskbar covers the bottom edge of the overlay. The
-  window-tracking thread reads the taskbar frame together with the window list and sends its top edge
-  (`taskbarTop` in `windows-changed`); if that edge is above the bottom of the work area, the frontend uses
-  it as the ground.
-- **Pets**: each pet is a small `<canvas>` the size of one frame, moved with CSS transforms and only
-  redrawn when its frame changes. The whole group (up to 3 pets) shares one overlay and one loop; only the
-  sprites of the characters on screen are loaded, and removed characters are dropped. The loop runs at
-  most 30 fps, setting a timer before asking for `requestAnimationFrame` (asking for rAF continuously wakes
-  the WebView at the display's refresh rate, 60–144 times a second). When the whole group stands still or
-  perches, it only wakes when a pet changes frame (about 7 times a second); when the whole group sleeps it
-  stops entirely and Rust tells WebView2 to use less RAM (`MemoryUsageTargetLevel`), and the same happens
-  while the overlay is hidden. The alpha mask used for hit-testing stores 1 bit per pixel.
-- **Logic** (`packages/sim`): no dependency on the DOM or Tauri, tested with vitest. A fixed time step
-  keeps behavior independent of fps; a seeded RNG makes random behavior testable.
-- **Weather** (`src-tauri/src/weather.rs`): only Rust goes online, never the webview. With a city chosen,
-  it asks Open-Meteo at startup, when the city changes and then every 30 minutes, and sends a
-  `weather-changed` event; on errors it waits 1 minute, doubling each time up to 30 minutes, and only sends
-  `weather-failed` on the first error. City search (`search_city`) also goes through Rust. The overlay
-  (`src/overlay/ambience.ts`) turns the weather into effects, and handles night time, holiday lines and the
-  ghost by the time in the chosen city (`wallClock`, IANA time zone); the lunar calendar is computed
-  locally (`packages/sim/src/lunar.ts`). Every pet line lives in `packages/sim/src/lines.ts`.
-- **Health** (`src-tauri/src/activity.rs`): a background thread reads the time of the last input
+  window-tracking thread reads the taskbar frame together with the window list; if its top edge is above
+  the bottom of the work area, pets use it as the ground.
+- **Logic** (`native/src/sim`): no dependency on Windows, tested with `cargo test`. A fixed time step keeps
+  behavior independent of fps; a seeded RNG makes random behavior testable.
+- **Weather** (`desktop/backend/src/weather.rs`): with a city chosen, the overlay asks Open-Meteo at
+  startup, when the city changes and then every 30 minutes; on errors it waits 1 minute, doubling each time
+  up to 30 minutes, and only reports the first error. City search (`search_city`) also goes through it.
+  `native/src/ambience.rs` turns the weather into effects, and handles night time, holiday lines and the
+  ghost by the time in the chosen city (IANA time zone); the lunar calendar is computed locally
+  (`native/src/sim/lunar.rs`). Every pet line is built in `native/src/sim/lines.rs`.
+- **Health** (`desktop/backend/src/activity.rs`): a background thread reads the time of the last input
   (`GetLastInputInfo`) and the cursor position every second, without a keyboard hook. `Tracker` (pure
-  logic, tested) adds up screen time from the gaps between inputs, decides on break, water and late-night
-  reminders, and sends a `reminder` event; input while the mouse stands still sends `activity-changed`
-  (typing). Ctrl+S spam is read in the cursor loop of `cursor.rs`. The overlay only makes the pets talk
-  (`Ambience.remind`).
-- **Chat** (`src-tauri/src/chat.rs`, `src-tauri/src/gemini.rs`, `src/chat/`): a separate React window
-  (`chat.html`), only created when you right-click a pet and destroyed when it closes (Rust sends
-  `chat-closed` to the overlay so the chatting pet walks again). The chat window builds the message to send
-  (the character's personality, the local time, the last 6 turns, `prompt.ts`); Rust checks the send
-  limits (`Limiter`), then calls the endpoint gemini.google.com uses when signed out (`gemini.rs`: sends
-  only the question, no headers, no browser impersonation, no page scraping; Google picks the model). No
-  server, no open ports. Markdown answers are parsed into blocks (`markdown.ts`) and drawn with React,
-  never as raw HTML.
+  logic, tested) adds up screen time from the gaps between inputs and decides on break, water and late-night
+  reminders; input while the mouse stands still counts as typing. Ctrl+S spam is read in the overlay's
+  cursor loop. The overlay only makes the pets talk.
+- **Chat** (`desktop/backend/src/chat.rs`, `gemini.rs`, `desktop/src/chat/`): a React window (`chat.html`)
+  in the Tauri process, only created when you right-click a pet and destroyed when it closes (the chatting
+  pet then walks again). The chat window builds the message to send (the character's personality, the
+  local time, the last 6 turns, `prompt.ts`); the overlay checks the send limits (`Limiter`), then calls the
+  endpoint gemini.google.com uses when signed out (`gemini.rs`: sends only the question, no headers, no
+  browser impersonation, no page scraping; Google picks the model). Markdown answers are parsed into blocks
+  (`markdown.ts`) and drawn with React, never as raw HTML.
 - **Language** (`packages/core/src/i18n/`): all user-facing text is in `vi.json` and `en.json`, shared by
-  the frontend (Settings, the chat window, pet lines via `packages/sim/src/lines.ts`) and Rust (`i18n.rs`
-  embeds both files at build time: tray menu, chat window title, error messages). `{name}` placeholders are
-  filled in when used. Add new text to both files; a missing entry fails typecheck and tests. By default
-  the app follows the Windows display language (Vietnamese for Vietnamese, English otherwise); Rust works
-  out `lang` and sends it with the settings. Built-in calendar events whose name and line haven't been
+  the React windows and Rust (`i18n.rs` embeds both files at build time: pet lines, tray menu, chat window
+  title, error messages). `{name}` placeholders are filled in when used. Add new text to both files; a
+  missing entry fails typecheck and tests. By default the app follows the Windows display language
+  (Vietnamese for Vietnamese, English otherwise). Built-in calendar events whose name and line haven't been
   edited (`preset`) show in the current language.
-- **Settings window** (`src/settings/`, `src-tauri/src/settings.rs`): a separate React page
-  (`settings.html`), only created when you click **Settings…** and destroyed when it closes to save RAM.
-  The overlay doesn't pull in React.
+- **Settings window** (`desktop/src/settings/`): a React page (`settings.html`) in the Tauri process, only
+  created when you click **Settings…** and destroyed when it closes.
 - **Data** lives in `%APPDATA%\com.tinyworld.app\`, written to a temp file and then renamed:
   - `world.json`: each pet's position, facing and whether it's asleep (the id is the pack folder name).
     Saved every 30 seconds (only when something changed) and on **Quit**; an abrupt shutdown loses at most
@@ -332,6 +334,8 @@ Rust (cursor.rs) --GetCursorPos ~60 times/s--> event "cursor-moved" (overlay CSS
   - `tinyworld.log`: errors from Rust (chat, weather, updates, Win32) and panics, one timestamped line
     each, local time. Release builds have no console, so this is the only place they end up. Over 1 MB it is
     renamed to `tinyworld.old.log` and a new file starts. It never leaves the computer.
+  - `said.json`: the event lines and the ghost already seen today and the last update announced, so
+    reopening the app doesn't say them again.
   - **Start with Windows** isn't stored here but as the `TinyWorld` value in
     `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (pointing to the running exe).
 
@@ -339,16 +343,25 @@ Rust (cursor.rs) --GetCursorPos ~60 times/s--> event "cursor-moved" (overlay CSS
 
 ```bash
 pnpm typecheck
-pnpm test                               # sprite packs, Long's effects, overlay drag/double-click, Long's combo, pet.json, vi/en text files, FSM, World/Pet, pet groups and Quiet, window terrain, cursor, screen changes, world.json, weather, lunar calendar, event calendar
-cd desktop/src-tauri && cargo test      # DPI coordinates, neighboring screens, coordinate mapping between screens, window list, saved state, settings, language, event calendar, Open-Meteo parsing, screen time and reminders, Ctrl+S spam, chat send limits, chat window position, Gemini reply parsing, suggested questions, chat images, update parsing and installer SHA-256, log file, registry
+pnpm test                                               # sprite packs, Long's effects, chat markdown, vi/en text files, weather, lunar and event calendar helpers
+cargo test -p tinyworld-backend -p tinyworld-native     # see below
+cargo test -p tinyworld                                 # the Tauri shell, on its own (sharing one build breaks the other tests' exe)
 ```
 
+`tinyworld-native` tests the pet simulation (FSM, World/Pet, pet groups and Quiet, window terrain, cursor,
+screen changes, world.json, Long's blink and vanish), pet.json and every sprite pack, mouse handling (drag,
+throw, double click, Shift skill), Long's combo, the ghost's flight, weather, lunar and event calendars and
+pet lines. `tinyworld-backend` tests DPI coordinates, neighboring screens, coordinate mapping between
+screens, the window list, saved state, settings, language, Open-Meteo parsing, screen time and reminders,
+Ctrl+S spam, chat send limits, chat window position, Gemini reply parsing, suggested questions, chat
+images, update parsing and installer SHA-256, the log file and the registry.
+
 `pnpm test` includes `pnpm test:sprites` (the sprite normalization script, `prepare-sprites.mjs --check`
-on all 22 packs and `prepare-aura.mjs --check` for Long's effects), `pnpm test:overlay` (drag and
-double-click on the overlay, Long's tail-whip combo, chat markdown and message building) and the vitest
-suites in `packages/*`.
+on all 22 packs and `prepare-aura.mjs --check` for Long's effects), `pnpm test:chat` (chat markdown and
+message building) and the vitest suites in `packages/*`.
 
 To measure CPU and RAM over a long run (leak check) or on battery, start the app and run
 `powershell -ExecutionPolicy Bypass -File scripts/measure.ps1 -Minutes 480 -Every 60`: it adds up
-`tinyworld.exe` and its WebView2 processes, writes one CSV row per sample (with AC/battery and charge) and
-prints a summary at the end.
+`tinyworld.exe` (the overlay, plus the Settings/chat process and its WebView2 processes while one of those
+windows is open), writes one CSV row per sample (with AC/battery and charge) and prints a summary at the
+end.

@@ -10,10 +10,10 @@ số 1: **nhẹ**.
 |---|---|
 | Tên | TinyWorld, identifier `com.tinyworld.app` (dữ liệu ở `%APPDATA%\com.tinyworld.app\`) |
 | Nền tảng | Chỉ Windows 10/11. Desktop awareness dùng Win32, CI chỉ build NSIS |
-| Stack | Tauri v2 + Vite + TypeScript, backend Rust. Không Electron, không game engine, không server |
-| Vẽ pet | Mỗi pet một `<canvas>` nhỏ, di chuyển bằng CSS transform, vòng lặp `requestAnimationFrame` tối đa 30 fps. React chỉ dùng cho cửa sổ Settings (Phase 1) |
-| Logic pet | `packages/sim`: TS thuần (FSM, vật lý, RNG có seed), test bằng vitest |
-| Click-through | Overlay mặc định để chuột đi xuyên. Rust đọc con trỏ khoảng 60 lần/giây gửi sang, overlay kiểm tra theo alpha của sprite, con trỏ nằm trên pet thì tắt click-through |
+| Stack | Rust. Overlay vẽ thẳng bằng DirectComposition (`native/`); cửa sổ Cài đặt và Chat là Tauri v2 + Vite + React, chạy ở tiến trình riêng lúc cần (Phase 8). Không Electron, không game engine, không server |
+| Vẽ pet | Mỗi pet vài visual DirectComposition nhỏ (sprite, sao choáng, thời tiết, bóng thoại), chỉ vẽ lại surface bằng Direct2D khi đổi frame hay đổi câu, đi lại thì chỉ dời visual. Bước mô phỏng 30 lần/giây; đang bay hay bị kéo thì vẽ theo nhịp màn hình |
+| Logic pet | `native/src/sim`: Rust thuần (FSM, vật lý, RNG có seed), chuyển từ bản TypeScript cũ và giữ đúng chuỗi số ngẫu nhiên, test bằng `cargo test` |
+| Click-through | Overlay mặc định để chuột đi xuyên. Overlay đọc con trỏ khoảng 60 lần/giây, kiểm tra theo alpha của sprite, con trỏ nằm trên pet thì tắt click-through |
 | Asset | Nhân vật tự vẽ bằng imagegen: atlas gốc ở `assets/sprite-sources/`, `scripts/prepare-sprites.mjs` chuẩn hoá thành pack `assets/sprites/<pack>/` có `pet.json`. Không dùng asset của bên thứ ba. Chưa có pack thì dùng pet tạm vẽ bằng code |
 | Riêng tư | Mọi dữ liệu xử lý trên máy, không đọc tiêu đề cửa sổ, tính năng nhạy cảm (bàn phím, thói quen) mặc định tắt. Chỉ gọi mạng cho thời tiết thật (toạ độ thành phố người dùng tự nhập) và chat với pet (Phase 6, tuỳ chọn) |
 | Thời tiết | Thời tiết thật từ Open-Meteo (Phase 4): miễn phí, không cần key hay tài khoản. Người dùng tự chọn thành phố, không đoán vị trí qua IP/GPS; giờ, ngày và lịch sự kiện theo múi giờ của thành phố đó. Chưa chọn thành phố thì thời tiết giả lập theo mùa. Đã chọn mà mất mạng hay API lỗi thì pet nói "Không có mạng :))" / "Không có thời tiết :))", không giả lập |
@@ -25,8 +25,8 @@ số 1: **nhẹ**.
 ### Quy ước code
 
 - pnpm monorepo: `packages/core`, `packages/sim`, `desktop`; package nội bộ export thẳng source TS, `tsconfig.base.json` strict
-- Rust: `main.rs → app.rs → commands.rs → module nghiệp vụ`; lỗi `AppError { code, message }` trả thẳng về frontend
-- Frontend gọi Rust qua `desktop/src/api.ts`; types dùng chung ở `packages/core` khớp struct Rust (serde camelCase)
+- Cargo workspace: `native` (overlay), `desktop/backend` (phần không giao diện), `desktop/src-tauri` (`tinyworld.exe`); lỗi `AppError { code, message }` trả thẳng về frontend
+- Frontend gọi Rust qua `desktop/src/api.ts`: một Tauri command `call` chuyển sang overlay (`native/src/commands.rs`); types dùng chung ở `packages/core` khớp struct Rust (serde camelCase)
 - Dữ liệu JSON trong `%APPDATA%\com.tinyworld.app\`, ghi ra file tạm rồi đổi tên; `assets/` giữ file gốc kèm README
 
 ## Lộ trình
@@ -41,6 +41,7 @@ số 1: **nhẹ**.
 | 5 | Sức khoẻ & công việc | Giờ ngồi máy, nhắc nghỉ, nhắc uống nước, nhắc khuya, spam Ctrl+S (chỉ trên máy, tự bật) | Xong phần code, test pass (`cargo test`, sim); đã thử lời nhắc trên bản dev bằng event giả. Chưa đối chiếu giờ ngồi máy cả ngày |
 | 6 | Chat với pet | Click pet để chat, hỏi đáp và tra cứu nhanh qua Gemini, đỡ phải mở trình duyệt (tuỳ chọn) | Xong phần code, test pass; đã gửi thật: chưa đăng nhập Google trả lời bằng 3.6 Flash trong khoảng 3 giây |
 | 7 | Ổn định & dùng hằng ngày | Log ra file, không phá cuộc họp video, Im lặng có hẹn giờ, updater kiểm tra SHA-256, script đo CPU/RAM; trả các bài thử còn nợ | Xong phần code (7a–7e), test pass; còn các bài thử tay ở Phase 7 |
+| 8 | Overlay native | Bỏ WebView2 khỏi overlay: vẽ bằng DirectComposition, ít RAM, CPU, GPU hơn; Cài đặt và Chat vẫn React, chỉ chạy lúc mở | Xong phần code, test pass; đã chạy bản dev (pet, kéo ném, Cài đặt, Chat qua tiến trình giao diện). Còn đo bản release và các bài thử tay ở Phase 8 |
 
 TinyWorld không phải game: không làm chỉ số tính cách, quan hệ giữa các pet, nhu cầu, xây nhà, tài
 nguyên, tiến hoá, trứng nở hay trao đổi pet.
@@ -373,12 +374,9 @@ Còn phải thử tay trên máy thật (không tự động được):
 
 Chưa làm (lý do):
 
-- Ẩn pet khi chia sẻ màn hình: không làm được lúc này. `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)` trên
-  overlay báo lỗi 8 (`ERROR_NOT_ENOUGH_MEMORY`), gọi lúc mở app hay 3 giây sau đều vậy, bỏ `WS_EX_TOOLWINDOW`
-  cũng vậy (Windows 10 build 19045). Cửa sổ Win32 mẫu cùng kiểu (layered, chuột đi xuyên, DWM blur-behind
-  rỗng như tao, có cửa sổ con của process khác) thì gọi được, nên vướng ở WebView2. Tauri
-  `set_content_protected` gọi đúng hàm này nên cũng không được. Đã bỏ công tắc trong Cài đặt để không có
-  tuỳ chọn bấm mà không có tác dụng; thử lại khi WebView2 hay tao đổi
+- Ẩn pet khi chia sẻ màn hình: overlay WebView2 cũ gọi `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)` thì
+  báo lỗi 8 (`ERROR_NOT_ENOUGH_MEMORY`), nên đã bỏ công tắc trong Cài đặt. Overlay DirectComposition (Phase 8)
+  gọi được, chưa kiểm tra bằng ảnh chụp; thử xong thì thêm lại công tắc
 
 - Chế độ tiết kiệm pin: app đã giới hạn 30 fps, dừng vòng lặp khi cả nhóm ngủ, hạ RAM WebView2; chờ số đo
   trên pin
@@ -391,19 +389,47 @@ Chưa làm (lý do):
 - Phím tắt toàn cục ẩn/hiện, mở chat từ tray, vuốt ve pet, chào khi người dùng quay lại máy, tuỳ chọn giảm
   chuyển động: để sau bản ổn định
 
+### Phase 8 — Overlay native
+
+Overlay WebView2 cũ: 7 tiến trình, working set 187–434 MB, CPU 0,6–1,2% của 4 nhân, GPU khoảng 1,3% lúc mưa.
+Bản thử DirectComposition đầu tiên (chỉ vẽ, chưa có mô phỏng thật): 1 tiến trình, working set khoảng 40 MB, CPU
+0,05% lúc đi, GPU 0,3% (Intel UHD 630, 60 Hz, 2 pet, bản release). Nên chuyển hẳn overlay sang native; Cài đặt
+và Chat giữ React vì ít khi mở và nhiều giao diện.
+
+| Bước | Nội dung | Trạng thái |
+|---|---|---|
+| 8a | Tách phần Rust không dính Tauri sang `desktop/backend` (cài đặt, lưu trạng thái, thời tiết, giờ ngồi máy, chat, cập nhật, danh sách cửa sổ, toạ độ màn hình); luồng nền báo qua trait `Host` | Xong, test pass |
+| 8b | Chuyển mô phỏng sang Rust (`native/src/sim`): cùng seed ra cùng chuỗi số với bản TS. Đã so từng bước với bản TS trên 200 kịch bản ngẫu nhiên (đủ 12 state, sang màn hình 94 lần), chuyển hết test của `packages/sim` | Xong, test pass |
+| 8c | Vẽ bằng DirectComposition: pet, bóng thoại (DirectWrite), choáng, phần bị cửa sổ che, thời tiết quanh pet, nhãn nhiệt độ (hình SVG), con ma, đồ diễn của Long; chuột, click-through, khay, nhiều màn hình, lưu `world.json`. Câu đã nói trong ngày và bản mới đã báo lưu ở `said.json` (trước nằm trong localStorage của WebView, mở bản mới có thể nói lại một lần) | Xong phần code, test pass; đã chạy bản dev (pet ngủ, thức, nói, bị ném, choáng), chưa soát hình bằng mắt |
+| 8d | `tinyworld.exe --ui`: tiến trình Tauri chỉ có cửa sổ Cài đặt và Chat, overlay chạy lúc cần mở, đóng hết cửa sổ thì thoát. Mọi command đi qua kết nối nội bộ (cổng ngẫu nhiên, mã bí mật truyền cho tiến trình con) | Xong; đã thử Cài đặt (đọc, lưu, đổi nhân vật và cỡ), Chat (mở, câu gợi ý, tắt chat thì đóng), Thoát |
+
+Còn phải thử tay:
+
+- Soát hình từng thứ so với bản WebView: pet, bóng thoại, thời tiết, nhãn nhiệt độ, con ma, Long
+- Kéo, ném bằng chuột thật; click-through; Ctrl xuyên pet; 2 màn hình; taskbar tự ẩn
+- Đo lại RAM, CPU, GPU bản release (`measure.ps1`) và chạy dài
+- Trong cuộc họp thật: chạm, kéo pet mà video người khác chia sẻ không đen
+- Antivirus: bản thử native từng bị Symantec Endpoint Protection chặn trên máy công ty (exe chưa ký số)
+
+Ghi chú:
+
+- Bản dev dùng thư mục dữ liệu riêng `%APPDATA%\com.tinyworld.app.dev` và chạy song song được với bản cài
+- Trang giới thiệu vẫn dùng bản TypeScript của thời tiết quanh pet (`website/src/weather.ts`)
+
 ## Rủi ro kỹ thuật
 
 | Rủi ro | Cách xử lý |
 |---|---|
 | Click-through đổi chậm → click đầu tiên lọt xuống app bên dưới | Đọc con trỏ khoảng 60 lần/giây; đang kéo thì giữ quyền nhận chuột |
 | Toạ độ Win32 (pixel vật lý) lệch với CSS pixel khi DPI khác nhau | Một quy ước toạ độ (CSS pixel của overlay), Rust đổi toạ độ, có test |
-| Overlay trong suốt phủ màn hình tốn GPU khi vẽ liên tục | Giới hạn fps, chỉ vẽ lại canvas của pet khi đổi frame, dừng vòng lặp khi không có gì chuyển động |
+| Overlay trong suốt phủ màn hình tốn GPU khi vẽ liên tục | Giới hạn fps, chỉ vẽ lại surface của pet khi đổi frame, đi lại chỉ dời visual, dừng vẽ khi không có gì chuyển động |
 | Overlay đè lên video/game fullscreen | Tự ẩn khi app đang dùng chiếm trọn màn hình (Phase 1); cửa sổ phóng to còn thanh tiêu đề không tính (Phase 2) |
 | Overlay luôn trên mà che kín màn hình bị Windows coi là app fullscreen: tắt thông báo (Focus Assist), pet tự ẩn/hiện mỗi giây | Overlay chỉ phủ vùng làm việc; taskbar tự ẩn (vùng làm việc trùng màn hình) thì thấp đi 1 pixel. Phase 2 giữ quy tắc này: pet đứng trên mép taskbar, không vẽ lên taskbar; taskbar tự ẩn trồi lên thì pet đứng lên trên nó |
-| Con trỏ nằm trên pet thì overlay tắt click-through, thành cửa sổ đục phủ vùng làm việc: Chrome/Edge tưởng cửa sổ của nó bị che kín, ẩn trang, Google Meet tắt video người khác chia sẻ (màn hình đen) | Overlay luôn là cửa sổ công cụ (`WS_EX_TOOLWINDOW`, Chromium không tính là che); tao ghi đè ex-style mỗi lần đổi click-through nên overlay.rs thêm lại cờ ở `WM_STYLECHANGING` |
+| Con trỏ nằm trên pet thì overlay tắt click-through, thành cửa sổ đục phủ vùng làm việc: Chrome/Edge tưởng cửa sổ của nó bị che kín, ẩn trang, Google Meet tắt video người khác chia sẻ (màn hình đen) | Overlay luôn là cửa sổ công cụ (`WS_EX_TOOLWINDOW`, Chromium không tính là che): tạo sẵn lúc mở, đổi click-through chỉ bật tắt `WS_EX_TRANSPARENT` |
 | Theo dõi bàn phím dễ bị antivirus nghi ngờ | Không hook bàn phím: chỉ đọc trạng thái Ctrl và S bằng `GetAsyncKeyState` trong luồng đọc con trỏ có sẵn; tuỳ chọn riêng, mặc định tắt |
 | 3 pet cùng thức tốn CPU gấp mấy lần 1 con | Một vòng lặp chung, ngủ chung, đo ở bước 3b; cao quá thì giới hạn số con đi lại cùng lúc |
 | Mỗi lượt sinh lại sprite bằng AI có thể làm mất hoặc đổi màu tay chân mà `--check` không bắt được | Soát từng frame so với atlas gốc trước khi nhận sheet mới; lỗi nhỏ sửa bằng tuỳ chọn trong `PETS` của script thay vì sinh lại |
 | Open-Meteo lỗi, đổi API hoặc chặn vì quá hạn mức | Không có thời tiết thật thì dùng thời tiết giả lập; 30 phút mới hỏi một lần, lỗi thì chờ lâu dần |
 | Chat đi qua trang web Gemini (không phải API chính thức): Google đổi trang thì hỏng, gọi nhiều thì bị chặn IP | Build label và mã model đọc từ chính trang nên đổi bản thường không hỏng; giới hạn tần suất ngay trong app, lỗi thì chờ lâu dần, khung chat ghi ngắn gọn lý do. Đổi cách gửi thì sửa `gemini.rs`. Chat là tuỳ chọn: hỏng thì phần còn lại của app vẫn chạy |
 | App chưa ký số → SmartScreen cảnh báo | Hướng dẫn "More info → Run anyway" trong README và trang Release |
+| Exe chưa ký số có cửa sổ trong suốt luôn trên, đọc con trỏ, mở cổng loopback: antivirus doanh nghiệp có thể chặn (đã gặp với Symantec ở bản thử native) | Ký số bản phát hành; cổng chỉ nghe 127.0.0.1 và đòi mã bí mật |
