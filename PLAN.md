@@ -41,7 +41,7 @@ số 1: **nhẹ**.
 | 5 | Sức khoẻ & công việc | Giờ ngồi máy, nhắc nghỉ, nhắc uống nước, nhắc khuya, spam Ctrl+S (chỉ trên máy, tự bật) | Xong phần code, test pass (`cargo test`, sim); đã thử lời nhắc trên bản dev bằng event giả. Chưa đối chiếu giờ ngồi máy cả ngày |
 | 6 | Chat với pet | Click pet để chat, hỏi đáp và tra cứu nhanh qua Gemini, đỡ phải mở trình duyệt (tuỳ chọn) | Xong phần code, test pass; đã gửi thật: chưa đăng nhập Google trả lời bằng 3.6 Flash trong khoảng 3 giây |
 | 7 | Ổn định & dùng hằng ngày | Log ra file, không phá cuộc họp video, Im lặng có hẹn giờ, updater kiểm tra SHA-256, script đo CPU/RAM; trả các bài thử còn nợ | Xong phần code (7a–7e), test pass; còn các bài thử tay ở Phase 7 |
-| 8 | Overlay native | Bỏ WebView2 khỏi overlay: vẽ bằng DirectComposition, ít RAM, CPU, GPU hơn; Cài đặt và Chat vẫn React, chỉ chạy lúc mở | Xong phần code, test pass; đã chạy bản dev (pet, kéo ném, Cài đặt, Chat qua tiến trình giao diện). Còn đo bản release và các bài thử tay ở Phase 8 |
+| 8 | Overlay native | Bỏ WebView2 khỏi overlay: vẽ bằng DirectComposition, ít RAM, CPU, GPU hơn; Cài đặt và Chat vẫn React, chỉ chạy lúc mở | Xong phần code, test pass; bản release 1 tiến trình, private khoảng 21 MB, CPU 0,07% lúc đi. Còn soát hình và các bài thử tay ở Phase 8 |
 
 TinyWorld không phải game: không làm chỉ số tính cách, quan hệ giữa các pet, nhu cầu, xây nhà, tài
 nguyên, tiến hoá, trứng nở hay trao đổi pet.
@@ -407,9 +407,13 @@ Còn phải thử tay:
 
 - Soát hình từng thứ so với bản WebView: pet, bóng thoại, thời tiết, nhãn nhiệt độ, con ma, Long
 - Kéo, ném bằng chuột thật; click-through; Ctrl xuyên pet; 2 màn hình; taskbar tự ẩn
-- Đo lại RAM, CPU, GPU bản release (`measure.ps1`) và chạy dài
+- Đo GPU lúc màn hình đang mở và chạy dài (`measure.ps1 -Minutes 480`)
 - Trong cuộc họp thật: chạm, kéo pet mà video người khác chia sẻ không đen
 - Antivirus: bản thử native từng bị Symantec Endpoint Protection chặn trên máy công ty (exe chưa ký số)
+
+Đo bản release đầu tiên (2 pet, ban đêm có sao quanh pet, máy 4 nhân; màn hình đang khoá nên chưa tính GPU): 1
+tiến trình, working set 39–40 MB, private 20–21 MB, CPU 0,07% của 4 nhân lúc pet đi lại, 0,02% lúc cả nhóm ngủ.
+Mở Cài đặt hay Chat thì thêm tiến trình giao diện và WebView2 của nó tới lúc đóng cửa sổ.
 
 Ghi chú:
 

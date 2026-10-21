@@ -1,5 +1,6 @@
-﻿# Đo CPU, GPU và RAM của TinyWorld (tinyworld.exe và các tiến trình WebView2 con của nó) theo thời gian, kèm đang
-# cắm sạc hay chạy pin. Dùng cho bài chạy thử 8–24 tiếng (rò RAM) và đo lúc dùng pin (PLAN.md, Phase 7).
+﻿# Đo CPU, GPU và RAM của TinyWorld (tinyworld.exe và mọi tiến trình con: cửa sổ Cài đặt/Chat và WebView2 của nó lúc đang
+# mở) theo thời gian, kèm đang cắm sạc hay chạy pin. Dùng cho bài chạy thử 8–24 tiếng (rò RAM) và đo lúc dùng pin
+# (PLAN.md, Phase 7).
 #
 #   powershell -ExecutionPolicy Bypass -File scripts/measure.ps1 -Minutes 480 -Every 60
 #   powershell -ExecutionPolicy Bypass -File scripts/measure.ps1 -Name tinyworld-native -Minutes 2 -Every 10
@@ -10,7 +11,7 @@
 param(
   [int]$Minutes = 480,
   [int]$Every = 60,
-  # Tên tiến trình gốc, không có .exe (`tinyworld-native`: overlay DirectComposition trong native/).
+  # Tên tiến trình gốc, không có .exe (`tinyworld-native`: chỉ chạy overlay, `cargo run -p tinyworld-native`).
   [string]$Name = "tinyworld",
   [string]$Out = "$Name-measure-$(Get-Date -Format 'yyyyMMdd-HHmm').csv"
 )
