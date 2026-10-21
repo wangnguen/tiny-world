@@ -118,9 +118,9 @@ pub struct SpriteVisual {
 }
 
 impl SpriteVisual {
-    /// Vẽ lại cả surface bằng `bitmap` co giãn vừa khít, lật ngang nếu `mirrored`. `pixel_art`: lấy điểm gần nhất
-    /// thay vì nội suy (như `imageSmoothingEnabled = false` của canvas).
-    pub fn draw(&self, bitmap: &ID2D1Bitmap1, mirrored: bool, pixel_art: bool) -> Result<()> {
+    /// Vẽ lại cả surface bằng `bitmap` co giãn vừa khít, lật ngang nếu `mirrored`. `nearest`: lấy điểm gần nhất thay
+    /// vì nội suy (như `imageSmoothingEnabled = false` của canvas).
+    pub fn draw(&self, bitmap: &ID2D1Bitmap1, mirrored: bool, nearest: bool) -> Result<()> {
         unsafe {
             let mut offset = POINT::default();
             let dc: ID2D1DeviceContext = self.surface.BeginDraw(None, &mut offset)?;
@@ -133,7 +133,7 @@ impl SpriteVisual {
             dc.SetTransform(&transform);
             dc.Clear(Some(&D2D1_COLOR_F { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }));
             let mode =
-                if pixel_art { D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR } else { D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC };
+                if nearest { D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR } else { D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC };
             let dest = D2D_RECT_F { left: 0.0, top: 0.0, right: w, bottom: self.height as f32 };
             dc.DrawBitmap(bitmap, Some(&dest), 1.0, mode, None, None);
             self.surface.EndDraw()?;

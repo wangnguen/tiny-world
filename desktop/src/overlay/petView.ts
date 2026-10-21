@@ -1,7 +1,7 @@
 import { frameIndex, type AnimationName, type Point, type Rect } from "@tinyworld/core";
 import { contains, type Bounds, type Pet } from "@tinyworld/sim";
 import { DizzyStars, dizzyLean, dizzyReach, leanShift, ringRow } from "./dizzy";
-import { headOf, mouthOf, type Animation, type Head, type Mask, type SpriteSet } from "./spriteSet";
+import { headOf, mouthOf, setSmoothing, type Animation, type Head, type Mask, type SpriteSet } from "./spriteSet";
 
 /** Đáy speech bubble (cả đuôi) cách đỉnh đầu pet chừng này CSS pixel. */
 const BUBBLE_LIFT = 12;
@@ -396,7 +396,7 @@ export class PetView {
     const target = this.lean === 0 ? ctx : context(this.upright);
     target.setTransform(1, 0, 0, 1, 0, 0);
     target.clearRect(0, 0, element.width, element.height);
-    target.imageSmoothingEnabled = !this.sprite.pixelArt;
+    setSmoothing(target, this.sprite.pixelArt, this.density);
     const x = this.pad * this.density;
     const width = this.sprite.frameWidth * this.density;
     if (flip) target.setTransform(-1, 0, 0, 1, x + width, 0);

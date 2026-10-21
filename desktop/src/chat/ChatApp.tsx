@@ -11,6 +11,7 @@ import {
 } from "@tinyworld/core";
 import { api } from "../api";
 import { LangContext, guessLang, useMessages } from "../i18n";
+import { setSmoothing } from "../overlay/spriteSet";
 import { loadThumbnail } from "../overlay/sprites";
 import { ChatScene, HILL_FOOT } from "./ChatScene";
 import { parseReply, type Inline } from "./markdown";
@@ -402,7 +403,7 @@ function Avatar({ pet }: { pet: string }) {
           const frame = frames[index++ % frames.length];
           ctx.setTransform(1, 0, 0, 1, 0, 0);
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.imageSmoothingEnabled = !pixelArt;
+          setSmoothing(ctx, pixelArt, scale * dpr);
           if (flip) ctx.setTransform(-1, 0, 0, 1, canvas.width, 0);
           ctx.drawImage(image, frame.x, frame.y, frame.width, frame.height, 0, 0, canvas.width, canvas.height);
         };

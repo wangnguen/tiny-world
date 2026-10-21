@@ -79,6 +79,16 @@ export function buildAnimation(
   return { image, frames, masks, fps, loop };
 }
 
+/**
+ * Bật nội suy khi frame bị thu nhỏ (`scale`: pixel canvas cho một pixel của frame, dưới 1). `pixelArt` chỉ để phóng
+ * to cho sắc (assets/README.md); thu nhỏ mà lấy điểm gần nhất thì nét mảnh như mí mắt, con ngươi đứt đoạn, mỗi
+ * frame một kiểu, nhìn như chớp mắt lỗi.
+ */
+export function setSmoothing(ctx: CanvasRenderingContext2D, pixelArt: boolean, scale: number): void {
+  ctx.imageSmoothingEnabled = !pixelArt || scale < 1;
+  ctx.imageSmoothingQuality = "high";
+}
+
 /** Pack thiếu animation thì mượn animation gần giống trước khi dùng `idle`. */
 const SIMILAR: Partial<Record<AnimationName, AnimationName>> = {
   walk: "run",
