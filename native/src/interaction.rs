@@ -194,6 +194,194 @@ fn throw_velocity(samples: &VecDeque<Sample>, now: f64) -> (f64, f64) {
 mod tests {
     use super::*;
 
+    /// Overlay giả: con trỏ ở `x` < 100 là con 1, < 200 là con 2, còn lại là chỗ trống.
+    #[derive(Default)]
+    struct Fake {
+        foot: Option<Point>,
+        positions: std::collections::HashMap<u32, (f64, f64)>,
+        dragging: Option<u32>,
+        holds: Vec<bool>,
+        releases: Vec<(f64, f64)>,
+        pokes: Vec<u32>,
+        doubles: Vec<u32>,
+        skills: Vec<u32>,
+        /// Con nào có kỹ năng riêng (Shift + click).
+        skilled: bool,
+        raised: Vec<u32>,
+        captured: bool,
+        outside: Vec<Point>,
+    }
+
+    impl Host for Fake {
+        fn pick(&self, point: Point) -> Option<u32> {
+            if point.x < 100.0 {
+                Some(1)
+            } else if point.x < 200.0 {
+                Some(2)
+            } else {
+                None
+            }
+        }
+        fn foot(&self, _: u32) -> Option<Point> {
+            self.foot.or(Some(Point { x: 100.0, y: 200.0 }))
+        }
+        fn grab_pointer(&mut self, pet: u32) {
+            self.raised.push(pet);
+            self.captured = true;
+        }
+        fn release_pointer(&mut self) {
+            self.captured = false;
+        }
+        fn hold(&mut self, held: bool) {
+            self.holds.push(held);
+        }
+        fn activity(&mut self) {}
+        fn grab(&mut self, pet: u32) {
+            self.dragging = Some(pet);
+        }
+        fn drag_to(&mut self, pet: u32, x: f64, y: f64) {
+            self.positions.insert(pet, (x, y));
+        }
+        fn release(&mut self, _: u32, vx: f64, vy: f64) {
+            self.dragging = None;
+            self.releases.push((vx, vy));
+        }
+        fn poke(&mut self, pet: u32) {
+            self.pokes.push(pet);
+        }
+        fn drag_outside(&mut self, point: Point) {
+            self.outside.push(point);
+        }
+        fn inside(&self, point: Point) -> bool {
+            point.x >= 0.0 && point.y >= 0.0
+        }
+        fn double_click(&mut self, pet: u32) {
+            self.doubles.push(pet);
+        }
+        fn skill(&mut self, pet: u32) -> bool {
+            self.skills.push(pet);
+            self.skilled
+        }
+    }
+
+    fn at(x: f64, y: f64) -> Point {
+        Point { x, y }
+    }
+
+    /// Bấm vào con 1 rồi kéo đi một đoạn.
+    fn drag(interaction: &mut Interaction, host: &mut Fake) {
+        interaction.down(host, at(50.0, 190.0), false, 0.0);
+        interaction.moved(host, at(70.0, 100.0), 20.0);
+        assert_eq!(host.dragging, Some(1));
+    }
+
+    #[test]
+    fn mat_quyen_giu_chuot_thi_tha_pet_dang_keo_va_tra_lai_click_through() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake::default());
+        drag(&mut interaction, &mut host);
+        interaction.cancel(&mut host);
+        interaction.cancel(&mut host);
+        assert_eq!(host.dragging, None);
+        assert!(!host.captured);
+        assert_eq!(host.releases, [(0.0, 0.0)]);
+        assert_eq!(host.holds, [true, false]);
+        interaction.up(&mut host, 30.0);
+        assert_eq!(host.releases.len(), 1);
+    }
+
+    #[test]
+    fn click_thuong_van_cham_mot_lan() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake::default());
+        interaction.down(&mut host, at(50.0, 190.0), false, 0.0);
+        interaction.up(&mut host, 20.0);
+        assert_eq!(host.pokes, [1]);
+        assert!(!host.captured);
+        assert_eq!(host.holds, [true, false]);
+        assert!(host.releases.is_empty());
+    }
+
+    #[test]
+    fn shift_click_goi_ky_nang_thay_vi_cham_hay_bam_dup() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake { skilled: true, ..Fake::default() });
+        interaction.down(&mut host, at(50.0, 190.0), true, 100.0);
+        interaction.up(&mut host, 120.0);
+        assert_eq!(host.skills, [1]);
+        assert!(host.pokes.is_empty());
+    }
+
+    #[test]
+    fn shift_click_vao_con_khong_co_ky_nang_la_click_thuong() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake::default());
+        interaction.down(&mut host, at(50.0, 190.0), true, 100.0);
+        interaction.up(&mut host, 120.0);
+        assert_eq!(host.skills, [1]);
+        assert_eq!(host.pokes, [1]);
+    }
+
+    #[test]
+    fn keo_theo_khoang_lech_luc_bam_va_nem_luc_buong() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake::default());
+        drag(&mut interaction, &mut host);
+        interaction.moved(&mut host, at(90.0, 80.0), 40.0);
+        assert_eq!(host.positions[&1], (140.0, 90.0));
+        interaction.up(&mut host, 45.0);
+        assert_eq!(host.dragging, None);
+        assert_eq!(host.releases, [(1000.0, -2750.0)]);
+        assert_eq!(host.holds, [true, false]);
+    }
+
+    #[test]
+    fn bat_pet_dang_bay_giu_dung_cho_dang_ve() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake { foot: Some(at(80.0, 170.0)), ..Fake::default() });
+        interaction.down(&mut host, at(50.0, 190.0), false, 0.0);
+        interaction.moved(&mut host, at(70.0, 100.0), 20.0);
+        assert_eq!(host.positions[&1], (100.0, 80.0));
+    }
+
+    #[test]
+    fn bam_vao_pet_thi_dua_no_len_tren_cac_con_khac() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake::default());
+        interaction.down(&mut host, at(150.0, 50.0), false, 0.0);
+        assert_eq!(host.raised, [2]);
+        assert_eq!(interaction.held(), Some(2));
+    }
+
+    #[test]
+    fn nhieu_pet_chi_bat_con_duoi_con_tro_cho_trong_thi_di_xuyen() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake::default());
+        interaction.down(&mut host, at(150.0, 50.0), false, 0.0);
+        interaction.up(&mut host, 10.0);
+        assert_eq!(host.pokes, [2]);
+        interaction.down(&mut host, at(300.0, 50.0), false, 20.0);
+        assert_eq!(interaction.held(), None);
+        interaction.up(&mut host, 30.0);
+        assert_eq!(host.pokes, [2]);
+    }
+
+    #[test]
+    fn hai_lan_click_nhanh_la_bam_dup_lan_ba_tinh_lai() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake::default());
+        let mut click = |time: f64| {
+            interaction.down(&mut host, at(10.0, 10.0), false, time);
+            interaction.up(&mut host, time);
+        };
+        click(0.0);
+        click(250.0);
+        click(500.0);
+        // Hai lần cách nhau lâu thì không phải bấm đúp.
+        click(2000.0);
+        assert_eq!(host.doubles, [1]);
+        assert_eq!(host.pokes.len(), 4);
+    }
+
+    #[test]
+    fn keo_ra_ngoai_overlay_thi_bao_de_sang_man_hinh_khac() {
+        let (mut interaction, mut host) = (Interaction::default(), Fake::default());
+        drag(&mut interaction, &mut host);
+        interaction.moved(&mut host, at(-20.0, 100.0), 40.0);
+        assert_eq!(host.outside, [at(-20.0, 100.0)]);
+    }
+
     #[test]
     fn van_toc_nem_tu_doan_cuoi() {
         let samples: VecDeque<Sample> =

@@ -158,3 +158,71 @@ impl Ghost {
         Ok(Some(Point { x, y }))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const BOUNDS: Bounds = Bounds { left: 0.0, right: 1920.0, top: 0.0, floor: 1040.0 };
+
+    fn samples(flight: &Flight, targets: &[Point], steps: usize) -> Vec<(f64, f64, f64)> {
+        (0..=steps).map(|i| ghost_at(flight, targets, i as f64 / steps as f64)).collect()
+    }
+
+    fn phases() -> impl Iterator<Item = f64> {
+        (0..9).map(|i| f64::from(i) * 0.7)
+    }
+
+    #[test]
+    fn bay_tu_ngoai_mep_nay_sang_ngoai_mep_kia() {
+        for dir in [1.0, -1.0] {
+            let flight = Flight { bounds: BOUNDS, dir, phase: 1.0 };
+            let (first, last) = (ghost_at(&flight, &[], 0.0), ghost_at(&flight, &[], 1.0));
+            let outside = |x: f64| x + WIDTH / 2.0 <= BOUNDS.left || x - WIDTH / 2.0 >= BOUNDS.right;
+            assert!(outside(first.0) && outside(last.0));
+            assert_eq!((last.0 - first.0).signum(), dir);
+        }
+    }
+
+    #[test]
+    fn luon_khap_chieu_cao_ma_khong_ra_ngoai_mep_tren_mep_duoi() {
+        let half = HEIGHT / 2.0;
+        for phase in phases() {
+            let ys: Vec<f64> =
+                samples(&Flight { bounds: BOUNDS, dir: 1.0, phase }, &[], 2000).iter().map(|p| p.1).collect();
+            let min = ys.iter().copied().fold(f64::INFINITY, f64::min);
+            let max = ys.iter().copied().fold(0.0, f64::max);
+            assert!(min - half >= BOUNDS.top, "phase {phase}: thò lên trên");
+            assert!(max + half <= BOUNDS.floor, "phase {phase}: thò xuống dưới");
+            assert!(min < BOUNDS.floor * 0.25, "phase {phase}: không lên cao");
+            assert!(max > BOUNDS.floor * 0.75, "phase {phase}: không xuống thấp");
+        }
+    }
+
+    #[test]
+    fn sa_qua_dung_cho_tung_pet_ke_ca_pet_dung_tren_cua_so() {
+        let targets = [Point { x: 300.0, y: 980.0 }, Point { x: 1500.0, y: 420.0 }];
+        for phase in phases() {
+            for dir in [1.0, -1.0] {
+                let path = samples(&Flight { bounds: BOUNDS, dir, phase }, &targets, 2000);
+                for target in &targets {
+                    let near = (path.iter().copied())
+                        .reduce(|a, b| if (b.0 - target.x).abs() < (a.0 - target.x).abs() { b } else { a })
+                        .unwrap();
+                    let off = near.1 - target.y;
+                    assert!(off.abs() < 12.0, "phase {phase} dir {dir}: cách pet {off}px");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn bay_muot_khong_giat_nghieng_vua_phai() {
+        let targets = [Point { x: 900.0, y: 980.0 }, Point { x: 960.0, y: 500.0 }];
+        let path = samples(&Flight { bounds: BOUNDS, dir: 1.0, phase: 2.0 }, &targets, 14 * 30);
+        for pair in path.windows(2) {
+            assert!((pair[1].1 - pair[0].1).abs() < 40.0);
+            assert!(pair[1].2.abs() <= 0.45 + 1e-9);
+        }
+    }
+}

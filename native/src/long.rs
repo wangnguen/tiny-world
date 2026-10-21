@@ -521,3 +521,267 @@ impl LongCombo {
         self.until = until;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    /// Một con đứng ở `x`; `busy` thì không chịu `hold` như con đang bị kéo, rơi, leo.
+    #[derive(Debug, Clone)]
+    struct Fighter {
+        x: f64,
+        y: f64,
+        facing: Facing,
+        state: PetState,
+        vanished: f64,
+        startled: u32,
+        busy: bool,
+        covered: bool,
+    }
+
+    #[derive(Default)]
+    struct FakeStage {
+        pets: HashMap<u32, Fighter>,
+        log: Vec<String>,
+        blinks: Vec<(bool, Facing, f64)>,
+    }
+
+    impl FakeStage {
+        fn add(&mut self, uid: u32, x: f64, y: f64) {
+            let fighter = Fighter {
+                x,
+                y,
+                facing: 1,
+                state: PetState::Idle,
+                vanished: 0.0,
+                startled: 0,
+                busy: false,
+                covered: false,
+            };
+            self.pets.insert(uid, fighter);
+        }
+
+        fn pet(&mut self, uid: u32) -> &mut Fighter {
+            self.pets.get_mut(&uid).unwrap()
+        }
+    }
+
+    impl Stage for FakeStage {
+        fn state(&self, pet: u32) -> Option<PetState> {
+            self.pets.get(&pet).map(|p| p.state)
+        }
+        fn position(&self, pet: u32) -> Option<Point> {
+            self.pets.get(&pet).map(|p| Point { x: p.x, y: p.y })
+        }
+        fn facing(&self, pet: u32) -> Facing {
+            self.pets.get(&pet).map_or(1, |p| p.facing)
+        }
+        fn set_facing(&mut self, pet: u32, facing: Facing) {
+            if let Some(p) = self.pets.get_mut(&pet) {
+                p.facing = facing;
+            }
+        }
+        fn hold(&mut self, pet: u32, facing: Facing, _: f64) -> bool {
+            let Some(p) = self.pets.get_mut(&pet) else { return false };
+            if p.busy || p.state == PetState::Dragged {
+                return false;
+            }
+            p.facing = facing;
+            p.state = PetState::Idle;
+            true
+        }
+        fn blink_to(&mut self, pet: u32, target: u32, x: f64, _: f64) {
+            let (tx, ty) = (self.pets[&target].x, self.pets[&target].y);
+            let p = self.pet(pet);
+            p.x = x;
+            p.y = ty;
+            p.state = PetState::Idle;
+            if (tx - x).abs() > 1.0 {
+                p.facing = if tx > x { 1 } else { -1 };
+            }
+        }
+        fn startle(&mut self, pet: u32) {
+            let p = self.pet(pet);
+            p.startled += 1;
+            p.state = PetState::React;
+        }
+        fn vanish(&mut self, pet: u32, seconds: f64) {
+            self.pet(pet).vanished = seconds;
+        }
+        fn size(&self, _: u32) -> (f64, f64) {
+            (96.0, 96.0)
+        }
+        fn set_covered(&mut self, pet: u32, covered: bool) {
+            if let Some(p) = self.pets.get_mut(&pet) {
+                p.covered = covered;
+            }
+        }
+        fn play(&mut self, action: Action, _: f64, facing: Facing) {
+            self.log.push(format!("play {action:?} {facing}"));
+        }
+        fn stop_action(&mut self) {
+            self.log.push("stop".into());
+        }
+        fn teleport(&mut self, at: Point, _: (f64, f64), direction: Facing, reverse: bool, _: f64, _: f64) {
+            self.blinks.push((reverse, direction, at.x));
+        }
+    }
+
+    /// Chạy combo mỗi 10 ms từ `from` tới `to` (hoặc tới lúc xong); `each(stage, t)` chạy trước mỗi lần.
+    fn run(
+        combo: &mut LongCombo,
+        stage: &mut FakeStage,
+        from: f64,
+        to: f64,
+        mut each: impl FnMut(&mut FakeStage, f64),
+    ) -> f64 {
+        let mut t = from;
+        while t <= to && !combo.done() {
+            each(stage, t);
+            combo.update(stage, t);
+            t += 10.0;
+        }
+        t
+    }
+
+    fn plays(stage: &FakeStage) -> Vec<&str> {
+        stage.log.iter().filter(|l| l.starts_with("play")).map(String::as_str).collect()
+    }
+
+    #[test]
+    fn bien_hinh_roi_lan_luot_toc_bien_toi_quat_tung_con() {
+        let mut stage = FakeStage::default();
+        stage.add(1, 100.0, 700.0);
+        stage.add(2, 400.0, 700.0);
+        stage.add(3, 900.0, 400.0);
+        let mut combo = LongCombo::start(&mut stage, 1, vec![2, 3], 0.0);
+        assert!(stage.pets[&1].covered);
+        run(&mut combo, &mut stage, 0.0, TRANSFORM_MS - 10.0, |_, _| {});
+        assert_eq!(stage.pets[&2].startled, 0);
+        run(&mut combo, &mut stage, TRANSFORM_MS, 20_000.0, |_, _| {});
+        assert!(combo.done());
+        assert!(!stage.pets[&1].covered);
+        for target in [2, 3] {
+            assert_eq!(stage.pets[&target].startled, 1);
+            assert_eq!(stage.pets[&target].vanished, VANISH_SECONDS);
+        }
+        assert_eq!(plays(&stage), ["play Transform 1", "play TailSwipe 1", "play TailSwipe 1"]);
+        // Đi từ chỗ Long đứng, hiện ra cạnh mục tiêu, trên chỗ đứng của chính mục tiêu.
+        let ways: Vec<bool> = stage.blinks.iter().map(|b| b.0).collect();
+        assert_eq!(ways, [false, true, false, true]);
+        assert_eq!(stage.blinks[0].2, 100.0);
+        assert!((stage.blinks[1].2 - (400.0 - 192.0 * REACH)).abs() < 1e-9);
+        assert_eq!(stage.pets[&1].y, 400.0);
+    }
+
+    #[test]
+    fn don_quat_van_huong_ve_muc_tieu_du_sim_quay_long_theo_con_tro() {
+        let mut stage = FakeStage::default();
+        stage.add(1, 800.0, 700.0);
+        stage.add(2, 300.0, 700.0);
+        let mut combo = LongCombo::start(&mut stage, 1, vec![2], 0.0);
+        // Pet đứng yên nhìn theo con trỏ; người dùng vừa bấm chỗ Long đứng cũ (bên phải).
+        run(&mut combo, &mut stage, 0.0, 20_000.0, |stage, _| {
+            stage.pet(1).facing = 1;
+            stage.pet(2).facing = 1;
+        });
+        assert_eq!(plays(&stage)[1], "play TailSwipe -1");
+        assert_eq!(stage.pets[&2].startled, 1);
+    }
+
+    #[test]
+    fn muc_tieu_dang_ban_thi_cho_roi_bo_qua_con_sau_van_trung() {
+        let mut stage = FakeStage::default();
+        stage.add(1, 100.0, 700.0);
+        stage.add(2, 400.0, 700.0);
+        stage.add(3, 700.0, 700.0);
+        stage.pet(2).busy = true;
+        let mut combo = LongCombo::start(&mut stage, 1, vec![2, 3], 0.0);
+        let end = run(&mut combo, &mut stage, 0.0, 20_000.0, |_, _| {});
+        assert_eq!(stage.pets[&2].vanished, 0.0);
+        assert_eq!(stage.pets[&2].startled, 0);
+        assert_eq!(stage.pets[&3].vanished, VANISH_SECONDS);
+        assert!(end > TRANSFORM_MS + WAIT_MS);
+    }
+
+    #[test]
+    fn muc_tieu_ranh_ra_trong_luc_cho_thi_van_trung() {
+        let mut stage = FakeStage::default();
+        stage.add(1, 100.0, 700.0);
+        stage.add(2, 400.0, 700.0);
+        stage.pet(2).busy = true;
+        let mut combo = LongCombo::start(&mut stage, 1, vec![2], 0.0);
+        run(&mut combo, &mut stage, 0.0, 20_000.0, |stage, t| {
+            if t == TRANSFORM_MS + 500.0 {
+                stage.pet(2).busy = false;
+            }
+        });
+        assert_eq!(stage.pets[&2].vanished, VANISH_SECONDS);
+    }
+
+    #[test]
+    fn nhac_long_len_giua_chung_thi_dung_va_hien_lai_long() {
+        let mut stage = FakeStage::default();
+        stage.add(1, 100.0, 700.0);
+        stage.add(2, 400.0, 700.0);
+        let mut combo = LongCombo::start(&mut stage, 1, vec![2], 0.0);
+        run(&mut combo, &mut stage, 0.0, TRANSFORM_MS + 300.0, |_, _| {});
+        stage.pet(1).state = PetState::Dragged;
+        combo.update(&mut stage, TRANSFORM_MS + 310.0);
+        assert!(combo.done());
+        assert!(!stage.pets[&1].covered);
+        assert_eq!(stage.log.last().map(String::as_str), Some("stop"));
+        run(&mut combo, &mut stage, TRANSFORM_MS + 320.0, 20_000.0, |_, _| {});
+        assert_eq!(stage.pets[&2].vanished, 0.0);
+    }
+
+    #[test]
+    fn bo_long_khoi_man_hinh_thi_dung_combo() {
+        let mut stage = FakeStage::default();
+        stage.add(1, 100.0, 700.0);
+        stage.add(2, 400.0, 700.0);
+        let mut combo = LongCombo::start(&mut stage, 1, vec![2], 0.0);
+        combo.drop(&mut stage, 1);
+        assert!(combo.done());
+        assert!(!stage.pets[&1].covered);
+    }
+
+    #[test]
+    fn muc_tieu_bi_bo_hay_bi_nhac_len_giua_don_thi_thoat_long_sang_con_tiep() {
+        let mut stage = FakeStage::default();
+        stage.add(1, 100.0, 700.0);
+        stage.add(2, 400.0, 700.0);
+        stage.add(3, 600.0, 700.0);
+        stage.add(4, 800.0, 700.0);
+        let mut combo = LongCombo::start(&mut stage, 1, vec![2, 3, 4], 0.0);
+        // Bị bỏ khỏi màn hình trong lúc Long tốc biến tới.
+        run(&mut combo, &mut stage, 0.0, TRANSFORM_MS + 100.0, |_, _| {});
+        combo.drop(&mut stage, 2);
+        stage.pets.remove(&2);
+        // Bị người dùng nhấc lên lúc Long đang quật.
+        run(&mut combo, &mut stage, TRANSFORM_MS + 110.0, 20_000.0, |stage, _| {
+            let long = &stage.pets[&1];
+            if long.covered && long.x > 400.0 && long.x < 600.0 {
+                stage.pet(3).state = PetState::Dragged;
+            }
+        });
+        assert_eq!(stage.pets[&3].vanished, 0.0);
+        assert_eq!(stage.pets[&3].startled, 0);
+        assert_eq!(stage.pets[&4].vanished, VANISH_SECONDS);
+        assert!(!stage.pets[&1].covered);
+    }
+
+    #[test]
+    fn khong_con_muc_tieu_thi_xong_va_hien_lai_long() {
+        let mut stage = FakeStage::default();
+        stage.add(1, 100.0, 700.0);
+        stage.add(2, 400.0, 700.0);
+        stage.pet(2).busy = true;
+        let mut combo = LongCombo::start(&mut stage, 1, vec![2], 0.0);
+        run(&mut combo, &mut stage, 0.0, 20_000.0, |_, _| {});
+        assert!(combo.done());
+        assert!(!stage.pets[&1].covered);
+        assert_eq!(stage.pets[&2].startled, 0);
+    }
+}
