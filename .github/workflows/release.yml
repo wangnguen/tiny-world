@@ -46,7 +46,10 @@ jobs:
           workspaces: . -> target
       # Tauri cần thư mục dist của frontend lúc compile.
       - run: pnpm --filter desktop build
-      - run: cargo test --workspace --locked
+      # Test riêng shell Tauri: build chung thì Tauri bật thêm tính năng cho muda (menu khay của overlay), exe test
+      # của overlay không có manifest cho tính năng đó nên không chạy được.
+      - run: cargo test --locked -p tinyworld-backend -p tinyworld-native
+      - run: cargo test --locked -p tinyworld
 
   create-release:
     name: Tạo release nháp

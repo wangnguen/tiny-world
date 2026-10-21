@@ -6,25 +6,21 @@ edition = "2021"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+serde_json = "1"
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
-tauri-plugin-single-instance = "2"
-serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", features = [] }
 serde_json = "1"
-# Cài đặt, log, chữ, thời tiết, chat, cập nhật, theo dõi cửa sổ: phần không dính tới Tauri.
-tinyworld-backend = { path = "../backend", features = ["tauri"] }
-# Đã có sẵn qua Tauri; hẹn giờ tự tắt Im lặng (tray.rs).
-tokio = { version = "1", features = ["time"] }
+# Overlay vẽ bằng DirectComposition: tiến trình chính của app.
+tinyworld-native = { path = "../../native" }
+# Cài đặt, chữ, chat, kiểu dữ liệu dùng chung với overlay.
+tinyworld-backend = { path = "../backend" }
+# Đã có sẵn qua Tauri; chờ overlay trả lời command (ui.rs).
+tokio = { version = "1", features = ["sync"] }
 
 [target.'cfg(windows)'.dependencies]
-# Cùng phiên bản Tauri đang dùng: hạ mức dùng RAM của WebView2 lúc pet ngủ hoặc overlay ẩn (overlay.rs).
-webview2-com = "0.39"
-windows-core = "0.62"
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",
-    "Win32_UI_Input_KeyboardAndMouse",
-    "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",
 ] }

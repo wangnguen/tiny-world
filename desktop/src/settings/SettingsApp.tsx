@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { errorMessage, fill, messages, type Language, type Messages, type Settings } from "@tinyworld/core";
 import { api } from "../api";
 import { LangContext, guessLang } from "../i18n";
-import { listPacks, resolvePacks } from "../overlay/sprites";
+import { listPacks, resolvePacks } from "../sprites/sprites";
 import { ChatIcon, CubeIcon, GlobeIcon, InfoIcon, RunnerIcon, WindowsIcon } from "./icons";
 import { PetPicker } from "./PetPicker";
 import { PetPreview } from "./PetPreview";

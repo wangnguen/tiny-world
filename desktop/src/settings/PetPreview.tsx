@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { frameIndex } from "@tinyworld/core";
-import { loadSpriteSet } from "../overlay/sprites";
+import { loadSpriteSet } from "../sprites/sprites";
 
 interface Props {
   /** Nhân vật đang chọn (`Settings.pet`). */

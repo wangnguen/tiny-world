@@ -11,8 +11,8 @@ import {
 } from "@tinyworld/core";
 import { api } from "../api";
 import { LangContext, guessLang, useMessages } from "../i18n";
-import { setSmoothing } from "../overlay/spriteSet";
-import { loadThumbnail } from "../overlay/sprites";
+import { setSmoothing } from "../sprites/spriteSet";
+import { loadThumbnail } from "../sprites/sprites";
 import { ChatScene, HILL_FOOT } from "./ChatScene";
 import { parseReply, type Inline } from "./markdown";
 import { MESSAGE_MAX, buildPrompt, dayKey, dayText, personaOf, pickSuggestions, turnsOf, type Line } from "./prompt";

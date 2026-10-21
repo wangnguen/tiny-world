@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type WheelEvent } from "react";
 import { MAX_PETS, fill } from "@tinyworld/core";
 import { useMessages } from "../i18n";
-import { setSmoothing } from "../overlay/spriteSet";
-import { loadThumbnail, type PackInfo, type Thumbnail } from "../overlay/sprites";
+import { setSmoothing } from "../sprites/spriteSet";
+import { loadThumbnail, type PackInfo, type Thumbnail } from "../sprites/sprites";
 import { ChevronIcon, PawIcon } from "./icons";
 
 /** Cỡ ảnh trong mỗi ô (CSS pixel), khớp `.pet-choice canvas` trong settings.css. */

@@ -4,22 +4,25 @@
 #[macro_use]
 extern crate tinyworld_backend;
 
-// Phần không dính tới Tauri nằm ở desktop/backend; đặt tên ở đây để các module dùng `crate::weather`... như cũ.
-use tinyworld_backend::{
-    activity, autostart, error, events, fullscreen, geometry, i18n, log, storage, weather, window_list,
-};
-
-mod app;
 mod app_icon;
-mod chat;
-mod commands;
-mod cursor;
-mod overlay;
-mod preview;
-mod settings;
-mod tray;
-mod update;
+mod ui;
 
+/// Không tham số: overlay (pet, khay, các luồng nền), xem `tinyworld_native`. `--ui`: cửa sổ Cài đặt và khung chat,
+/// do overlay chạy lúc cần.
 fn main() {
-    app::run();
+    if std::env::args().nth(1).as_deref() == Some("--ui") {
+        ui::run();
+        return;
+    }
+    let Some(data_dir) = tinyworld_native::default_data_dir() else {
+        return;
+    };
+    let config = tinyworld_native::Config {
+        version: env!("TINYWORLD_VERSION").to_owned(),
+        data_dir,
+        ui_exe: std::env::current_exe().ok(),
+    };
+    if let Err(e) = tinyworld_native::run(config) {
+        log!("Overlay dừng vì lỗi: {e:#}");
+    }
 }
