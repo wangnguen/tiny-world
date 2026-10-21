@@ -11,6 +11,7 @@ sổ. Dưới đó là demo thời tiết, bảng 22 nhân vật và nút tải 
 | `i18n/vi.json`, `i18n/en.json` | Chữ của trang, hai file phải có đúng các mục như nhau | Có |
 | `i18n/page.html` | Khung trang chung cho mọi ngôn ngữ (`{{t.mục}}` là chữ) | Có |
 | `style.css`, `js/main.js`, `js/desk.js`, `js/demo.js`, `js/sprite.js` | Giao diện và hành vi | Có |
+| `src/weather.ts` | Thời tiết quanh pet cho demo (bản TypeScript của `native/src/weather.rs`, sửa cả hai cho khớp) | Có |
 | `_headers` | Header HTTP trên Cloudflare (cache ảnh) | Có |
 | `index.html`, `en/index.html` | Trang đã điền chữ | Không, sinh ra |
 | `pets/`, `img/`, `favicon.ico`, `js/gen/` | Sprite, ảnh, và code dùng chung với app (thời tiết, câu pet nói, âm lịch) | Không, sinh ra |
@@ -21,7 +22,7 @@ với app.
 ## Sửa trang
 
 1. Sửa chữ trong `i18n/vi.json` và `i18n/en.json`, hoặc sửa bố cục trong `i18n/page.html`.
-2. Dựng lại (cũng chạy lại khi đổi sprite, file chữ của app, hay `weather.ts`, `lines.ts` của app):
+2. Dựng lại (cũng chạy lại khi đổi sprite, file chữ của app, `src/weather.ts`, hay `lines.ts` của app):
 
    ```bash
    pnpm prepare:website
