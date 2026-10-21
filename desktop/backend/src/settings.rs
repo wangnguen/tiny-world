@@ -14,7 +14,7 @@ const SIZE_RANGE: (f64, f64) = (0.5, 2.0);
 const SPEED_RANGE: (f64, f64) = (0.5, 2.0);
 const PET_ID_MAX_LEN: usize = 64;
 /// Số nhân vật tối đa cùng sống trên màn hình, khớp `MAX_PETS` trong packages/core.
-const MAX_PETS: usize = 3;
+pub const MAX_PETS: usize = 3;
 const CITY_NAME_MAX_LEN: usize = 120;
 const TIMEZONE_MAX_LEN: usize = 64;
 /// Tối đa chừng này sự kiện trong lịch; tên, câu nói dài tối đa chừng này ký tự; kéo dài 1–10 ngày.

@@ -8,6 +8,9 @@ use crate::i18n;
 use serde::{Deserialize, Serialize};
 use std::sync::{Mutex, PoisonError};
 
+/// Xem thử kéo dài chừng này giây, khớp `PREVIEW_SECONDS` trong packages/core.
+pub const PREVIEW_SECONDS: u32 = 30;
+
 /// Nhiệt độ xem thử được (°C).
 const TEMPERATURE: (f64, f64) = (-60.0, 60.0);
 
