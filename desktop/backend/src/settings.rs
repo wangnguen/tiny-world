@@ -12,6 +12,8 @@ use std::sync::Mutex;
 
 const SIZE_RANGE: (f64, f64) = (0.5, 2.0);
 const SPEED_RANGE: (f64, f64) = (0.5, 2.0);
+/// Nhịp vẽ chọn được, trừ 0 (theo màn hình): thấp nhất là nhịp mô phỏng.
+const FPS_RANGE: (u16, u16) = (30, 240);
 const PET_ID_MAX_LEN: usize = 64;
 /// Số nhân vật tối đa cùng sống trên màn hình, khớp `MAX_PETS` trong packages/core.
 pub const MAX_PETS: usize = 3;
@@ -188,6 +190,9 @@ pub struct Settings {
     pub size: f64,
     /// Hệ số tốc độ đi/chạy.
     pub speed: f64,
+    /// Nhịp vẽ lúc có con chuyển động (đi, chạy, bay, bị kéo...), 0 là theo nhịp màn hình. Đứng yên, ngủ thì vẫn chỉ vẽ
+    /// lúc đổi frame.
+    pub fps: u16,
     /// Các nhân vật đang hiện (tối đa `MAX_PETS`, không trùng), theo thứ tự chọn: tên thư mục sprite
     /// pack trong `assets/sprites/`. Rỗng là pack đầu tiên. Pack không còn trong bản build thì overlay tự
     /// bỏ qua, nên ở đây chỉ kiểm tra dạng tên.
@@ -238,6 +243,7 @@ impl Default for Settings {
         Self {
             size: 1.0,
             speed: 1.0,
+            fps: 60,
             pets: Vec::new(),
             pet: None,
             city: None,
@@ -286,6 +292,7 @@ impl Settings {
         Self {
             size: clamp(self.size, SIZE_RANGE, default.size),
             speed: clamp(self.speed, SPEED_RANGE, default.speed),
+            fps: if self.fps == 0 { 0 } else { self.fps.clamp(FPS_RANGE.0, FPS_RANGE.1) },
             pet: seen.first().cloned(),
             pets: seen,
             city: self.city.filter(City::is_valid).map(|c| City {
@@ -411,6 +418,15 @@ mod tests {
             }
         );
         fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn nhip_ve_theo_man_hinh_hoac_kep_trong_khoang() {
+        let fps = |fps: u16| Settings { fps, ..Settings::default() }.sanitized().fps;
+        assert_eq!((fps(0), fps(10), fps(60), fps(1000)), (0, 30, 60, 240));
+        // File bản trước chưa có nhịp vẽ: 60.
+        let old: Settings = serde_json::from_str(r#"{ "pet": "a-momo" }"#).unwrap();
+        assert_eq!(old.sanitized().fps, 60);
     }
 
     #[test]

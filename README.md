@@ -255,9 +255,11 @@ tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (o
   build time.
 - **Loop** (`native/src/app.rs`): one thread handles window messages, reads the cursor about 60 times a
   second (`GetCursorPos`, plus Ctrl and the mouse buttons) and steps the simulation 30 times a second
-  (`FixedStep`). Walking pets are drawn at 30 fps; while one is flying or dragged the loop follows the display
-  (`DwmFlush`) and draws between two steps (`StepBlend`). When the whole group stands still it only wakes
-  when a pet changes frame; when everyone sleeps it stops drawing entirely and only the cursor is read.
+  (`FixedStep`). While a pet walks, flies, is dragged or reels it draws at the rate picked under Smoothness
+  in Settings, between two steps (`StepBlend`): 30 fps on a timer, or 60 fps (the default) or the display's
+  own rate in step with the display (`DwmFlush`; at 60 fps on a faster display some refreshes are
+  skipped). When the whole group stands still it only wakes when a pet changes frame; when everyone sleeps
+  it stops drawing entirely and only the cursor is read.
 - **Click-through**: the window lets the mouse pass (`WS_EX_TRANSPARENT`) except while the cursor is over a
   visible part of a pet (by sprite alpha, not while Ctrl is held) or a pet is being dragged; then it takes
   clicks without taking focus. `WS_EX_TOOLWINDOW` keeps Chrome and Edge from treating the overlay as a

@@ -61,7 +61,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
     QS_ALLINPUT, WM_QUIT,
 };
 
-/// Tần số mô phỏng, cũng là tần số vẽ lúc pet đi đứng bình thường: sprite thường chỉ 8–12 fps nên 30 là đủ mượt.
+/// Tần số mô phỏng. Có con chuyển động mà chọn 30 fps trong Cài đặt thì cũng là tần số vẽ; chọn cao hơn thì vẽ theo
+/// nhịp màn hình (`App::sleep`).
 const FPS: f64 = 30.0;
 const FRAME: Duration = Duration::from_nanos(1_000_000_000 / 30);
 /// Cả nhóm đứng yên thì chỉ cần thức dậy lúc có con đổi frame, nhưng tối đa chừng này một lần để mô phỏng không dồn
@@ -79,6 +80,8 @@ const SAVE_INTERVAL: Duration = Duration::from_secs(30);
 const MOVE_INTERVAL: Duration = Duration::from_millis(200);
 /// `DwmFlush` trả về nhanh hơn chừng này là không có gì chờ ghép hình: hẹn giờ như thường để khỏi quay vòng.
 const FLUSH_MIN: Duration = Duration::from_millis(2);
+/// Màn hình làm tươi sớm hơn lần vẽ kế (`App::smooth_due`) chừng này vẫn vẽ: nhịp làm tươi xê dịch đôi chút.
+const FLUSH_SLACK: Duration = Duration::from_millis(2);
 /// Khoảng cách từ mép phải vùng làm việc tới con đầu tiên lúc xuất hiện lần đầu (CSS pixel).
 const SPAWN_MARGIN: f64 = 48.0;
 /// Các con xuất hiện lần đầu đứng cách nhau chừng này lần bề ngang pet.
@@ -190,6 +193,9 @@ pub struct App {
     /// lần đổi cũ hơn.
     resizing: u64,
     loading: u64,
+    /// Nhịp vẽ lúc có con chuyển động (`Settings::fps`) và lúc tới lần vẽ kế khi vẽ theo nhịp màn hình (`sleep`).
+    fps: u16,
+    smooth_due: Instant,
     /// Chat với pet đang bật trong Cài đặt (Phase 6).
     chat_on: bool,
     /// Con đang chat (`uid`): đứng yên cạnh khung chat tới khi đóng khung chat.
@@ -335,6 +341,8 @@ impl App {
             size: current_settings.size,
             resizing: 0,
             loading: 0,
+            fps: current_settings.fps,
+            smooth_due: now,
             chat_on: current_settings.chat,
             listening: None,
             paused: false,
@@ -464,13 +472,21 @@ impl App {
 
     /// Ngủ tới việc gần nhất phải làm; có message (chuột, tin từ luồng khác) thì thức sớm.
     fn sleep(&mut self) {
-        // Có con đang bay (bị ném, rơi, nhảy) hoặc đang bị kéo: vẽ theo nhịp màn hình. Vẽ 30 fps thì pet bị ném
-        // nhanh nhảy cóc từng đoạn dài, nhìn giật.
-        if self.running && self.fast() {
+        // Có gì đang chuyển động mà chọn trên 30 fps: vẽ theo nhịp màn hình, ở vị trí nội suy giữa hai bước mô phỏng
+        // (`StepBlend`); màn hình làm tươi nhanh hơn nhịp đã chọn thì bỏ bớt lần, trung bình vẫn đúng nhịp. Vẽ 30 fps
+        // thì pet đi lại hơi giật, bị ném nhanh thì nhảy cóc từng đoạn dài.
+        if self.running && (self.fps == 0 || f64::from(self.fps) > FPS) && self.fast() {
             let start = Instant::now();
             let flushed = unsafe { DwmFlush() }.is_ok();
-            if flushed && start.elapsed() >= FLUSH_MIN {
-                self.next_frame = Instant::now();
+            let now = Instant::now();
+            if flushed && now - start >= FLUSH_MIN {
+                if now + FLUSH_SLACK >= self.smooth_due {
+                    let gap = if self.fps == 0 { Duration::ZERO } else { Duration::from_secs(1) / u32::from(self.fps) };
+                    // Không hẹn xa hơn một nhịp kể từ lần vẽ này (màn hình nhanh hơn nhịp đã chọn một chút thì vẫn vẽ mọi
+                    // lần), cũng không hẹn về trước (vừa đứng yên một lúc thì không vẽ bù).
+                    self.smooth_due = (self.smooth_due + gap).clamp(now, now + gap);
+                    self.next_frame = now;
+                }
                 return;
             }
         }
@@ -495,9 +511,13 @@ impl App {
         }
     }
 
-    /// Có con đang bay hoặc đang bị kéo.
+    /// Có gì đang chuyển động: con nào không đứng yên (đi, chạy, leo, bay, bị kéo, lảo đảo...), Long đang diễn combo,
+    /// hay con ma đang bay. Đứng yên, ngồi mép, ngủ thì chỉ đổi frame vài lần mỗi giây (`next_delay`).
     fn fast(&self) -> bool {
-        self.world.pets.iter().any(|p| matches!(p.state(), PetState::Fall | PetState::Jump | PetState::Dragged))
+        self.combo.is_some()
+            || self.ambience.flying()
+            || (self.world.pets.iter())
+                .any(|p| p.vanished == 0.0 && !matches!(p.state(), PetState::Idle | PetState::Perch | PetState::Sleep))
     }
 
     fn message(&mut self, message: Message) -> Result<()> {
@@ -649,7 +669,8 @@ impl App {
         self.world.pets.iter().map(|p| (p.uid(), Point { x: p.x, y: p.y })).collect()
     }
 
-    /// Cả nhóm đứng yên thì chờ tới lúc có con đổi frame; có con đi lại thì vẽ 30 lần mỗi giây.
+    /// Cả nhóm đứng yên thì chờ tới lúc có con đổi frame; có con đi lại thì vẽ 30 lần mỗi giây (chọn nhịp cao hơn thì
+    /// `sleep` vẽ sớm hơn, theo nhịp màn hình).
     fn next_delay(&self) -> Duration {
         // Long đang diễn combo (cinematic, vệt tốc biến): vẽ đủ nhịp.
         if self.combo.is_some() {
@@ -680,13 +701,15 @@ impl App {
         let bounds = self.world.bounds();
         let pace = self.world.pace();
         let alpha = self.step.alpha();
+        // Vẽ trễ mô phỏng một bước, nội suy theo `alpha` (`StepBlend`).
+        let lag = (1.0 - alpha) * self.step.dt;
         let px = self.px();
         for member in &mut self.members {
             let Some(i) = self.world.index_of(member.uid) else { continue };
             let pet = &self.world.pets[i];
             let occluders = self.world.occluders(i);
             let at = self.blend.at(member.uid, Point { x: pet.x, y: pet.y }, alpha);
-            member.view.update(&self.gfx, pet, &bounds, &occluders, at, pace)?;
+            member.view.update(&self.gfx, pet, &bounds, &occluders, at, lag, pace)?;
             if let Some(kit) = &mut member.kit {
                 let foot = member.view.foot.unwrap_or(at);
                 kit.update(&self.gfx, foot, (member.view.width, member.view.height), ms, px)?;
@@ -1276,6 +1299,7 @@ impl App {
     fn apply_settings(&mut self, next: &Settings) {
         self.world.lang = next.lang;
         self.world.speed = next.speed;
+        self.fps = next.fps;
         self.chat_on = next.chat;
         if !next.chat {
             self.chat_closed();

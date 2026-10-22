@@ -232,7 +232,9 @@ impl PetView {
     }
 
     /// `occluders`: cửa sổ đang che pet (`World::occluders`), phần bị che không vẽ. `at`: điểm chân để vẽ (vị trí nội
-    /// suy giữa hai bước mô phỏng). `pace`: hệ số tốc độ (`World::pace`).
+    /// suy giữa hai bước mô phỏng), trễ mô phỏng `lag` giây: lảo đảo và sao choáng cũng tính theo lúc đó nên mượt theo
+    /// nhịp vẽ. `pace`: hệ số tốc độ (`World::pace`).
+    #[allow(clippy::too_many_arguments)]
     pub fn update(
         &mut self,
         gfx: &Gfx,
@@ -240,6 +242,7 @@ impl PetView {
         bounds: &Bounds,
         occluders: &[Rect],
         at: Point,
+        lag: f64,
         pace: f64,
     ) -> Result<()> {
         self.gone = pet.vanished > 0.0;
@@ -266,10 +269,11 @@ impl PetView {
         let left = canvas_left + self.pad * scale;
         let top = self.snap(at.y - anchor_y * scale);
         self.foot = Some(at);
+        let time = (pet.state_time() - lag).max(0.0);
         // Choáng: lảo đảo qua lại quanh điểm chân, đỉnh đầu lệch `lean` pixel của frame.
         let lean = if state == PetState::Dizzy {
             let mask = &self.sprite.animation(state).masks[frame];
-            let lean = dizzy_lean(pet.state_time(), (anchor_y - self.head.top).max(1.0));
+            let lean = dizzy_lean(time, (anchor_y - self.head.top).max(1.0));
             self.fit_lean(lean, mask, flip, left, bounds)
         } else {
             0.0
@@ -306,7 +310,7 @@ impl PetView {
         self.top = top;
         self.layer.move_to((canvas_left * self.px).round() as f32, (top * self.px).round() as f32)?;
         if state == PetState::Dizzy {
-            self.place_stars(gfx, pet.state_time(), flip)?;
+            self.place_stars(gfx, time, flip)?;
         }
         self.place_bubble(gfx, pet, flip, bounds)
     }

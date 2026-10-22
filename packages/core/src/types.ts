@@ -123,6 +123,8 @@ export interface Settings {
   size: number;
   /** Hệ số tốc độ đi/chạy, 0.5–2. */
   speed: number;
+  /** Nhịp vẽ lúc pet chuyển động (đi, chạy, bay, bị kéo...), 30–240; `0` là theo nhịp màn hình. */
+  fps: number;
   /**
    * Các nhân vật đang hiện (tối đa `MAX_PETS`, không trùng), theo thứ tự chọn: tên thư mục sprite pack
    * trong `assets/sprites/`. Rỗng (hoặc không pack nào còn) là pack đầu tiên theo tên thư mục.

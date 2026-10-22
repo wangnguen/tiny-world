@@ -11,7 +11,7 @@ số 1: **nhẹ**.
 | Tên | TinyWorld, identifier `com.tinyworld.app` (dữ liệu ở `%APPDATA%\com.tinyworld.app\`) |
 | Nền tảng | Chỉ Windows 10/11. Desktop awareness dùng Win32, CI chỉ build NSIS |
 | Stack | Rust. Overlay vẽ thẳng bằng DirectComposition (`native/`); cửa sổ Cài đặt và Chat là Tauri v2 + Vite + React, chạy ở tiến trình riêng lúc cần (Phase 8). Không Electron, không game engine, không server |
-| Vẽ pet | Mỗi pet vài visual DirectComposition nhỏ (sprite, sao choáng, thời tiết, bóng thoại), chỉ vẽ lại surface bằng Direct2D khi đổi frame hay đổi câu, đi lại thì chỉ dời visual. Bước mô phỏng 30 lần/giây; đang bay hay bị kéo thì vẽ theo nhịp màn hình |
+| Vẽ pet | Mỗi pet vài visual DirectComposition nhỏ (sprite, sao choáng, thời tiết, bóng thoại), chỉ vẽ lại surface bằng Direct2D khi đổi frame hay đổi câu, đi lại thì chỉ dời visual. Bước mô phỏng 30 lần/giây; có con đang đi, bay, bị kéo hay lảo đảo thì vẽ theo mục Độ mượt trong Cài đặt (30 fps, 60 fps hay theo nhịp màn hình), nội suy giữa hai bước |
 | Logic pet | `native/src/sim`: Rust thuần (FSM, vật lý, RNG có seed), chuyển từ bản TypeScript cũ và giữ đúng chuỗi số ngẫu nhiên, test bằng `cargo test` |
 | Click-through | Overlay mặc định để chuột đi xuyên. Overlay đọc con trỏ khoảng 60 lần/giây, kiểm tra theo alpha của sprite, con trỏ nằm trên pet thì tắt click-through |
 | Asset | Nhân vật tự vẽ bằng imagegen: atlas gốc ở `assets/sprite-sources/`, `scripts/prepare-sprites.mjs` chuẩn hoá thành pack `assets/sprites/<pack>/` có `pet.json`. Không dùng asset của bên thứ ba. Chưa có pack thì dùng pet tạm vẽ bằng code |
@@ -378,8 +378,8 @@ Chưa làm (lý do):
   báo lỗi 8 (`ERROR_NOT_ENOUGH_MEMORY`), nên đã bỏ công tắc trong Cài đặt. Overlay DirectComposition (Phase 8)
   gọi được, chưa kiểm tra bằng ảnh chụp; thử xong thì thêm lại công tắc
 
-- Chế độ tiết kiệm pin: app đã giới hạn 30 fps, dừng vòng lặp khi cả nhóm ngủ, hạ RAM WebView2; chờ số đo
-  trên pin
+- Chế độ tiết kiệm pin: chạy pin thì tự hạ xuống 30 fps (giờ chọn tay ở mục Độ mượt trong Cài đặt); cả nhóm ngủ
+  thì vòng lặp đã dừng; chờ số đo trên pin
 - Phụ kiện (nơ, khăn): đặt đồ lên đầu bằng đo tự động đã thử ở Phase 4, lệch ở nhiều nhân vật
 - Sao lưu/khôi phục cài đặt: `settings.json` chép tay được
 - Tự mở lại sau crash: cần một tiến trình canh riêng; dữ liệu ghi file tạm rồi đổi tên nên không hỏng, panic

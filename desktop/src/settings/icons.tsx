@@ -31,6 +31,17 @@ export function RunnerIcon() {
   );
 }
 
+/** Mục Độ mượt (nhịp vẽ lúc pet chuyển động). */
+export function GaugeIcon() {
+  return (
+    <svg className="icon icon--gauge" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.2 17.5a8.5 8.5 0 1 1 15.6 0" />
+      <path d="M12 14.5 16 9" />
+      <circle cx="12" cy="14.5" r="1.5" />
+    </svg>
+  );
+}
+
 export function WindowsIcon() {
   return (
     <svg className="icon icon--windows" viewBox="0 0 24 24" aria-hidden="true">
