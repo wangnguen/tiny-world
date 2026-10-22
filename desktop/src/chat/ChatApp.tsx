@@ -56,10 +56,6 @@ export function ChatApp() {
 
   useEffect(() => {
     api
-      .chatTarget()
-      .then((t) => t && setTarget(t))
-      .catch((e: unknown) => console.warn("Không biết đang chat với ai:", errorMessage(e)));
-    api
       .getSettings()
       .then((settings) => setLang(settings.lang))
       .catch((e: unknown) => console.warn("Không đọc được cài đặt:", errorMessage(e)));
@@ -76,6 +72,11 @@ export function ChatApp() {
       }),
       api.onSettingsChanged((settings) => setLang(settings.lang)),
     ];
+    // Hỏi sau khi đã nghe event: trang dựng sẵn (chưa có pet nào) mà được mở đúng lúc đang tải thì không lỡ mất pet.
+    unlisten[0]
+      .then(() => api.chatTarget())
+      .then((t) => t && setTarget(t))
+      .catch((e: unknown) => console.warn("Không biết đang chat với ai:", errorMessage(e)));
     return () => {
       for (const promise of unlisten) promise.then((stop) => stop()).catch(() => {});
     };

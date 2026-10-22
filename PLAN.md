@@ -401,7 +401,7 @@ và Chat giữ React vì ít khi mở và nhiều giao diện.
 | 8a | Tách phần Rust không dính Tauri sang `desktop/backend` (cài đặt, lưu trạng thái, thời tiết, giờ ngồi máy, chat, cập nhật, danh sách cửa sổ, toạ độ màn hình); luồng nền báo qua trait `Host` | Xong, test pass |
 | 8b | Chuyển mô phỏng sang Rust (`native/src/sim`): cùng seed ra cùng chuỗi số với bản TS. Đã so từng bước với bản TS trên 200 kịch bản ngẫu nhiên (đủ 12 state, sang màn hình 94 lần), chuyển hết test của `packages/sim` | Xong, test pass |
 | 8c | Vẽ bằng DirectComposition: pet, bóng thoại (DirectWrite), choáng, phần bị cửa sổ che, thời tiết quanh pet, nhãn nhiệt độ (hình SVG), con ma, đồ diễn của Long; chuột, click-through, khay, nhiều màn hình, lưu `world.json`. Câu đã nói trong ngày và bản mới đã báo lưu ở `said.json` (trước nằm trong localStorage của WebView, mở bản mới có thể nói lại một lần) | Xong phần code, test pass; đã chạy bản dev (pet ngủ, thức, nói, bị ném, choáng), chưa soát hình bằng mắt |
-| 8d | `tinyworld.exe --ui`: tiến trình Tauri chỉ có cửa sổ Cài đặt và Chat, overlay chạy lúc cần mở, đóng hết cửa sổ thì thoát. Mọi command đi qua kết nối nội bộ (cổng ngẫu nhiên, mã bí mật truyền cho tiến trình con) | Xong; đã thử Cài đặt (đọc, lưu, đổi nhân vật và cỡ), Chat (mở, câu gợi ý, tắt chat thì đóng), Thoát |
+| 8d | `tinyworld.exe --ui`: tiến trình Tauri chỉ có cửa sổ Cài đặt và Chat, overlay chạy lúc cần mở. Khởi động nó và WebView2 mất khoảng một giây nên overlay chạy sẵn (cửa sổ dựng sẵn, ẩn) lúc bấm icon khay và lúc trỏ chuột dừng trên pet khi đã bật chat; đóng cửa sổ thì chỉ ẩn, 1 phút không mở lại mới thoát. Mọi command đi qua kết nối nội bộ (cổng ngẫu nhiên, mã bí mật truyền cho tiến trình con) | Xong; đã thử Cài đặt (đọc, lưu, đổi nhân vật và cỡ), Chat (mở, câu gợi ý, tắt chat thì đóng), Thoát |
 
 Còn phải thử tay:
 
@@ -413,7 +413,9 @@ Còn phải thử tay:
 
 Đo bản release đầu tiên (2 pet, ban đêm có sao quanh pet, máy 4 nhân; màn hình đang khoá nên chưa tính GPU): 1
 tiến trình, working set 39–40 MB, private 20–21 MB, CPU 0,07% của 4 nhân lúc pet đi lại, 0,02% lúc cả nhóm ngủ.
-Mở Cài đặt hay Chat thì thêm tiến trình giao diện và WebView2 của nó tới lúc đóng cửa sổ.
+Mở Cài đặt hay Chat thì thêm tiến trình giao diện và WebView2 của nó tới 1 phút sau khi đóng cửa sổ (bấm icon khay,
+trỏ chuột vào pet lúc đã bật chat cũng chạy sẵn nó; không mở thì thoát lúc menu khay đóng, hay 15 giây sau khi chuột
+rời pet).
 
 Ghi chú:
 

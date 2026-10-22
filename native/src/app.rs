@@ -82,6 +82,10 @@ const MOVE_INTERVAL: Duration = Duration::from_millis(200);
 const FLUSH_MIN: Duration = Duration::from_millis(2);
 /// Màn hình làm tươi sớm hơn lần vẽ kế (`App::smooth_due`) chừng này vẫn vẽ: nhịp làm tươi xê dịch đôi chút.
 const FLUSH_SLACK: Duration = Duration::from_millis(2);
+/// Đã bật chat mà con trỏ dừng trên một con chừng này thì dựng sẵn khung chat; con trỏ rời pet chừng này mà không mở
+/// thì thôi.
+const CHAT_HOVER: Duration = Duration::from_millis(250);
+const CHAT_COOL: Duration = Duration::from_secs(15);
 /// Khoảng cách từ mép phải vùng làm việc tới con đầu tiên lúc xuất hiện lần đầu (CSS pixel).
 const SPAWN_MARGIN: f64 = 48.0;
 /// Các con xuất hiện lần đầu đứng cách nhau chừng này lần bề ngang pet.
@@ -159,7 +163,6 @@ pub fn run(config: Config) -> Result<()> {
 }
 
 pub struct App {
-    config: Config,
     hwnd: HWND,
     gfx: Gfx,
     world: World,
@@ -198,6 +201,9 @@ pub struct App {
     smooth_due: Instant,
     /// Chat với pet đang bật trong Cài đặt (Phase 6).
     chat_on: bool,
+    /// Con trỏ nằm trên pet từ lúc nào, và đang dựng sẵn khung chat tới lúc nào (`prepare_chat`).
+    hover_since: Option<Instant>,
+    chat_warm_until: Option<Instant>,
     /// Con đang chat (`uid`): đứng yên cạnh khung chat tới khi đóng khung chat.
     listening: Option<u32>,
     paused: bool,
@@ -280,8 +286,10 @@ impl App {
             }
         });
         let debug = data_dir.join("ipc.json");
-        let ipc = Ipc::start(ui_tx, window::wake, Some(&debug)).context("mở cổng cho cửa sổ giao diện")?;
-        let tray = Tray::new(current_settings.lang, window::wake)?;
+        let ipc = Ipc::start(ui_tx, window::wake, config.ui_exe, Some(&debug))
+            .context("mở cổng cho cửa sổ giao diện")?;
+        let launcher = ipc.launcher();
+        let tray = Tray::new(current_settings.lang, window::wake, move || launcher.warm_settings())?;
 
         let screen = geometry.screen.clone();
         let bounds = bounds_of(&screen, None);
@@ -312,7 +320,6 @@ impl App {
         };
         let now = Instant::now();
         let mut app = Self {
-            config,
             hwnd,
             gfx,
             world,
@@ -344,6 +351,8 @@ impl App {
             fps: current_settings.fps,
             smooth_due: now,
             chat_on: current_settings.chat,
+            hover_since: None,
+            chat_warm_until: None,
             listening: None,
             paused: false,
             hidden: false,
@@ -436,7 +445,12 @@ impl App {
         for input in window::take_input() {
             self.input(input)?;
         }
-        for action in self.tray.take_events() {
+        let actions = self.tray.take_events();
+        // Bấm icon khay thì đã dựng sẵn Cài đặt; menu đóng mà không chọn Cài đặt… thì thôi.
+        if self.ipc.take_tray_warm() && !actions.contains(&tray::Action::Settings) {
+            self.ipc.cool(ipc::SETTINGS);
+        }
+        for action in actions {
             self.tray_action(action)?;
         }
         for remap in std::mem::take(&mut self.remaps) {
@@ -449,6 +463,7 @@ impl App {
         if now >= self.next_poll {
             self.poll_cursor()?;
             self.next_poll = now + if self.overlay.is_visible() { POLL } else { HIDDEN_POLL };
+            self.prepare_chat(now);
         }
         if now >= self.next_watch {
             self.next_watch = now + WATCH;
@@ -732,21 +747,27 @@ impl App {
             .map(|m| m.uid)
     }
 
-    /// Con trỏ nằm trên phần có hình của một con (và không giữ Ctrl), hoặc đang kéo: overlay nhận chuột.
-    fn refresh_click_through(&mut self) {
+    /// Con trỏ nằm trên phần có hình của một con (và không giữ Ctrl), hoặc đang kéo: overlay nhận chuột. Trả về con trỏ có
+    /// nằm trên pet không.
+    fn refresh_click_through(&mut self) -> bool {
         let over = !self.paused
             && self.cursor.is_some_and(|c| !c.pass_through && self.pick(Point { x: c.x, y: c.y }).is_some());
+        if !over {
+            self.hover_since = None;
+        }
         let enabled = !over && !self.held;
         if enabled != self.click_through {
             self.click_through = enabled;
             window::set_click_through(self.hwnd, enabled);
         }
+        over
     }
 
     /// Đọc con trỏ, phím Ctrl, nút chuột (và phím S khi bật "Spam Ctrl+S").
     fn poll_cursor(&mut self) -> Result<()> {
         if !self.overlay.is_visible() {
             self.last_cursor = None;
+            self.hover_since = None;
             return Ok(());
         }
         let mut point = POINT::default();
@@ -782,7 +803,10 @@ impl App {
         if self.running {
             self.world.move_cursor(x, y);
         }
-        self.refresh_click_through();
+        // Chỉ tính lúc người dùng đưa chuột vào pet (`prepare_chat`), không tính lúc pet đi tới dưới con trỏ đứng yên.
+        if self.refresh_click_through() && !self.held && self.hover_since.is_none() {
+            self.hover_since = Some(Instant::now());
+        }
         Ok(())
     }
 
@@ -878,12 +902,31 @@ impl App {
             "pet": pet,
             "side": side,
         });
-        self.ipc.open(self.config.ui_exe.as_deref(), message);
+        self.ipc.open(message);
         Ok(side)
     }
 
     fn open_settings(&mut self) {
-        self.ipc.open(self.config.ui_exe.as_deref(), json!({ "open": "settings" }));
+        self.ipc.open(json!({ "open": ipc::SETTINGS }));
+    }
+
+    /// Đã bật chat mà con trỏ dừng trên một con chừng `CHAT_HOVER`: dựng sẵn khung chat (ẩn) để click chuột phải là hiện
+    /// ngay. Con trỏ rời pet `CHAT_COOL` mà không mở thì thôi.
+    fn prepare_chat(&mut self, now: Instant) {
+        // Đang chat thì khung chat đã có sẵn.
+        let hovering = self.chat_on
+            && self.listening.is_none()
+            && !self.held
+            && self.hover_since.is_some_and(|since| now - since >= CHAT_HOVER);
+        if hovering {
+            if self.chat_warm_until.is_none() {
+                self.ipc.warm(ipc::CHAT);
+            }
+            self.chat_warm_until = Some(now + CHAT_COOL);
+        } else if self.chat_warm_until.is_some_and(|until| now >= until) {
+            self.chat_warm_until = None;
+            self.ipc.cool(ipc::CHAT);
+        }
     }
 
     // Khay.
@@ -1486,6 +1529,17 @@ impl App {
         if args["window"] == "settings" {
             self.open_settings();
             return Ok(Value::Null);
+        }
+        // Dựng sẵn hay thôi dựng sẵn cửa sổ (`{"warm": "settings"}`, `{"cool": "chat"}`), như bấm khay, trỏ vào pet.
+        for (key, warm) in [("warm", true), ("cool", false)] {
+            if let Some(window) = [ipc::SETTINGS, ipc::CHAT].into_iter().find(|w| args[key] == *w) {
+                if warm {
+                    self.ipc.warm(window);
+                } else {
+                    self.ipc.cool(window);
+                }
+                return Ok(Value::Null);
+            }
         }
         let index = args["index"].as_u64().unwrap_or(0) as usize;
         let uid = self.world.pets.get(index).map(|p| p.uid()).unwrap_or_default();

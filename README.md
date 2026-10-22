@@ -232,14 +232,18 @@ latest version. Editing the text and rebuilding it (`pnpm prepare:website`): [we
 ## Architecture
 
 ```
-tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (only while Settings or chat is open)
+tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (around Settings or chat being open)
   native/: simulation, DirectComposition, mouse, tray  <-- local connection (127.0.0.1) -->  Tauri + React windows
   desktop/backend/: settings, weather, screen time, chat, updates, window list
 ```
 
 - **Two processes, one exe**: `tinyworld.exe` without arguments is the overlay. It owns the tray, the
   settings and every background thread. Opening Settings or a chat starts `tinyworld.exe --ui`, a Tauri
-  process that only shows those React windows and exits once both are closed, taking WebView2 with it. Every
+  process that only shows those React windows. Starting it and WebView2 takes about a second, so the overlay
+  starts it early with the window built but hidden: when the tray icon is clicked (dropped again if the menu
+  closes without Settings…) and, with chat on, when the cursor rests on a pet for a moment (dropped after
+  15 s away from the pets). Closing a window only hides it and reloads the page, so opening it again is
+  instant; once no window has been shown for a minute the process exits, taking WebView2 with it. Every
   command the windows call (`api.ts`) goes through one Tauri command `call` to the overlay over a local TCP
   connection (random port, a secret key passed to the child at start); events (settings changed, weather,
   updates, preview state) come back the same way. The overlay is single instance; opening the app again
@@ -304,12 +308,12 @@ tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (o
   reminders; input while the mouse stands still counts as typing. Ctrl+S spam is read in the overlay's
   cursor loop. The overlay only makes the pets talk.
 - **Chat** (`desktop/backend/src/chat.rs`, `gemini.rs`, `desktop/src/chat/`): a React window (`chat.html`)
-  in the Tauri process, only created when you right-click a pet and destroyed when it closes (the chatting
-  pet then walks again). The chat window builds the message to send (the character's personality, the
-  local time, the last 6 turns, `prompt.ts`); the overlay checks the send limits (`Limiter`), then calls the
-  endpoint gemini.google.com uses when signed out (`gemini.rs`: sends only the question, no headers, no
-  browser impersonation, no page scraping; Google picks the model). Markdown answers are parsed into blocks
-  (`markdown.ts`) and drawn with React, never as raw HTML.
+  in the Tauri process, built hidden ahead of time (see above) and only hidden again when it closes; the page
+  reloads then, so the next chat starts fresh, and the chatting pet walks again. The chat window builds the
+  message to send (the character's personality, the local time, the last 6 turns, `prompt.ts`); the overlay
+  checks the send limits (`Limiter`), then calls the endpoint gemini.google.com uses when signed out
+  (`gemini.rs`: sends only the question, no headers, no browser impersonation, no page scraping; Google picks
+  the model). Markdown answers are parsed into blocks (`markdown.ts`) and drawn with React, never as raw HTML.
 - **Language** (`packages/core/src/i18n/`): all user-facing text is in `vi.json` and `en.json`, shared by
   the React windows and Rust (`i18n.rs` embeds both files at build time: pet lines, tray menu, chat window
   title, error messages). `{name}` placeholders are filled in when used. Add new text to both files; a

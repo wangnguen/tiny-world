@@ -6,7 +6,7 @@ use std::sync::mpsc::{self, Receiver};
 use std::time::Duration;
 use tinyworld_backend::i18n::Lang;
 use tray_icon::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
-use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
+use tray_icon::{Icon, MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent};
 
 /// Các lựa chọn Im lặng: id mục trong menu, khoá chữ, thời gian (`None`: tới khi tắt).
 pub const QUIET: [(&str, &str, Option<Duration>); 3] = [
@@ -65,8 +65,9 @@ fn labels(lang: Lang) -> [String; 5] {
 }
 
 impl Tray {
-    /// Tạo icon khay; `wake` đánh thức vòng lặp chính mỗi lần có mục được bấm.
-    pub fn new(lang: Lang, wake: fn()) -> Result<Self> {
+    /// Tạo icon khay; `wake` đánh thức vòng lặp chính mỗi lần có mục được bấm. `on_open` chạy lúc bấm icon, ngay trước
+    /// khi menu hiện: vòng lặp chính bị menu chặn tới khi chọn xong.
+    pub fn new(lang: Lang, wake: fn(), on_open: impl Fn() + Send + Sync + 'static) -> Result<Self> {
         let [pause, quiet, toggle, settings, quit] = labels(lang);
         let pause = CheckMenuItem::with_id("pause", pause, true, false, None);
         let quiet_items: Vec<CheckMenuItem> =
@@ -82,6 +83,13 @@ impl Tray {
         MenuEvent::set_event_handler(Some(move |event| {
             let _ = tx.send(event);
             wake();
+        }));
+        TrayIconEvent::set_event_handler(Some(move |event| {
+            if let TrayIconEvent::Click { button, button_state: MouseButtonState::Up, .. } = event {
+                if matches!(button, MouseButton::Left | MouseButton::Right) {
+                    on_open();
+                }
+            }
         }));
         let mut builder =
             TrayIconBuilder::new().with_tooltip("TinyWorld").with_menu(Box::new(menu)).with_menu_on_left_click(true);
