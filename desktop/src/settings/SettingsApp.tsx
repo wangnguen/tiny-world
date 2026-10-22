@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { errorMessage, fill, messages, type Language, type Messages, type Settings } from "@tinyworld/core";
 import { api } from "../api";
 import { LangContext, guessLang } from "../i18n";
-import { listPacks, resolvePacks } from "../overlay/sprites";
-import { ChatIcon, CubeIcon, GlobeIcon, InfoIcon, RunnerIcon, WindowsIcon } from "./icons";
+import { listPacks, resolvePacks } from "../sprites/sprites";
+import { ChatIcon, CubeIcon, GaugeIcon, GlobeIcon, InfoIcon, RunnerIcon, WindowsIcon } from "./icons";
 import { PetPicker } from "./PetPicker";
 import { PetPreview } from "./PetPreview";
 import { CornerDecor, HILL_SPOT, NightScene, PineDecor } from "./scenery";
@@ -26,6 +26,13 @@ const SPEEDS: { value: number; key: keyof Messages["settings"]["speeds"] }[] = [
   { value: 0.5, key: "slow" },
   { value: 1, key: "normal" },
   { value: 1.5, key: "fast" },
+];
+
+/** `0` là theo nhịp màn hình. */
+const FPS: { value: number; key: keyof Messages["settings"]["fpsChoices"] }[] = [
+  { value: 30, key: "low" },
+  { value: 60, key: "high" },
+  { value: 0, key: "display" },
 ];
 
 const LANGUAGES: Language[] = ["auto", "vi", "en"];
@@ -159,6 +166,19 @@ export function SettingsApp() {
                     options={SPEEDS.map(({ value, key }) => ({ value, label: m.settings.speeds[key] }))}
                     value={settings.speed}
                     onChange={(speed) => update({ speed })}
+                  />
+                </section>
+                <section className="field">
+                  <h2 className="field__label">
+                    <GaugeIcon />
+                    {m.settings.fps}
+                  </h2>
+                  <p className="hint">{m.settings.fpsHint}</p>
+                  <Choices
+                    options={FPS.map(({ value, key }) => ({ value, label: m.settings.fpsChoices[key] }))}
+                    value={settings.fps}
+                    onChange={(fps) => update({ fps })}
+                    compact
                   />
                 </section>
                 <section className="field">

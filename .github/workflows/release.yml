@@ -43,11 +43,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2
         with:
-          workspaces: desktop/src-tauri -> target
+          workspaces: . -> target
       # Tauri cần thư mục dist của frontend lúc compile.
       - run: pnpm --filter desktop build
-      - run: cargo test --locked
-        working-directory: desktop/src-tauri
+      # Test riêng shell Tauri: build chung thì Tauri bật thêm tính năng cho muda (menu khay của overlay), exe test
+      # của overlay không có manifest cho tính năng đó nên không chạy được.
+      - run: cargo test --locked -p tinyworld-backend -p tinyworld-native
+      - run: cargo test --locked -p tinyworld
 
   create-release:
     name: Tạo release nháp
@@ -127,7 +129,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2
         with:
-          workspaces: desktop/src-tauri -> target
+          workspaces: . -> target
       - run: pnpm install --frozen-lockfile
       - name: Ghi version
         shell: bash
@@ -157,7 +159,7 @@ jobs:
             const { owner, repo } = context.repo;
             const release_id = Number(process.env.RELEASE_ID);
             const name = `TinyWorld_${process.env.VERSION}_x64-portable.exe`;
-            const data = fs.readFileSync("desktop/src-tauri/target/release/tinyworld.exe");
+            const data = fs.readFileSync("target/release/tinyworld.exe");
             const assets = await github.paginate(github.rest.repos.listReleaseAssets, {
               owner, repo, release_id, per_page: 100,
             });

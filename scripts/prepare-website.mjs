@@ -32,7 +32,7 @@ const LANGS = {
  * core.js của trang (`fill` và chữ của trang đang mở).
  */
 const SHARED = {
-  "weather.js": "desktop/src/overlay/weather.ts",
+  "weather.js": "website/src/weather.ts",
   "lines.js": "packages/sim/src/lines.ts",
   "lunar.js": "packages/sim/src/lunar.ts",
   "skyIcons.js": "desktop/src/skyIcons.ts",

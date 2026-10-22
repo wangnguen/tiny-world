@@ -22,10 +22,9 @@ export default defineConfig({
   build: {
     target: "chrome105",
     outDir: "dist",
-    // Ba trang: overlay vẽ pet (TS thuần, không kéo React vào), cửa sổ cài đặt và cửa sổ chat (React).
+    // Hai trang: cửa sổ cài đặt và cửa sổ chat (React). Pet vẽ bằng overlay native (native/).
     rollupOptions: {
       input: {
-        overlay: page("index.html"),
         settings: page("settings.html"),
         chat: page("chat.html"),
       },

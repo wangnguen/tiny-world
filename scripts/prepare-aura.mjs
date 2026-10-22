@@ -1,5 +1,5 @@
 // Tách sprite sheet effect của Long (aura, biến hình, quật đuôi) ở assets/sprite-sources/long/ thành từng
-// frame WebP trong assets/effects/ cho overlay (desktop/src/overlay/aura.ts, longAction.ts). Mỗi sheet có
+// frame WebP trong assets/effects/ cho overlay (native/src/long.rs, nhúng vào exe lúc build). Mỗi sheet có
 // đúng 4 frame bằng nhau xếp ngang, nền trong suốt; mỗi frame được thu nhỏ về cao `HEIGHT`.
 // Usage: node scripts/prepare-aura.mjs [--check]
 import assert from "node:assert/strict";

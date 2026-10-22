@@ -10,21 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [
-      {
-        "label": "overlay",
-        "title": "TinyWorld",
-        "transparent": true,
-        "decorations": false,
-        "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "shadow": false,
-        "resizable": false,
-        "focus": false,
-        "focusable": false,
-        "visible": false
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src ipc: http://ipc.localhost"
     }

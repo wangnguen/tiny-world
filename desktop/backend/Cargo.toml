@@ -1,0 +1,33 @@
+[package]
+name = "tinyworld-backend"
+version = "0.1.0"
+description = "TinyWorld: cài đặt, log, chữ, thời tiết, giờ ngồi máy, chat, cập nhật, theo dõi cửa sổ và màn hình"
+edition = "2021"
+publish = false
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Thời tiết thật (weather.rs) và chat với pet (gemini.rs): HTTPS bằng TLS của Windows (SChannel), không kéo OpenSSL.
+reqwest = { version = "0.12", default-features = false, features = ["native-tls"] }
+# Ảnh kèm câu trả lời gửi khung chat dạng `data:` (chat.rs).
+base64 = "0.22"
+# Kiểm tra SHA-256 của bộ cài bản mới (update.rs).
+sha2 = "0.10"
+# Hẹn giờ và `select!` cho vòng hỏi thời tiết, bản mới; Mutex async cho gemini.rs. `rt` cho test.
+tokio = { version = "1", features = ["time", "sync", "macros", "rt"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Globalization",
+    "Win32_Graphics_Dwm",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_Accessibility",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }

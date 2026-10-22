@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type WheelEvent } from "react";
 import { MAX_PETS, fill } from "@tinyworld/core";
 import { useMessages } from "../i18n";
-import { loadThumbnail, type PackInfo, type Thumbnail } from "../overlay/sprites";
+import { setSmoothing } from "../sprites/spriteSet";
+import { loadThumbnail, type PackInfo, type Thumbnail } from "../sprites/sprites";
 import { ChevronIcon, PawIcon } from "./icons";
 
 /** Cỡ ảnh trong mỗi ô (CSS pixel), khớp `.pet-choice canvas` trong settings.css. */
@@ -179,7 +180,7 @@ function draw(canvas: HTMLCanvasElement, { image, frame, pixelArt, facing }: Thu
   const left = Math.round((THUMB - width) / 2);
   const top = THUMB_FLOOR - height;
 
-  ctx.imageSmoothingEnabled = !pixelArt;
+  setSmoothing(ctx, pixelArt, scale * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   if (facing === "right") ctx.setTransform(-dpr, 0, 0, dpr, canvas.width, 0);
   ctx.drawImage(image, frame.x + box.x, frame.y + box.y, box.width, box.height, left, top, width, height);

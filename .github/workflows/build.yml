@@ -8,15 +8,18 @@ on:
   push:
     # Nhánh test tạo artifact .exe để kiểm thử trước khi merge vào main.
     branches: [main, test]
-    # Chỉ build khi push đổi thứ đi vào app: code (desktop/, packages/), sprite và icon (assets/), script dựng
+    # Chỉ build khi push đổi thứ đi vào app: code (desktop/, native/, packages/), sprite và icon (assets/), script dựng
     # sprite và test (scripts/), dependencies, cấu hình TypeScript và chính workflow này. Push chỉ sửa tài liệu
     # (.md) hay trang giới thiệu (website/, scripts/prepare-website.mjs) thì không build.
     paths:
       - "desktop/**"
+      - "native/**"
       - "packages/**"
       - "assets/**"
       - "scripts/**"
       - "!scripts/prepare-website.mjs"
+      - "Cargo.toml"
+      - "Cargo.lock"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -53,11 +56,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2
         with:
-          workspaces: desktop/src-tauri -> target
+          workspaces: . -> target
       # Tauri cần thư mục dist của frontend lúc compile test.
       - run: pnpm --filter desktop build
-      - run: cargo test --locked
-        working-directory: desktop/src-tauri
+      # Test riêng shell Tauri: build chung thì Tauri bật thêm tính năng cho muda (menu khay của overlay), exe test
+      # của overlay không có manifest cho tính năng đó nên không chạy được.
+      - run: cargo test --locked -p tinyworld-backend -p tinyworld-native
+      - run: cargo test --locked -p tinyworld
       # Ghi version của bản sắp phát hành vào tauri.conf.json, chỉ trên máy build (không sửa file trong
       # repo), để tên file tải về và dòng version trong Cài đặt khớp với bản Release: commit này đã được
       # phát hành thì lấy đúng version đó, chưa thì tăng số cuối của release mới nhất (v1.3.2 → 1.3.3).
@@ -101,8 +106,8 @@ jobs:
           build="TinyWorld_${version}-${{ github.run_number }}-${GITHUB_SHA::7}_x64"
           mkdir -p out
           # Bản cài đặt (NSIS) và bản chạy thẳng không cần cài (cần WebView2, Windows 10/11 có sẵn).
-          cp desktop/src-tauri/target/release/bundle/nsis/*-setup.exe "out/${build}-setup.exe"
-          cp desktop/src-tauri/target/release/tinyworld.exe "out/${build}-portable.exe"
+          cp target/release/bundle/nsis/*-setup.exe "out/${build}-setup.exe"
+          cp target/release/tinyworld.exe "out/${build}-portable.exe"
           echo "setup=out/${build}-setup.exe" >> "$GITHUB_OUTPUT"
           echo "portable=out/${build}-portable.exe" >> "$GITHUB_OUTPUT"
 

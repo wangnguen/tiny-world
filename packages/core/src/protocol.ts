@@ -26,6 +26,8 @@ export const EVENTS = {
   reminder: "reminder",
   /** `ChatTarget`, chỉ gửi cho cửa sổ chat: đang mở mà click chuột phải vào con khác. */
   chatTarget: "chat-target",
+  /** `string`, chỉ gửi cho cửa sổ chat: chữ của câu trả lời đã có tới giờ, trong lúc chờ `send_chat`. */
+  chatPartial: "chat-partial",
   /** Không có payload, chỉ gửi cho overlay: cửa sổ chat vừa đóng. */
   chatClosed: "chat-closed",
   /** `WeatherPreview`, chỉ gửi cho overlay: người dùng bấm xem thử thời tiết, nhiệt độ trong Cài đặt. */

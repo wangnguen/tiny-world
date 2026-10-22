@@ -1,0 +1,47 @@
+# Overlay vẽ bằng DirectComposition (không WebView2): mô phỏng pet, vẽ pet và hiệu ứng, chuột, khay. Shell Tauri
+# (desktop/src-tauri) gọi `tinyworld_native::run`; chạy riêng crate này để thử nhanh overlay (xem README.md).
+[package]
+name = "tinyworld-native"
+version = "0.1.0"
+description = "TinyWorld desktop pet overlay (DirectComposition)"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1"
+# Giải mã sprite (WebP, PNG cho pack tự làm) và icon khay.
+image = { version = "0.25", default-features = false, features = ["png", "webp"] }
+# Giờ theo múi giờ của thành phố đã chọn (IANA), lịch sự kiện.
+jiff = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Runtime cho các luồng nền của backend (thời tiết, cập nhật) và command chờ mạng; đã có sẵn qua reqwest.
+tokio = { version = "1", features = ["macros", "rt", "sync", "time"] }
+# Icon khay, cùng phiên bản Tauri đang dùng.
+tray-icon = { version = "0.25", default-features = false }
+windows-numerics = "0.3"
+tinyworld-backend = { path = "../desktop/backend" }
+
+[dependencies.windows]
+version = "0.62"
+features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct2D",
+    "Win32_Graphics_Direct2D_Common",
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_DirectWrite",
+    "Win32_Graphics_DirectComposition",
+    "Win32_Graphics_Dwm",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_UI_HiDpi",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+]

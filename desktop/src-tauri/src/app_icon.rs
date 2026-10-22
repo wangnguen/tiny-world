@@ -1,10 +1,9 @@
-//! Icon cỡ nhỏ (tray, thanh tiêu đề) lấy đúng cỡ có sẵn trong icon.ico.
+//! Icon cỡ nhỏ (thanh tiêu đề) lấy đúng cỡ có sẵn trong icon.ico.
 //!
 //! icon.ico có bản 16/24/32 px vẽ tay theo lưới pixel (scripts/small-icons.mjs). Mặc định Tauri dùng
 //! icon 32 px cho mọi chỗ rồi Windows tự thu nhỏ xuống 16 px, mắt và miệng của pet nhoè thành vệt.
 
-use tauri::image::Image;
-use tauri::{AppHandle, WebviewWindow};
+use tauri::WebviewWindow;
 
 /// Cỡ icon nhỏ của hệ thống: 16 px ở 100%, 24 px ở 150%...
 #[cfg(windows)]
@@ -15,15 +14,6 @@ fn small_size() -> i32 {
         n if n > 0 => n,
         _ => 16,
     }
-}
-
-/// Icon cho tray, đúng cỡ tray vẽ.
-pub fn tray(app: &AppHandle) -> Option<Image<'static>> {
-    #[cfg(windows)]
-    if let Ok(icon) = Image::from_app_icon_resource(small_size() as u32) {
-        return Some(icon);
-    }
-    app.default_window_icon().map(|icon| icon.clone().to_owned())
 }
 
 /// Đặt icon nhỏ (thanh tiêu đề) đúng cỡ cho cửa sổ; icon lớn (taskbar, Alt+Tab) giữ nguyên.

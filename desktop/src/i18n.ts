@@ -1,5 +1,5 @@
 // Ngôn ngữ của các cửa sổ React (Cài đặt, khung chat). Câu chữ nằm ở packages/core/src/i18n/vi.json, en.json;
-// overlay không dùng file này (câu pet nói lấy qua packages/sim, `setLang`).
+// overlay (native/) đọc cùng hai file đó lúc build, không dùng file này.
 import { createContext, useContext } from "react";
 import { fill, messages, type Lang, type Messages } from "@tinyworld/core";
 

@@ -2,29 +2,27 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 #[macro_use]
-mod log;
+extern crate tinyworld_backend;
 
-mod activity;
-mod app;
 mod app_icon;
-mod autostart;
-mod chat;
-mod commands;
-mod cursor;
-mod error;
-mod events;
-mod fullscreen;
-mod gemini;
-mod i18n;
-mod overlay;
-mod preview;
-mod settings;
-mod storage;
-mod tray;
-mod update;
-mod weather;
-mod window_list;
+mod ui;
 
+/// Không tham số: overlay (pet, khay, các luồng nền), xem `tinyworld_native`. `--ui`: cửa sổ Cài đặt và khung chat,
+/// do overlay chạy lúc cần.
 fn main() {
-    app::run();
+    if std::env::args().nth(1).as_deref() == Some("--ui") {
+        ui::run();
+        return;
+    }
+    let Some(data_dir) = tinyworld_native::default_data_dir() else {
+        return;
+    };
+    let config = tinyworld_native::Config {
+        version: env!("TINYWORLD_VERSION").to_owned(),
+        data_dir,
+        ui_exe: std::env::current_exe().ok(),
+    };
+    if let Err(e) = tinyworld_native::run(config) {
+        log!("Overlay dừng vì lỗi: {e:#}");
+    }
 }
