@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
   errorMessage,
   fill,
@@ -21,6 +21,12 @@ import { MESSAGE_MAX, buildPrompt, dayKey, dayText, personaOf, pickSuggestions, 
 const AVATAR_HEIGHT = 76;
 /** Chữ "Đã chép" hiện chừng này ms. */
 const COPIED_MS = 1500;
+/**
+ * Câu của pet chạy ra dần: mỗi khung hình thêm ít nhất chừng này ký tự, và thêm phần chữ chưa hiện chia cho số này để
+ * không tụt xa câu trả lời đang nhận (Google gửi dần khoảng 1000 ký tự mỗi giây).
+ */
+const REVEAL_MIN = 3;
+const REVEAL_CATCH_UP = 15;
 
 /**
  * Một dòng trong khung chat: câu của người dùng, câu của pet, ghi chú (mất mạng, gửi nhanh quá...), hoặc câu
@@ -32,6 +38,8 @@ interface Entry extends Line {
   followUps?: FollowUp[];
   /** Ảnh Google tìm được (chỉ câu của pet), hiện dưới câu trả lời. */
   images?: ChatImage[];
+  /** Câu của pet đang nhận dần (`onChatPartial`), chưa có câu trả lời cuối. */
+  streaming?: boolean;
 }
 
 /**
@@ -51,6 +59,8 @@ export function ChatApp() {
   /** Câu gợi ý Gemini viết cho hôm nay, theo ngôn ngữ đang dùng; rỗng là chưa có. */
   const written = useRef<string[]>([]);
   const nextId = useRef(1);
+  /** Id dành cho câu trả lời đang chờ; `null` là không chờ gì (chữ gửi tới muộn thì bỏ). */
+  const streamId = useRef<number | null>(null);
   const end = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLTextAreaElement>(null);
 
@@ -71,6 +81,10 @@ export function ChatApp() {
         box.current?.focus();
       }),
       api.onSettingsChanged((settings) => setLang(settings.lang)),
+      api.onChatPartial((text) => {
+        const id = streamId.current;
+        if (id !== null) setEntries((list) => upsert(list, { id, kind: "pet", text, streaming: true }));
+      }),
     ];
     // Hỏi sau khi đã nghe event: trang dựng sẵn (chưa có pet nào) mà được mở đúng lúc đang tải thì không lỡ mất pet.
     unlisten[0]
@@ -123,10 +137,18 @@ export function ChatApp() {
     setEntries((list) => [...list, { id, kind: "user", text: message }]);
     setInput("");
     setSending(true);
+    const replyId = nextId.current++;
+    streamId.current = replyId;
     try {
       const reply = await api.sendChat(prompt);
-      add("pet", reply.text, { followUps: reply.followUps, images: reply.images });
+      streamId.current = null;
+      setEntries((list) =>
+        upsert(list, { id: replyId, kind: "pet", text: reply.text, followUps: reply.followUps, images: reply.images }),
+      );
     } catch (e) {
+      // Chữ đã nhận dần mà cuối cùng lỗi thì bỏ, để không gửi kèm câu dở vào lượt sau.
+      streamId.current = null;
+      setEntries((list) => list.filter((entry) => entry.id !== replyId));
       if (isAppError(e) && e.code === "BUSY") {
         // Chưa gửi đi: trả lại câu vào ô nhập để gửi lại sau.
         setEntries((list) => list.filter((entry) => entry.id !== id));
@@ -184,28 +206,35 @@ export function ChatApp() {
                 {entry.text}
               </p>
             ) : (
-              <Fragment key={entry.id}>
-                <Message entry={entry} name={name} />
-                {entry === lastTurn && entry.followUps && entry.followUps.length > 0 && (
-                  <div className="chat__followups">
-                    {entry.followUps.map((followUp) => (
-                      <button
-                        key={followUp.label}
-                        type="button"
-                        className="chip"
-                        title={followUp.query}
-                        disabled={!target || sending}
-                        onClick={() => void send(followUp.query)}
-                      >
-                        {followUp.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </Fragment>
+              <Message
+                key={entry.id}
+                entry={entry}
+                name={name}
+                onGrow={() => end.current?.scrollIntoView({ block: "end" })}
+                footer={
+                  entry === lastTurn &&
+                  entry.followUps &&
+                  entry.followUps.length > 0 && (
+                    <div className="chat__followups">
+                      {entry.followUps.map((followUp) => (
+                        <button
+                          key={followUp.label}
+                          type="button"
+                          className="chip"
+                          title={followUp.query}
+                          disabled={!target || sending}
+                          onClick={() => void send(followUp.query)}
+                        >
+                          {followUp.label}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                }
+              />
             ),
           )}
-          {sending && (
+          {sending && !entries.some((entry) => entry.streaming) && (
             <p className="typing">
               <span className="typing__name">{name}</span> {m.chat.thinking}
               <span className="typing__dots" aria-hidden="true" />
@@ -249,10 +278,54 @@ export function ChatApp() {
   );
 }
 
-/** Một câu trong đoạn chat; câu của pet có tên pet phía trên và nút Chép (câu bắt đầu lại thì không). */
-function Message({ entry, name }: { entry: Entry; name: string }) {
+/** Thêm `entry`, hay thay câu cùng id nếu đã có (câu trả lời đang nhận dần). */
+function upsert(list: Entry[], entry: Entry): Entry[] {
+  return list.some((e) => e.id === entry.id) ? list.map((e) => (e.id === entry.id ? entry : e)) : [...list, entry];
+}
+
+/**
+ * Chữ chạy ra dần như đang gõ, tới hết `text` (chữ dài thêm thì chạy tiếp): mỗi khung hình thêm `REVEAL_MIN` ký tự, còn
+ * nhiều chưa hiện thì thêm nhanh hơn. Trả về phần đã hiện và đã hiện hết chưa.
+ */
+function useReveal(text: string, animate: boolean): [string, boolean] {
+  const [shown, setShown] = useState(animate ? 0 : text.length);
+  useEffect(() => {
+    if (shown >= text.length) return;
+    const frame = requestAnimationFrame(() =>
+      setShown((n) => Math.min(text.length, n + Math.max(REVEAL_MIN, Math.ceil((text.length - n) / REVEAL_CATCH_UP)))),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [shown, text]);
+  let n = Math.min(shown, text.length);
+  // Không cắt giữa cặp surrogate (emoji).
+  if (n < text.length && /[\uD800-\uDBFF]/.test(text[n - 1] ?? "")) n += 1;
+  return [text.slice(0, n), n >= text.length];
+}
+
+/**
+ * Một câu trong đoạn chat; câu của pet có tên pet phía trên và nút Chép (câu bắt đầu lại thì không). Câu trả lời của
+ * pet chạy ra dần (`useReveal`), hết chữ mới hiện ảnh, nút Chép và `footer` (nút hỏi tiếp); `onGrow` mỗi lần chữ dài
+ * thêm.
+ */
+function Message({
+  entry,
+  name,
+  footer,
+  onGrow,
+}: {
+  entry: Entry;
+  name: string;
+  footer?: ReactNode;
+  onGrow: () => void;
+}) {
   const m = useMessages();
   const [copied, setCopied] = useState(false);
+  const [shown, revealed] = useReveal(entry.text, entry.kind === "pet");
+  const done = revealed && !entry.streaming;
+  useEffect(() => {
+    if (entry.kind === "pet") onGrow();
+    // Chỉ theo độ dài chữ đã hiện và lúc hiện hết (ảnh, nút); `onGrow` đổi mỗi lần vẽ lại.
+  }, [shown.length, done]);
   if (entry.kind === "user") return <div className="msg msg--user">{entry.text}</div>;
   if (entry.kind === "restart") {
     return (
@@ -272,30 +345,35 @@ function Message({ entry, name }: { entry: Entry; name: string }) {
       .catch((e: unknown) => console.warn("Không chép được:", e));
   };
   return (
-    <div className="msg msg--pet">
-      <span className="msg__name">{name}</span>
-      <Reply text={entry.text} />
-      {entry.images && entry.images.length > 0 && (
-        <div className="msg__images">
-          {entry.images.map((image) => (
-            <button
-              key={image.src}
-              type="button"
-              className="msg__image"
-              title={fill(m.chat.imageSource, { title: image.title, site: image.site }).trim()}
-              onClick={() =>
-                api.openLink(image.page).catch((e: unknown) => console.warn("Không mở được link:", errorMessage(e)))
-              }
-            >
-              <img src={image.src} alt={image.title} width={image.width || undefined} height={image.height || undefined} />
-            </button>
-          ))}
-        </div>
-      )}
-      <button type="button" className="msg__copy" onClick={copy}>
-        {copied ? m.chat.copied : m.chat.copy}
-      </button>
-    </div>
+    <>
+      <div className="msg msg--pet">
+        <span className="msg__name">{name}</span>
+        <Reply text={shown} />
+        {done && entry.images && entry.images.length > 0 && (
+          <div className="msg__images">
+            {entry.images.map((image) => (
+              <button
+                key={image.src}
+                type="button"
+                className="msg__image"
+                title={fill(m.chat.imageSource, { title: image.title, site: image.site }).trim()}
+                onClick={() =>
+                  api.openLink(image.page).catch((e: unknown) => console.warn("Không mở được link:", errorMessage(e)))
+                }
+              >
+                <img src={image.src} alt={image.title} width={image.width || undefined} height={image.height || undefined} />
+              </button>
+            ))}
+          </div>
+        )}
+        {done && (
+          <button type="button" className="msg__copy" onClick={copy}>
+            {copied ? m.chat.copied : m.chat.copy}
+          </button>
+        )}
+      </div>
+      {done && footer}
+    </>
   );
 }
 

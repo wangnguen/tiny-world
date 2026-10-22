@@ -5,14 +5,14 @@
 use crate::app::{App, Message};
 use crate::ipc::Writer;
 use serde::de::DeserializeOwned;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::future::Future;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use tinyworld_backend::activity::Activity;
 use tinyworld_backend::chat::{self, Chat};
 use tinyworld_backend::error::{AppError, AppResult};
-use tinyworld_backend::events::{Event, Host};
+use tinyworld_backend::events::{self, Event, Host};
 use tinyworld_backend::settings::SettingsStore;
 use tinyworld_backend::update::Updater;
 use tinyworld_backend::weather::{self, Weather};
@@ -116,11 +116,16 @@ pub fn call(app: &mut App, id: u64, name: &str, args: Value, writer: Writer) {
                 Err(e) => return writer.reply(id, Err(e)),
             };
             let (chat, on) = (services.chat.clone(), services.settings.get().chat);
+            // Câu trả lời hiện dần trong khung chat trong lúc chờ.
+            let to_chat = writer.clone();
+            let partial = move |text: &str| {
+                to_chat.send(&json!({ "event": events::CHAT_PARTIAL, "payload": text, "to": "chat" }));
+            };
             return later(&services, writer, id, async move {
                 if !on {
                     return Err(chat::chat_off());
                 }
-                chat.send(&prompt).await.and_then(ok)
+                chat.send(&prompt, partial).await.and_then(ok)
             });
         }
         "check_update" => {

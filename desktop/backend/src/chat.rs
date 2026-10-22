@@ -270,8 +270,9 @@ impl Chat {
         list
     }
 
-    /// Gửi `prompt` (đã kèm tính cách pet, giờ, vài lượt chat gần nhất) và chờ câu trả lời.
-    pub async fn send(&self, prompt: &str) -> AppResult<ChatReply> {
+    /// Gửi `prompt` (đã kèm tính cách pet, giờ, vài lượt chat gần nhất) và chờ câu trả lời; trong lúc chờ, mỗi
+    /// lần câu trả lời dài thêm thì gọi `partial` với phần chữ đã có.
+    pub async fn send(&self, prompt: &str, partial: impl FnMut(&str)) -> AppResult<ChatReply> {
         let lang = i18n::current();
         let prompt = prompt.trim();
         if prompt.is_empty() {
@@ -285,7 +286,7 @@ impl Chat {
             .unwrap_or_else(|e| e.into_inner())
             .begin(Instant::now())
             .map_err(|wait| wait_error(wait, lang))?;
-        let result = self.gemini.chat(prompt).await;
+        let result = self.gemini.chat_streaming(prompt, partial).await;
         let outcome = match &result {
             Ok(_) => Outcome::Ok,
             Err(GeminiError::Offline | GeminiError::Timeout) => Outcome::Offline,

@@ -78,6 +78,9 @@ export const api = {
     listen<WeatherFailure>(EVENTS.weatherFailed, (event) => callback(event.payload)),
   onChatTarget: (callback: (target: ChatTarget) => void) =>
     listen<ChatTarget>(EVENTS.chatTarget, (event) => callback(event.payload)),
+  /** Chữ của câu trả lời đã có tới giờ, trong lúc chờ `sendChat`. */
+  onChatPartial: (callback: (text: string) => void) =>
+    listen<string>(EVENTS.chatPartial, (event) => callback(event.payload)),
   /** Overlay vừa đổi thứ đang xem thử (cửa sổ Cài đặt nghe). */
   onPreviewChanged: (callback: (state: PreviewState) => void) =>
     listen<PreviewState>(EVENTS.previewChanged, (event) => callback(event.payload)),

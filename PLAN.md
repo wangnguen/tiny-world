@@ -304,8 +304,9 @@ Mục tiêu: hỏi nhanh, tra cứu vài thông tin hữu ích ngay trên deskto
 - Rust gọi endpoint `StreamGenerate` mà trang gemini.google.com dùng lúc chưa đăng nhập (`gemini.rs`, tự
   viết, chỉ dùng `reqwest` có sẵn): không cần key, cookie hay tài khoản, không chạy server, không mở cổng
   localhost. Webview không gọi mạng
-- Chỉ gửi phần tối thiểu: một POST, `f.req` = `[null,"[[câu hỏi],null,null]"]`. Không header, không tham
-  số URL, không User-Agent giả trình duyệt, không đọc trang `/app`. Những chỗ Google đổi được mà làm hỏng
+- Chỉ gửi phần tối thiểu: một POST, `f.req` = `[null,"[[câu hỏi],null,null]"]`. Không header, tham số URL
+  duy nhất là `rt=c` (Google gửi dần câu trả lời, chữ đầu tiên tới sau khoảng 1,5–2 giây thay vì chờ cả câu;
+  khung chat hiện chữ chạy dần theo), không User-Agent giả trình duyệt, không đọc trang `/app`. Những chỗ Google đổi được mà làm hỏng
   app chỉ còn đường dẫn endpoint, kiểu body tối giản (có từ thời Bard) và cách đọc câu trả lời
   - Đã thử 13/10/2026: bỏ từng thứ trang thật gửi (User-Agent, Origin, Referer, X-Same-Domain, build label
     `bl`, `hl`, `_reqid`, `rt`, body 102 ô) thì Google vẫn trả lời như cũ, cả câu cần tra mạng

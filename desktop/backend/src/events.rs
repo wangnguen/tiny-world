@@ -85,6 +85,8 @@ pub const ACTIVITY_CHANGED: &str = "activity-changed";
 pub const REMINDER: &str = "reminder";
 /// `ChatTarget` (chat.rs), chỉ gửi cho cửa sổ chat: đang mở mà click chuột phải vào con khác thì chat với con đó.
 pub const CHAT_TARGET: &str = "chat-target";
+/// Chữ của câu trả lời đã có tới giờ (chat.rs), chỉ gửi cho cửa sổ chat trong lúc chờ `send_chat`.
+pub const CHAT_PARTIAL: &str = "chat-partial";
 /// Không có payload (chat.rs), chỉ gửi cho overlay: cửa sổ chat vừa đóng, pet đang chat lại đi lại như thường.
 pub const CHAT_CLOSED: &str = "chat-closed";
 /// `WeatherPreview` (preview.rs), chỉ gửi cho overlay: người dùng bấm xem thử thời tiết, nhiệt độ trong

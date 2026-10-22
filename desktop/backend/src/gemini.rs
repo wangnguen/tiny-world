@@ -1,8 +1,9 @@
 //! Gọi Gemini qua endpoint mà trang gemini.google.com dùng lúc chưa đăng nhập, cho chat với pet (Phase 6):
 //! không cần key, cookie hay tài khoản, không chạy server, không mở cổng.
 //!
-//! Chỉ gửi phần tối thiểu Google cần: một POST với `f.req` là câu hỏi, không header hay tham số nào khác,
-//! không giả trình duyệt, không đọc trang Gemini. Trang thật gửi thêm nhiều thứ (build label, User-Agent,
+//! Chỉ gửi phần tối thiểu Google cần: một POST với `f.req` là câu hỏi, thêm `rt=c` để Google gửi dần câu trả
+//! lời (khung chat hiện dần theo), không header hay tham số nào khác, không giả trình duyệt, không đọc trang
+//! Gemini. Trang thật gửi thêm nhiều thứ (build label, User-Agent,
 //! header chọn model, body 102 ô...), và chính những thứ đó hay hỏng khi Google đổi trang: 13/10/2026 header
 //! chọn 3.6 Flash làm mọi câu trả lời thành câu báo lỗi "Sorry, something went wrong", và build label đổi tên
 //! server. Không chọn model thì Google dùng model mặc định cho người chưa đăng nhập (lúc viết là 3.5
@@ -14,8 +15,10 @@
 use serde::Serialize;
 use std::time::Duration;
 
+/// `rt=c`: mỗi lần câu trả lời dài thêm Google gửi ngay một dòng (chữ đầu tiên tới sau khoảng 2 giây thay vì chờ cả
+/// câu, khoảng 5 giây).
 const GENERATE_URL: &str =
-    "https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate";
+    "https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate?rt=c";
 /// Thẻ HTML không có thẻ đóng.
 const VOID_TAGS: [&str; 3] = ["br", "hr", "img"];
 /// Thẻ HTML bỏ đi thì thay bằng xuống dòng, để chữ hai bên không dính nhau; thẻ khác bỏ hẳn.
@@ -122,7 +125,12 @@ impl Gemini {
 
     /// Gửi `prompt`, chờ cả câu trả lời.
     pub async fn chat(&self, prompt: &str) -> Result<Reply, GeminiError> {
-        let response = self
+        self.chat_streaming(prompt, |_| {}).await
+    }
+
+    /// Như `chat`, mỗi lần câu trả lời dài thêm thì gọi `partial` với phần chữ đã có (`Parser::partial`).
+    pub async fn chat_streaming(&self, prompt: &str, mut partial: impl FnMut(&str)) -> Result<Reply, GeminiError> {
+        let mut response = self
             .http
             .post(GENERATE_URL)
             .form(&[("f.req", request_body(prompt))])
@@ -135,7 +143,27 @@ impl Gemini {
         if !status.is_success() {
             return Err(GeminiError::Status(status.as_u16()));
         }
-        let reply = parse_reply(&response.text().await?);
+        let mut parser = Parser::default();
+        let mut pending = Vec::new();
+        let mut shown = String::new();
+        while let Some(chunk) = response.chunk().await? {
+            pending.extend_from_slice(&chunk);
+            // Chỉ đọc các dòng đã đủ; `\n` không nằm giữa một ký tự UTF-8 nhiều byte.
+            let Some(end) = pending.iter().rposition(|&b| b == b'\n') else {
+                continue;
+            };
+            let lines: Vec<u8> = pending.drain(..=end).collect();
+            if !String::from_utf8_lossy(&lines).lines().fold(false, |grew, line| parser.line(line) | grew) {
+                continue;
+            }
+            let text = parser.partial();
+            if !text.is_empty() && text != shown {
+                partial(&text);
+                shown = text;
+            }
+        }
+        parser.line(&String::from_utf8_lossy(&pending));
+        let reply = parser.finish();
         if reply.text.is_empty() {
             return Err(GeminiError::Empty);
         }
@@ -167,45 +195,84 @@ fn request_body(prompt: &str) -> String {
 
 /// Câu trả lời trong body của StreamGenerate: các mục `wrb.fr` gửi dần câu trả lời dài dần, lấy bản dài
 /// nhất. Ảnh ở ô 12 của câu trả lời (lấy danh sách gửi sau cùng), tên model Google đã dùng ở ô 42. Đọc mọi
-/// mục trên mọi dòng, nên Google gửi mỗi dòng một mục (kiểu `rt=c`) hay cả mảng một dòng đều đọc được.
+/// mục trên mọi dòng, nên Google gửi mỗi dòng một mục (kiểu `rt=c`) hay cả mảng một dòng đều đọc được. App đọc
+/// dần từng dòng (`Gemini::chat_streaming`), cả body một lúc chỉ dùng trong test.
+#[cfg(test)]
 fn parse_reply(raw: &str) -> Reply {
-    let mut text = String::new();
-    let mut images = Vec::new();
-    let mut model = None;
-    let entries = raw
-        .lines()
-        .filter(|line| line.contains("\"wrb.fr\""))
-        .filter_map(|line| serde_json::from_str::<Vec<serde_json::Value>>(line).ok())
-        .flatten();
-    for entry in entries {
-        let Some(inner) = entry
-            .get(2)
-            .and_then(|v| v.as_str())
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-        else {
-            continue;
-        };
-        if let Some(name) = inner.get(42).and_then(|v| v.as_str()) {
-            model = Some(name.to_string());
+    let mut parser = Parser::default();
+    for line in raw.lines() {
+        parser.line(line);
+    }
+    parser.finish()
+}
+
+/// Đọc dần body của StreamGenerate theo từng dòng (`parse_reply`).
+#[derive(Default)]
+struct Parser {
+    text: String,
+    images: Vec<Image>,
+    model: Option<String>,
+}
+
+impl Parser {
+    /// Đọc một dòng; trả về câu trả lời có dài thêm không.
+    fn line(&mut self, line: &str) -> bool {
+        if !line.contains("\"wrb.fr\"") {
+            return false;
         }
-        for candidate in inner.get(4).and_then(|v| v.as_array()).into_iter().flatten() {
-            for part in candidate.get(1).and_then(|v| v.as_array()).into_iter().flatten() {
-                if let Some(s) = part.as_str().filter(|s| s.len() > text.len()) {
-                    text = s.to_string();
+        let Ok(entries) = serde_json::from_str::<Vec<serde_json::Value>>(line) else {
+            return false;
+        };
+        let mut grew = false;
+        for entry in entries {
+            let Some(inner) = entry
+                .get(2)
+                .and_then(|v| v.as_str())
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            else {
+                continue;
+            };
+            if let Some(name) = inner.get(42).and_then(|v| v.as_str()) {
+                self.model = Some(name.to_string());
+            }
+            for candidate in inner.get(4).and_then(|v| v.as_array()).into_iter().flatten() {
+                for part in candidate.get(1).and_then(|v| v.as_array()).into_iter().flatten() {
+                    if let Some(s) = part.as_str().filter(|s| s.len() > self.text.len()) {
+                        self.text = s.to_string();
+                        grew = true;
+                    }
+                }
+                let found = parse_images(candidate.get(12));
+                if !found.is_empty() {
+                    self.images = found;
                 }
             }
-            let found = parse_images(candidate.get(12));
-            if !found.is_empty() {
-                images = found;
-            }
+        }
+        grew
+    }
+
+    /// Chữ đã có để hiện trong lúc chờ: như câu trả lời cuối, bỏ thêm thẻ đang gửi dở ở cuối (nút hỏi tiếp tới
+    /// sau cùng, chưa đủ thẻ thì `clean` chưa nhận ra). "a < b" thì giữ.
+    fn partial(&self) -> String {
+        let (text, _) = clean(&self.text);
+        let open = text.rfind('<').filter(|&at| {
+            let rest = &text[at + 1..];
+            rest.starts_with(|c: char| c.is_ascii_alphabetic() || c == '/') && !rest.contains(['>', '\n'])
+        });
+        match open {
+            Some(at) => text[..at].trim_end().to_string(),
+            None => text,
         }
     }
-    let (text, follow_ups) = clean(&text);
-    Reply {
-        text,
-        follow_ups,
-        images,
-        model,
+
+    fn finish(self) -> Reply {
+        let (text, follow_ups) = clean(&self.text);
+        Reply {
+            text,
+            follow_ups,
+            images: self.images,
+            model: self.model,
+        }
     }
 }
 
@@ -521,6 +588,23 @@ mod tests {
         ]);
         assert_eq!(parse_reply(&format!(")]}}'\n\n{one_line}\n")), reply);
         assert_eq!(parse_reply("<html>").text, "");
+    }
+
+    #[test]
+    fn doc_dan_tung_dong_chu_dai_dan_bo_the_dang_gui_do() {
+        let mut parser = Parser::default();
+        assert!(!parser.line(")]}'"));
+        assert!(parser.line(&line("m", "Mèo ngủ 16 giờ")));
+        assert_eq!(parser.partial(), "Mèo ngủ 16 giờ");
+        // Bản gửi lại không dài hơn thì không tính.
+        assert!(!parser.line(&line("m", "Mèo")));
+        assert!(parser.line(&line("m", "Mèo ngủ 16 giờ một ngày, a < b.\n\n<ElicitationsGroup message=\"Hỏi")));
+        assert_eq!(parser.partial(), "Mèo ngủ 16 giờ một ngày, a < b.");
+        let done = "Mèo ngủ 16 giờ một ngày.\n\n<Elicitation label=\"Vì sao?\" query=\"Vì sao mèo ngủ nhiều?\"/>";
+        assert!(parser.line(&line("m", done)));
+        let reply = parser.finish();
+        assert_eq!(reply.text, "Mèo ngủ 16 giờ một ngày.");
+        assert_eq!(reply.follow_ups.len(), 1);
     }
 
     #[test]

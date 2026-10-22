@@ -312,8 +312,11 @@ tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (a
   reloads then, so the next chat starts fresh, and the chatting pet walks again. The chat window builds the
   message to send (the character's personality, the local time, the last 6 turns, `prompt.ts`); the overlay
   checks the send limits (`Limiter`), then calls the endpoint gemini.google.com uses when signed out
-  (`gemini.rs`: sends only the question, no headers, no browser impersonation, no page scraping; Google picks
-  the model). Markdown answers are parsed into blocks (`markdown.ts`) and drawn with React, never as raw HTML.
+  (`gemini.rs`: sends only the question plus `rt=c`, no headers, no browser impersonation, no page scraping;
+  Google picks the model). With `rt=c` Google sends the answer in growing pieces; each one goes to the chat
+  window (`chat-partial` event), which types the answer out as it arrives; links, pictures, follow-up
+  questions and the Copy button show once it is complete. Markdown answers are parsed into blocks
+  (`markdown.ts`) and drawn with React, never as raw HTML.
 - **Language** (`packages/core/src/i18n/`): all user-facing text is in `vi.json` and `en.json`, shared by
   the React windows and Rust (`i18n.rs` embeds both files at build time: pet lines, tray menu, chat window
   title, error messages). `{name}` placeholders are filled in when used. Add new text to both files; a
