@@ -89,10 +89,10 @@ pub struct PetView {
 }
 
 impl PetView {
-    /// `sprite` phải còn điểm ảnh (vừa `sprites::load`); `size`: cỡ trong Settings; `px`: pixel màn hình cho một CSS
-    /// pixel.
-    pub fn new(gfx: &Gfx, layers: ViewLayers, sprite: SpriteSet, size: f64, px: f64) -> Result<Self> {
+    /// `prepared`: frame đã làm sẵn cho cỡ trong Settings (`prepare`).
+    pub fn new(gfx: &Gfx, layers: ViewLayers, prepared: Prepared) -> Result<Self> {
         let ViewLayers { stars_back, sprite: layer, stars_front, bubble } = layers;
+        let Prepared { sprite, size, px, frames } = prepared;
         let mut view = Self {
             head: head_of(&sprite.animation(PetState::Idle).masks[0]),
             sprite,
@@ -124,14 +124,8 @@ impl PetView {
             covered: false,
             gone: false,
         };
-        view.configure(gfx)?;
+        view.layout(gfx, frames)?;
         Ok(view)
-    }
-
-    /// Đổi cỡ pet (Settings); gọi `pet.resize(view.width, view.height, view.reach)` sau đó để sim biết cỡ mới.
-    pub fn set_size(&mut self, gfx: &Gfx, size: f64) -> Result<()> {
-        self.size = size;
-        self.configure(gfx)
     }
 
     /// Màn hình đổi DPI (sang màn hình khác): vẽ lại cho nét.
@@ -143,8 +137,24 @@ impl PetView {
         self.configure(gfx)
     }
 
+    /// Đổi sang cỡ của `prepared` (Settings), frame đã làm sẵn ở luồng nền; gọi `pet.resize(view.width, view.height,
+    /// view.reach)` sau đó để sim biết cỡ mới. Trong lúc chờ mà màn hình đổi DPI thì làm lại frame ở đây.
+    pub fn apply(&mut self, gfx: &Gfx, prepared: Prepared) -> Result<()> {
+        self.size = prepared.size;
+        if prepared.px != self.px || prepared.sprite.id != self.sprite.id {
+            return self.configure(gfx);
+        }
+        self.sprite = prepared.sprite;
+        self.layout(gfx, prepared.frames)
+    }
+
     /// Tính lại cỡ, đưa frame lên GPU theo cỡ mới (nạp lại điểm ảnh nếu đã bỏ).
     fn configure(&mut self, gfx: &Gfx) -> Result<()> {
+        let frames = scale_frames(&mut self.sprite, self.size, self.px);
+        self.layout(gfx, frames)
+    }
+
+    fn layout(&mut self, gfx: &Gfx, frames: Frames) -> Result<()> {
         let sprite = &self.sprite;
         self.scale = sprite.scale * self.size;
         self.pad = dizzy_reach(sprite.frame_height);
@@ -161,45 +171,12 @@ impl PetView {
         // Sao dùng lưới 48px riêng, không nhỏ đi khi pack tăng độ phân giải ảnh.
         let frame = sprite.frame_width.min(48);
         self.stars.configure(frame, self.scale * (f64::from(sprite.frame_width) / 48.0).max(1.0));
-        self.upload(gfx)?;
+        self.bitmaps = (frames.pixels.iter())
+            .map(|animation| animation.iter().map(|(w, h, bgra)| gfx.bitmap(*w, *h, bgra)).collect())
+            .collect::<Result<_>>()?;
+        self.prescaled = frames.prescaled;
         self.drawn = None;
         self.left = f64::NAN;
-        Ok(())
-    }
-
-    fn upload(&mut self, gfx: &Gfx) -> Result<()> {
-        if !self.sprite.has_pixels() {
-            let fresh = sprites::load(self.sprite.id.as_deref());
-            if fresh.id == self.sprite.id {
-                self.sprite = fresh;
-            }
-        }
-        let k = self.scale * self.px;
-        let (fw, fh) = (self.sprite.frame_width, self.sprite.frame_height);
-        // Pet nhỏ hơn frame (frame 192 px hiện 96 px ở cỡ 100%): thu nhỏ một lần ở đây bằng cách lấy trung bình từng
-        // vùng, rồi vẽ 1:1. Lấy điểm gần nhất thì nét mảnh như mí mắt, con ngươi đứt đoạn, mỗi frame một kiểu, nhìn
-        // như chớp mắt lỗi.
-        self.prescaled = k < 1.0;
-        let (bw, bh) = if self.prescaled {
-            ((js_round(f64::from(fw) * k) as u32).max(1), (js_round(f64::from(fh) * k) as u32).max(1))
-        } else {
-            (fw, fh)
-        };
-        let mut bitmaps = Vec::new();
-        for animation in self.sprite.animations() {
-            let mut frames = Vec::new();
-            for pixels in &animation.pixels {
-                frames.push(if self.prescaled {
-                    let frame = image::RgbaImage::from_raw(fw, fh, pixels.clone()).expect("frame đủ cỡ");
-                    gfx.bitmap(bw, bh, &image::imageops::thumbnail(&frame, bw, bh).into_raw())?
-                } else {
-                    gfx.bitmap(fw, fh, pixels)?
-                });
-            }
-            bitmaps.push(frames);
-        }
-        self.bitmaps = bitmaps;
-        self.sprite.release_pixels();
         Ok(())
     }
 
@@ -533,11 +510,104 @@ impl PetView {
     }
 }
 
+/// Điểm ảnh từng frame đúng cỡ vẽ, chưa đưa lên GPU.
+struct Frames {
+    /// Đã thu nhỏ sẵn: vẽ 1:1.
+    prescaled: bool,
+    /// Theo `SpriteSet::animations`: mỗi frame cỡ (pixel) và điểm ảnh BGRA nhân trước alpha.
+    pixels: Vec<Vec<(u32, u32, Vec<u8>)>>,
+}
+
+/// Frame của một pack đã làm sẵn cho một cỡ (`prepare`), chờ `PetView::new` hoặc `PetView::apply`.
+pub struct Prepared {
+    sprite: SpriteSet,
+    size: f64,
+    px: f64,
+    frames: Frames,
+}
+
+impl Prepared {
+    /// Làm cho đúng cỡ `size` và DPI `px` này.
+    pub fn fits(&self, size: f64, px: f64) -> bool {
+        self.size == size && self.px == px
+    }
+}
+
+/// Nạp pack `id` và thu nhỏ frame cho cỡ `size` (`px`: pixel màn hình cho một CSS pixel). Đây là phần nặng của việc
+/// thêm nhân vật hay đổi cỡ (bản debug mất nửa giây mỗi con), không đụng tới GPU nên chạy được ở luồng nền.
+pub fn prepare(id: Option<&str>, size: f64, px: f64) -> Prepared {
+    let mut sprite = sprites::load(id);
+    let frames = scale_frames(&mut sprite, size, px);
+    Prepared { sprite, size, px, frames }
+}
+
+/// `prepare` cho từng pack trong `ids`, mỗi pack một luồng: cả nhóm xong gần bằng thời gian của một con.
+pub fn prepare_all(ids: &[Option<String>], size: f64, px: f64) -> Vec<Prepared> {
+    std::thread::scope(|scope| {
+        let jobs: Vec<_> = ids.iter().map(|id| scope.spawn(move || prepare(id.as_deref(), size, px))).collect();
+        jobs.into_iter().map(|job| job.join().unwrap_or_else(|e| std::panic::resume_unwind(e))).collect()
+    })
+}
+
+/// Lấy điểm ảnh của `sprite` ra theo cỡ vẽ (nạp lại nếu đã bỏ); `sprite` chỉ còn giữ mặt nạ.
+fn scale_frames(sprite: &mut SpriteSet, size: f64, px: f64) -> Frames {
+    if !sprite.has_pixels() {
+        let fresh = sprites::load(sprite.id.as_deref());
+        if fresh.id == sprite.id {
+            *sprite = fresh;
+        }
+    }
+    let k = sprite.scale * size * px;
+    let (fw, fh) = (sprite.frame_width, sprite.frame_height);
+    // Pet nhỏ hơn frame (frame 192 px hiện 96 px ở cỡ 100%): thu nhỏ một lần ở đây bằng cách lấy trung bình từng vùng,
+    // rồi vẽ 1:1. Lấy điểm gần nhất thì nét mảnh như mí mắt, con ngươi đứt đoạn, mỗi frame một kiểu, nhìn như chớp mắt
+    // lỗi.
+    let prescaled = k < 1.0;
+    let (bw, bh) = if prescaled {
+        ((js_round(f64::from(fw) * k) as u32).max(1), (js_round(f64::from(fh) * k) as u32).max(1))
+    } else {
+        (fw, fh)
+    };
+    let pixels = (sprite.take_pixels().into_iter())
+        .map(|frames| {
+            (frames.into_iter())
+                .map(|bgra| {
+                    if !prescaled {
+                        return (fw, fh, bgra);
+                    }
+                    let frame = image::RgbaImage::from_raw(fw, fh, bgra).expect("frame đủ cỡ");
+                    (bw, bh, image::imageops::thumbnail(&frame, bw, bh).into_raw())
+                })
+                .collect()
+        })
+        .collect();
+    Frames { prescaled, pixels }
+}
+
 /// Đi/chạy/leo nhanh hơn (Settings) hay chậm hơn (ban đêm) thì chân tay cũng theo, không trượt.
 fn animation_fps(pet: &Pet, fps: f64, pace: f64) -> f64 {
     if matches!(pet.state(), PetState::Walk | PetState::Run | PetState::Climb) {
         fps * pace
     } else {
         fps
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pet_nho_hon_frame_thi_thu_nho_san_doi_co_thi_nap_lai() {
+        let sprite = sprites::load(None);
+        let (fw, scale) = (sprite.frame_width, sprite.scale);
+        let small = prepare(sprite.id.as_deref(), 0.5 / scale, 1.0);
+        assert!(small.frames.prescaled);
+        assert_eq!(small.frames.pixels[0][0].0, js_round(f64::from(fw) * 0.5) as u32);
+        assert!(!small.sprite.has_pixels());
+        let mut sprite = small.sprite;
+        let full = scale_frames(&mut sprite, 1.0 / scale, 1.0);
+        assert!(!full.prescaled);
+        assert_eq!(full.pixels[0][0].2.len(), (fw * sprite.frame_height * 4) as usize);
     }
 }

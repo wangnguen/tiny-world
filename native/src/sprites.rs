@@ -264,11 +264,11 @@ impl Mask {
     }
 }
 
-/// Một animation đã cắt frame: mặt nạ (giữ suốt), điểm ảnh (bỏ sau khi đưa lên GPU, `SpriteSet::release_pixels`).
+/// Một animation đã cắt frame: mặt nạ (giữ suốt), điểm ảnh (lấy ra để đưa lên GPU, `SpriteSet::take_pixels`).
 #[derive(Debug, Clone)]
 pub struct Animation {
     pub masks: Vec<Mask>,
-    /// Mỗi frame `frame_width * frame_height * 4` byte BGRA nhân trước alpha; rỗng sau `release_pixels`.
+    /// Mỗi frame `frame_width * frame_height * 4` byte BGRA nhân trước alpha; rỗng sau `take_pixels`.
     pub pixels: Vec<Vec<u8>>,
     pub fps: f64,
     pub looped: bool,
@@ -312,11 +312,9 @@ impl SpriteSet {
         &self.animations
     }
 
-    /// Bỏ điểm ảnh trên RAM (đã đưa lên GPU), chỉ giữ mặt nạ.
-    pub fn release_pixels(&mut self) {
-        for animation in &mut self.animations {
-            animation.pixels = Vec::new();
-        }
+    /// Lấy điểm ảnh ra (để đưa lên GPU) theo `animations()`, trên RAM chỉ còn giữ mặt nạ.
+    pub fn take_pixels(&mut self) -> Vec<Vec<Vec<u8>>> {
+        self.animations.iter_mut().map(|animation| std::mem::take(&mut animation.pixels)).collect()
     }
 
     pub fn has_pixels(&self) -> bool {

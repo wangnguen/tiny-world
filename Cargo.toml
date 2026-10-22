@@ -10,6 +10,10 @@ lto = true
 opt-level = "s"
 strip = true
 
-# Bản debug không tối ưu thì giải mã WebP lúc mở app chậm thấy rõ.
+# Bản debug không tối ưu thì giải mã WebP lúc mở app chậm thấy rõ, cắt và thu nhỏ frame lúc thêm nhân vật, đổi cỡ
+# cũng vậy.
 [profile.dev.package.image-webp]
+opt-level = 3
+
+[profile.dev.package.image]
 opt-level = 3

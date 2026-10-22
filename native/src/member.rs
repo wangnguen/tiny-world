@@ -3,8 +3,7 @@
 
 use crate::gfx::{Gfx, Group};
 use crate::long::{LongKit, LONG_PACK};
-use crate::sprites::SpriteSet;
-use crate::view::{PetView, ViewLayers};
+use crate::view::{PetView, Prepared, ViewLayers};
 use crate::weather::WeatherEffect;
 use anyhow::Result;
 
@@ -23,7 +22,7 @@ pub struct Member {
 impl Member {
     /// Tạo các lớp theo thứ tự từ dưới lên: sao choáng phía sau, aura (Long), pet, sao phía trước, thời tiết,
     /// cinematic và vệt tốc biến (Long), bóng thoại. Gán `uid` sau khi đã thêm pet vào `World`.
-    pub fn new(gfx: &Gfx, pack: Option<String>, sprite: SpriteSet, size: f64, px: f64) -> Result<Self> {
+    pub fn new(gfx: &Gfx, pack: Option<String>, prepared: Prepared) -> Result<Self> {
         let group = gfx.group()?;
         let layer = || gfx.layer(Some(&group));
         let long = pack.as_deref() == Some(LONG_PACK);
@@ -36,7 +35,7 @@ impl Member {
         let teleport = long.then(layer).transpose()?;
         let bubble = layer()?;
         let layers = ViewLayers { stars_back, sprite: sprite_layer, stars_front, bubble };
-        let view = PetView::new(gfx, layers, sprite, size, px)?;
+        let view = PetView::new(gfx, layers, prepared)?;
         let effect = WeatherEffect::new(gfx, weather)?;
         let kit = match (aura, action, teleport) {
             (Some(aura), Some(action), Some(teleport)) => Some(LongKit::new(gfx, aura, action, teleport)?),

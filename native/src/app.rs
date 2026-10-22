@@ -26,6 +26,7 @@ use crate::sim::{lines, Point, Rect};
 use crate::sprites;
 use crate::tag::TemperatureTag;
 use crate::tray::{self, Tray};
+use crate::view;
 use crate::window::{self, Input};
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
@@ -108,6 +109,10 @@ pub enum Message {
     Backend(Event),
     Fullscreen(bool),
     Ui(ipc::Message),
+    /// Frame cho cỡ mới đã làm xong ở luồng nền (`App::resize_members`), theo `uid` của từng con.
+    Resized { generation: u64, views: Vec<(u32, view::Prepared)> },
+    /// Pack của các nhân vật mới chọn đã nạp xong ở luồng nền (`App::sync_pets_later`).
+    PetsLoaded { generation: u64, packs: Vec<Option<String>>, loaded: Vec<(Option<String>, view::Prepared)> },
     /// Tải xong bộ cài bản mới: thoát để chạy nó.
     Quit,
 }
@@ -181,6 +186,10 @@ pub struct App {
     taskbar_top: Option<f64>,
     /// Cỡ nhân vật trong Settings.
     size: f64,
+    /// Lần đổi cỡ (`resize_members`) và lần đổi nhân vật (`sync_pets_later`) gần nhất, để bỏ kết quả nạp xong muộn của
+    /// lần đổi cũ hơn.
+    resizing: u64,
+    loading: u64,
     /// Chat với pet đang bật trong Cài đặt (Phase 6).
     chat_on: bool,
     /// Con đang chat (`uid`): đứng yên cạnh khung chat tới khi đóng khung chat.
@@ -324,6 +333,8 @@ impl App {
             current: screen,
             taskbar_top: None,
             size: current_settings.size,
+            resizing: 0,
+            loading: 0,
             chat_on: current_settings.chat,
             listening: None,
             paused: false,
@@ -497,6 +508,8 @@ impl App {
                 self.apply_visibility();
             }
             Message::Ui(message) => self.ui(message)?,
+            Message::Resized { generation, views } => self.resized(generation, views)?,
+            Message::PetsLoaded { generation, packs, loaded } => self.pets_loaded(generation, &packs, loaded)?,
             Message::Quit => self.request_quit(),
         }
         Ok(())
@@ -1065,9 +1078,10 @@ impl App {
         self.gfx = Gfx::new(self.hwnd)?;
         let ghost = Ghost::new(self.gfx.layer(None)?)?;
         let tag = TemperatureTag::new(self.gfx.layer(None)?)?;
-        for (pack, uid) in old {
-            let sprite = sprites::load(pack.as_deref());
-            let mut member = Member::new(&self.gfx, pack, sprite, self.size, self.px())?;
+        let packs: Vec<Option<String>> = old.iter().map(|(pack, _)| pack.clone()).collect();
+        let prepared = view::prepare_all(&packs, self.size, self.px());
+        for ((pack, uid), prepared) in old.into_iter().zip(prepared) {
+            let mut member = Member::new(&self.gfx, pack, prepared)?;
             member.uid = uid;
             self.ambience.adopt(&mut member);
             self.members.push(member);
@@ -1094,12 +1108,59 @@ impl App {
         right - SPAWN_MARGIN - width / 2.0
     }
 
-    /// Hiện đúng các con trong `packs` (`resolve_packs`). Nạp xong pack mới rồi mới bỏ con cũ, để lúc đổi nhân vật
-    /// không có lúc trống; con mới đứng đúng chỗ con vừa bị bỏ.
+    /// Hiện đúng các con trong `packs` (`resolve_packs`), nạp pack mới ngay (lúc mở app).
     fn sync_pets(&mut self, packs: &[Option<String>]) -> Result<()> {
-        let missing: Vec<Option<String>> =
-            packs.iter().filter(|pack| !self.members.iter().any(|m| &m.pack == *pack)).cloned().collect();
-        let loaded: Vec<_> = missing.iter().map(|pack| sprites::load(pack.as_deref())).collect();
+        let missing = self.missing_packs(packs);
+        let prepared = view::prepare_all(&missing, self.size, self.px());
+        self.place_pets(packs, missing.into_iter().zip(prepared).collect())
+    }
+
+    /// Như `sync_pets` nhưng nạp pack mới ở luồng nền (đổi nhân vật trong Cài đặt): trong lúc chờ các con đang có vẫn
+    /// đi lại như thường, nạp xong mới thay (`pets_loaded`).
+    fn sync_pets_later(&mut self, packs: Vec<Option<String>>) -> Result<()> {
+        self.loading += 1;
+        let missing = self.missing_packs(&packs);
+        if missing.is_empty() {
+            return self.place_pets(&packs, Vec::new());
+        }
+        let (generation, size, px, tx) = (self.loading, self.size, self.px(), self.tx.clone());
+        std::thread::spawn(move || {
+            let prepared = view::prepare_all(&missing, size, px);
+            let loaded = missing.into_iter().zip(prepared).collect();
+            let _ = tx.send(Message::PetsLoaded { generation, packs, loaded });
+            window::wake();
+        });
+        Ok(())
+    }
+
+    /// Pack mới đã nạp xong (`sync_pets_later`).
+    fn pets_loaded(
+        &mut self,
+        generation: u64,
+        packs: &[Option<String>],
+        loaded: Vec<(Option<String>, view::Prepared)>,
+    ) -> Result<()> {
+        // Trong lúc chờ đã đổi nhân vật lần nữa: bỏ kết quả của lần cũ.
+        if generation != self.loading {
+            return Ok(());
+        }
+        // Trong lúc chờ đã đổi cỡ: con mới hiện ở cỡ cũ rồi đổi cỡ cùng cả nhóm.
+        let stale = loaded.iter().any(|(_, prepared)| !prepared.fits(self.size, self.px()));
+        self.place_pets(packs, loaded)?;
+        if stale {
+            self.resize_members();
+        }
+        Ok(())
+    }
+
+    /// Các pack trong `packs` chưa có con nào trên màn hình.
+    fn missing_packs(&self, packs: &[Option<String>]) -> Vec<Option<String>> {
+        packs.iter().filter(|pack| !self.members.iter().any(|m| &m.pack == *pack)).cloned().collect()
+    }
+
+    /// Bỏ các con không còn trong `packs` rồi thêm các con đã nạp (`loaded`): pack mới nạp xong rồi mới bỏ con cũ, để
+    /// lúc đổi nhân vật không có lúc trống; con mới đứng đúng chỗ con vừa bị bỏ.
+    fn place_pets(&mut self, packs: &[Option<String>], loaded: Vec<(Option<String>, view::Prepared)>) -> Result<()> {
         let mut spots = Vec::new();
         let mut i = 0;
         while i < self.members.len() {
@@ -1110,17 +1171,17 @@ impl App {
             let member = self.members.remove(i);
             spots.push(self.remove_member(member));
         }
-        for (pack, sprite) in missing.into_iter().zip(loaded) {
+        for (pack, prepared) in loaded {
             let spot = if spots.is_empty() { None } else { Some(spots.remove(0)) };
-            self.add_member(pack, sprite, spot)?;
+            self.add_member(pack, prepared, spot)?;
         }
         self.redraw()?;
         self.wake();
         Ok(())
     }
 
-    fn add_member(&mut self, pack: Option<String>, sprite: sprites::SpriteSet, spot: Option<(f64, Facing)>) -> Result<()> {
-        let mut member = Member::new(&self.gfx, pack.clone(), sprite, self.size, self.px())?;
+    fn add_member(&mut self, pack: Option<String>, prepared: view::Prepared, spot: Option<(f64, Facing)>) -> Result<()> {
+        let mut member = Member::new(&self.gfx, pack.clone(), prepared)?;
         let view = &member.view;
         let x = spot.map_or_else(|| self.spawn_x(view.width), |(x, _)| x);
         let id = pack.clone().unwrap_or_else(|| PLACEHOLDER_ID.to_owned());
@@ -1223,19 +1284,45 @@ impl App {
         self.with_ambience(|ambience, ctx| ambience.set_settings(ctx, next_settings));
         if next.size != self.size {
             self.size = next.size;
-            for member in &mut self.members {
-                if let Err(e) = member.view.set_size(&self.gfx, next.size) {
-                    log!("Không đổi được cỡ pet: {e}");
-                }
-                if let Some(i) = self.world.index_of(member.uid) {
-                    let view = &member.view;
-                    self.world.pet(i).resize(view.width, view.height, Some(view.reach));
-                }
-            }
+            self.resize_members();
         }
-        if let Err(e) = self.sync_pets(&sprites::resolve_packs(&next.pets)) {
+        if let Err(e) = self.sync_pets_later(sprites::resolve_packs(&next.pets)) {
             log!("Không đổi được nhân vật: {e}");
         }
+    }
+
+    /// Đổi cỡ cả nhóm theo `self.size`. Nạp lại và thu nhỏ frame ở luồng nền (bản debug mất cả giây mỗi con), xong mới
+    /// đổi cỡ trên màn hình (`resized`); trong lúc chờ các con vẫn đi lại ở cỡ cũ.
+    fn resize_members(&mut self) {
+        self.resizing += 1;
+        let generation = self.resizing;
+        let (uids, ids): (Vec<u32>, Vec<Option<String>>) =
+            self.members.iter().map(|m| (m.uid, m.view.sprite.id.clone())).unzip();
+        let (size, px, tx) = (self.size, self.px(), self.tx.clone());
+        std::thread::spawn(move || {
+            let views = uids.into_iter().zip(view::prepare_all(&ids, size, px)).collect();
+            let _ = tx.send(Message::Resized { generation, views });
+            window::wake();
+        });
+    }
+
+    /// Frame cho cỡ mới đã làm xong (`resize_members`): đổi cỡ từng con trên màn hình và trong mô phỏng.
+    fn resized(&mut self, generation: u64, views: Vec<(u32, view::Prepared)>) -> Result<()> {
+        // Trong lúc chờ đã đổi cỡ lần nữa: bỏ kết quả của lần cũ.
+        if generation != self.resizing {
+            return Ok(());
+        }
+        for (uid, prepared) in views {
+            let Some(member) = self.members.iter_mut().find(|m| m.uid == uid) else { continue };
+            member.view.apply(&self.gfx, prepared)?;
+            if let Some(i) = self.world.index_of(uid) {
+                let view = &member.view;
+                self.world.pet(i).resize(view.width, view.height, Some(view.reach));
+            }
+        }
+        self.redraw()?;
+        self.wake();
+        Ok(())
     }
 
     /// Shift + click vào Long: aura; có con khác thì diễn combo quật đuôi. Con khác chưa có kỹ năng riêng.
