@@ -198,7 +198,8 @@ impl Gfx {
     /// Nhóm visual mới (không có hình), nằm trên mọi thứ đã có.
     pub fn group(&self) -> Result<Group> {
         let visual = unsafe { self.device.CreateVisual()? };
-        unsafe { self.root.AddVisual(&visual, true, None)? };
+        // Không có visual tham chiếu thì `insertAbove = false` mới là nằm trên mọi visual cùng cấp; `true` là nằm dưới.
+        unsafe { self.root.AddVisual(&visual, false, None)? };
         Ok(Group { visual })
     }
 
@@ -206,7 +207,7 @@ impl Gfx {
     pub fn layer(&self, parent: Option<&Group>) -> Result<Layer> {
         let visual = unsafe { self.device.CreateVisual()? };
         let parent = parent.map_or(&self.root, |g| &g.visual);
-        unsafe { parent.AddVisual(&visual, true, None)? };
+        unsafe { parent.AddVisual(&visual, false, None)? };
         Ok(Layer { visual, surface: None, width: 0, height: 0, visible: true, offset: (f32::NAN, f32::NAN) })
     }
 
@@ -214,7 +215,7 @@ impl Gfx {
     pub fn raise(&self, group: &Group) -> Result<()> {
         unsafe {
             self.root.RemoveVisual(&group.visual)?;
-            self.root.AddVisual(&group.visual, true, None)?;
+            self.root.AddVisual(&group.visual, false, None)?;
         }
         Ok(())
     }

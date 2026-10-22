@@ -14,8 +14,6 @@ const SWAY_STEADY: f64 = 0.4;
 const STAR_COUNT: usize = 3;
 /// Số vòng sao bay quanh đầu mỗi giây.
 const STAR_TURNS: f64 = 1.2;
-/// Vòng sao nằm dưới đỉnh đầu bấy nhiêu phần chiều cao, để vòng quanh đầu chứ không quanh tai/ăng-ten.
-const RING_DROP: f64 = 0.06;
 
 /// Đỉnh đầu lệch bao nhiêu pixel của frame lúc choáng (dương: sang phải màn hình). `height`: từ chân tới đỉnh đầu,
 /// pixel của frame. Làm tròn theo pixel để pixel art nghiêng thành bậc gọn chứ không lăn tăn.
@@ -39,11 +37,6 @@ pub fn lean_shift(lean: f64, y: f64, foot_y: f64, head_top: f64, density: f64) -
     }
     let t = (foot_y - y) / (foot_y - head_top).max(1.0);
     crate::sim::js_round(lean * density * t.clamp(0.0, 1.0)) / density
-}
-
-/// Hàng pixel (của frame) mà vòng sao bay quanh.
-pub fn ring_row(head_top: f64, height: f64) -> f64 {
-    head_top + crate::sim::js_round(height * RING_DROP)
 }
 
 // Sao vẽ theo từng pixel: o viền, y vàng, w sáng, d vàng tối (sao phía sau, xa hơn).
@@ -124,9 +117,10 @@ impl DizzyStars {
         Ok(())
     }
 
-    /// `(x, y)`: tâm vòng sao, CSS pixel của overlay; `time`: số giây đã choáng; `px`: pixel màn hình cho một CSS
-    /// pixel.
+    /// `(x, y)`: giữa đỉnh đầu, CSS pixel của overlay; `time`: số giây đã choáng; `px`: pixel màn hình cho một CSS
+    /// pixel. Vòng sao nằm ngay trên đỉnh đầu: sao bay qua phía trước chỉ chạm mép trên của đầu, không che mắt.
     pub fn update(&mut self, gfx: &Gfx, time: f64, x: f64, y: f64, px: f64) -> Result<()> {
+        let y = y - f64::from(self.ry) * self.scale;
         if !self.shown {
             self.shown = true;
             self.back.set_visible(true)?;

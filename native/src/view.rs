@@ -4,7 +4,7 @@
 //! Toạ độ tính theo CSS pixel của overlay như bản web; `px` là số pixel màn hình cho một CSS pixel.
 
 use crate::bubble::Bubble;
-use crate::dizzy::{dizzy_lean, dizzy_reach, lean_shift, ring_row, DizzyStars};
+use crate::dizzy::{dizzy_lean, dizzy_reach, lean_shift, DizzyStars};
 use crate::gfx::{mirrored, rect, Gfx, Layer};
 use crate::sim::pet::{Pet, PetState};
 use crate::sim::terrain::{contains, Bounds};
@@ -403,13 +403,12 @@ impl PetView {
         })
     }
 
-    /// Vòng sao quanh đầu, lệch theo đầu lúc lảo đảo.
+    /// Vòng sao trên đỉnh đầu, lệch theo đầu lúc lảo đảo.
     fn place_stars(&mut self, gfx: &Gfx, time: f64, flip: bool) -> Result<()> {
         let frame_width = f64::from(self.sprite.frame_width);
         let head_x = if flip { frame_width - self.head.center_x } else { self.head.center_x };
-        let row = ring_row(self.head.top, self.sprite.anchor.1 - self.head.top);
-        let x = self.left + (head_x + self.shift(row)) * self.scale;
-        let y = self.top + row * self.scale;
+        let x = self.left + (head_x + self.shift(self.head.top)) * self.scale;
+        let y = self.top + self.head.top * self.scale;
         self.stars.update(gfx, time, x, y, self.px)
     }
 
