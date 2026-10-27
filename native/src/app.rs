@@ -445,12 +445,7 @@ impl App {
         for input in window::take_input() {
             self.input(input)?;
         }
-        let actions = self.tray.take_events();
-        // Bấm icon khay thì đã dựng sẵn Cài đặt; menu đóng mà không chọn Cài đặt… thì thôi.
-        if self.ipc.take_tray_warm() && !actions.contains(&tray::Action::Settings) {
-            self.ipc.cool(ipc::SETTINGS);
-        }
-        for action in actions {
+        for action in self.tray.take_events() {
             self.tray_action(action)?;
         }
         for remap in std::mem::take(&mut self.remaps) {
@@ -948,6 +943,9 @@ impl App {
             }
             tray::Action::Settings => self.open_settings(),
             tray::Action::Quit => self.request_quit(),
+            // Bấm icon khay thì đã dựng sẵn Cài đặt (`Launcher`); menu đóng mà không chọn Cài đặt… thì thôi. Đã chọn
+            // thì `open_settings` đã lấy cửa sổ dựng sẵn, `cool` không làm gì.
+            tray::Action::Closed => self.ipc.cool(ipc::SETTINGS),
         }
         Ok(())
     }
