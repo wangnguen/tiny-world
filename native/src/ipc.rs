@@ -73,8 +73,6 @@ struct Shared {
     pending: Vec<Value>,
     /// Cửa sổ đang dựng sẵn mà chưa mở.
     warm: Vec<&'static str>,
-    /// Khay vừa dựng sẵn Cài đặt, vòng lặp chính chưa biết (`Ipc::take_tray_warm`).
-    tray_warm: bool,
 }
 
 impl Shared {
@@ -136,8 +134,7 @@ impl Ipc {
                 std::thread::spawn(move || serve(stream, &expected, &tx, wake));
             }
         });
-        let shared =
-            Shared { exe, env, writer: None, child: None, pending: Vec::new(), warm: Vec::new(), tray_warm: false };
+        let shared = Shared { exe, env, writer: None, child: None, pending: Vec::new(), warm: Vec::new() };
         Ok(Self(Arc::new(Mutex::new(shared))))
     }
 
@@ -199,11 +196,6 @@ impl Ipc {
         shared.send(json!({ "cool": window }), false);
     }
 
-    /// Khay đã dựng sẵn Cài đặt từ lần gọi trước: menu khay đã đóng, có chọn Cài đặt… thì đã có trong `Tray::take_events`.
-    pub fn take_tray_warm(&mut self) -> bool {
-        std::mem::take(&mut lock(&self.0).tray_warm)
-    }
-
     /// Gửi tin cho tiến trình giao diện nếu đang chạy (không chạy thì thôi: chưa có cửa sổ nào cần biết).
     pub fn send(&self, message: Value) {
         if let Some(writer) = &lock(&self.0).writer {
@@ -223,16 +215,14 @@ impl Ipc {
     }
 }
 
-/// Khay gọi ngay lúc menu hiện (bấm icon), trong lúc vòng lặp chính còn bị menu chặn tới khi chọn xong.
+/// Luồng khay gọi lúc bấm icon, ngay trước khi menu hiện, để khỏi chờ vòng lặp chính.
 #[derive(Clone)]
 pub struct Launcher(Arc<Mutex<Shared>>);
 
 impl Launcher {
-    /// Dựng sẵn cửa sổ Cài đặt (ẩn) để chọn Cài đặt… thì hiện ngay.
+    /// Dựng sẵn cửa sổ Cài đặt (ẩn) để chọn Cài đặt… thì hiện ngay; menu đóng mà không chọn thì vòng lặp chính `cool`.
     pub fn warm_settings(&self) {
-        let mut shared = lock(&self.0);
-        shared.warm(SETTINGS);
-        shared.tray_warm = true;
+        lock(&self.0).warm(SETTINGS);
     }
 }
 
