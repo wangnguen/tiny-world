@@ -14,7 +14,9 @@ ra; thay file gốc ở đây rồi chạy lại lệnh tạo.
 
 Mỗi pack là một thư mục trong `sprites/`, có file `pet.json` mô tả các animation. Người dùng chọn
 nhân vật trong tray → **Cài đặt…** → **Nhân vật** (lưu tên thư mục vào `settings.json`). Chưa chọn,
-hoặc pack đã chọn không còn, thì dùng pack **đầu tiên theo tên thư mục** (`a-momo`). Pack có
+hoặc pack đã chọn không còn, thì dùng nhân vật **mặc định Boggo** (`c-boggo`, hằng `DEFAULT_PACK` trong
+`native/src/sprites.rs` và `desktop/src/sprites/sprites.ts`); thiếu cả pack này thì dùng pack đầu tiên
+theo tên thư mục. Pack có
 `pet.json` lỗi không hiện trong danh sách; chưa có pack nào (hoặc pack lỗi khi nạp) thì dùng pet tạm
 (cục blob 16×16 vẽ bằng code) và in lý do lỗi ra console (tray → **Mở DevTools** khi chạy dev).
 

@@ -7,7 +7,7 @@ nhúng atlas lớn vào app.
 
 | Nhân vật | Thiết kế | Pack chạy trong app |
 |---|---|---|
-| Momo | Axolotl hồng, mang san hô, bụng kem | `../sprites/a-momo/` (mặc định) |
+| Momo | Axolotl hồng, mang san hô, bụng kem | `../sprites/a-momo/` |
 | Bông | Thỏ kem, tai hồng, khăn xanh teal | `../sprites/b-bong/` |
 | Kitsu | Cáo cam, mõm/bụng kem, chóp đuôi trắng | `../sprites/b-kitsu/` |
 | Mầm | Sinh vật rừng màu kem, hai lá xanh trên đầu | `../sprites/c-mam/` |
@@ -22,7 +22,7 @@ nhúng atlas lớn vào app.
 | Dứa | Bé dứa vàng, ba lá xanh trên đầu | `../sprites/c-dua/` |
 | Su | Phi hành gia nhỏ, bộ đồ trắng tím | `../sprites/c-su/` |
 | Bắp | Ong vàng tròn, cánh xanh nhạt | `../sprites/c-bap/` |
-| Boggo | Ếch coder xanh rêu, mắt mệt, hoodie than, ly cà phê nâu | `../sprites/c-boggo/` |
+| Boggo | Ếch coder xanh rêu, mắt mệt, hoodie than, ly cà phê nâu | `../sprites/c-boggo/` (mặc định) |
 | Gloop | Ếch nghịch xanh lá, khăn quàng cam gạch | `../sprites/c-gloop/` |
 | Bẹp | Cóc lùn xanh nâu, mặt chán đời, túi đeo chéo | `../sprites/c-bep/` |
 | Frobu | Ếch thức khuya, hoodie xanh navy, tai nghe tím nhạt | `../sprites/c-frobu/` |

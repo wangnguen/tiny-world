@@ -194,7 +194,7 @@ pub struct Settings {
     /// lúc đổi frame.
     pub fps: u16,
     /// Các nhân vật đang hiện (tối đa `MAX_PETS`, không trùng), theo thứ tự chọn: tên thư mục sprite
-    /// pack trong `assets/sprites/`. Rỗng là pack đầu tiên. Pack không còn trong bản build thì overlay tự
+    /// pack trong `assets/sprites/`. Rỗng là nhân vật mặc định (`c-boggo`). Pack không còn trong bản build thì overlay tự
     /// bỏ qua, nên ở đây chỉ kiểm tra dạng tên.
     pub pets: Vec<String>,
     /// Bản cũ chỉ có một nhân vật: đọc vào `pets` khi `pets` rỗng (`sanitized`). Vẫn ghi ra (con đầu tiên)

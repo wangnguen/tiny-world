@@ -29,8 +29,8 @@ desktop-pet/
 
 21 original characters drawn for the project. Pick them in **Settings… → Pets** and click a tile to add or
 remove that character: up to 3 can live on the screen at once, and at least one always stays (16
-characters per page; flip pages with the arrows, the page dots or the mouse wheel). They are Momo (the
-default), Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp,
+characters per page; flip pages with the arrows, the page dots or the mouse wheel). They are Boggo (the
+default), Momo, Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su, Bắp, Gloop, Bẹp,
 Frobu, Byte and Patch. Every character has all 12 animations: the 9 from Phase 1 plus climb, perch
 and jump. Watch them move in the [sprite studio](assets/sprite-sources/index.html) (open it straight in a
 browser); each character's design is in [assets/sprite-sources/README.md](assets/sprite-sources/README.md).
@@ -331,8 +331,8 @@ tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (a
     pet size, speed, language (`language`: `auto`, `vi`, `en`), city (name, coordinates, time zone), the
     World tab toggles and the event calendar (`occasions`, at most 30 events). If it's edited by hand with
     bad values, the app clamps them to the allowed range, drops duplicate names, drops pets beyond 3 and
-    events on dates that don't exist; missing packs are skipped, and if none are left the first pack is
-    used. Files from older versions (`pet`, a single character; no World tab entries yet) still load.
+    events on dates that don't exist; missing packs are skipped, and if none are left the default pet
+    (Boggo) is used. Files from older versions (`pet`, a single character; no World tab entries yet) still load.
   - `weather.json`: the last weather fetched, so starting the app offline can still use it if it's less
     than 3 hours old.
   - `stats.json`: per day for the last 30 days: screen time, the longest stretch (ms) and the number of
