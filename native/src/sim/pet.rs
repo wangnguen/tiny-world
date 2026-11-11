@@ -67,11 +67,6 @@ fn calm(state: PetState) -> bool {
     matches!(state, PetState::Idle | PetState::Walk | PetState::Run | PetState::Perch | PetState::Land)
 }
 
-/// State đứng yên ngay được (`hold`): đang rảnh, đang ngủ hay đang choáng trên mặt đất hoặc mép cửa sổ.
-fn holdable(state: PetState) -> bool {
-    calm(state) || matches!(state, PetState::Sleep | PetState::Dizzy)
-}
-
 /// Pet đang đứng trên (hoặc leo) cửa sổ `id`: điểm chân cách góc trên trái cửa sổ (dx, dy). Cửa sổ di chuyển thì
 /// pet đi theo.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -241,9 +236,6 @@ pub struct Pet {
     /// Đang chat (khung chat mở cạnh con này, ở phía này): đứng yên quay về phía khung chat, không ngủ, không đi
     /// theo con khác. `None` là không chat.
     pub listening: Option<Facing>,
-    /// Còn biến mất chừng này giây (bị Long quật bay, `vanish`): đứng nguyên như lúc biến mất, không làm gì, con
-    /// khác không thấy; hết giờ thì hiện lại đúng chỗ cũ và làm tiếp việc đang dở. 0 là đang hiện.
-    pub vanished: f64,
     brain: Brain,
 }
 
@@ -277,7 +269,6 @@ impl Pet {
             since_meet: f64::INFINITY,
             buddy: None,
             listening: None,
-            vanished: 0.0,
             brain: Brain { state: PetState::Idle, time: 0.0 },
         }
     }
@@ -310,11 +301,6 @@ impl Pet {
     /// cho vui.
     pub fn say(&mut self, text: impl Into<String>, seconds: f64) {
         self.speech = Some(Speech { text: text.into(), left: seconds });
-    }
-
-    /// Biến mất `seconds` giây (`vanished`); câu đang nói để dành tới lúc hiện lại.
-    pub fn vanish(&mut self, seconds: f64) {
-        self.vanished = self.vanished.max(seconds);
     }
 
     /// Khung chat đã đóng hoặc đổi sang con khác: lại đi lại như thường.
@@ -369,10 +355,6 @@ fn neighbors(pet: &Pet, other: &Pet, reach: f64) -> bool {
 fn meetable(pet: &Pet, other: &Pet) -> bool {
     if other.since_meet < t::MEET_COOLDOWN || other.crossing.is_some() || other.goal.is_some() || other.listening.is_some()
     {
-        return false;
-    }
-    // Con đang biến mất thì không thấy để mà chào.
-    if other.vanished > 0.0 {
         return false;
     }
     if !matches!(other.state(), PetState::Idle | PetState::Walk | PetState::Run) {
@@ -464,49 +446,7 @@ impl PetMut<'_> {
         self.p().planned = seconds;
     }
 
-    /// Đứng yên `seconds` giây quay về phía `facing`, nếu đang rảnh trên mặt đất hoặc mép cửa sổ (đang ngủ, đang
-    /// choáng thì dậy luôn). Đang bị kéo, rơi, leo, nhảy, chat, sang màn hình khác hay đang biến mất thì thôi, trả
-    /// về `false`: ép đứng yên lúc đó thì pet đứng khựng giữa không trung.
-    pub fn hold(&mut self, facing: Facing, seconds: f64) -> bool {
-        let me = self.me();
-        if !holdable(me.state()) || me.crossing.is_some() || me.listening.is_some() || me.vanished > 0.0 {
-            return false;
-        }
-        self.pause(facing, seconds);
-        true
-    }
-
-    /// Tốc biến tới đứng cạnh con thứ `other` (đang đứng trên mặt đất hoặc mép cửa sổ): cùng chỗ đứng với nó, điểm
-    /// chân ở `x` (kẹp trong chỗ đứng), quay mặt về phía nó rồi đứng yên `seconds` giây. Đang rơi, leo, nhảy cũng
-    /// được, đứng hẳn lên chỗ mới chứ không lơ lửng. Không gọi lúc đang bị kéo.
-    pub fn blink_to(&mut self, other: usize, x: f64, seconds: f64) {
-        let facing = self.me().facing;
-        self.pause(facing, seconds);
-        let target = &self.w.pets[other];
-        let mount = if target.grounded() { target.mount } else { None };
-        let pet = self.p();
-        pet.vx = 0.0;
-        pet.vy = 0.0;
-        pet.crossing = None;
-        pet.skip_ledge = None;
-        pet.mount = mount.map(|m| Mount { id: m.id, dx: 0.0, dy: m.dy });
-        let ground = self.ground();
-        // Cửa sổ vừa đóng thì đứng xuống mặt đất.
-        if ground.ledge.is_none() {
-            self.p().mount = None;
-        }
-        // Mép hẹp hơn chỗ đứng: đứng giữa mép, bước sau sẽ rơi (`mount_holds`) như mọi lúc khác.
-        self.p().x =
-            if ground.to < ground.from { (ground.from + ground.to) / 2.0 } else { clamp(x, ground.from, ground.to) };
-        self.p().y = ground.y;
-        self.sync_mount();
-        let other_x = self.w.pets[other].x;
-        if (other_x - self.me().x).abs() > 1.0 {
-            self.p().facing = sign(other_x - self.me().x);
-        }
-    }
-
-    /// Người dùng click vào pet: phản ứng, đang ngủ thì thức dậy, đang leo thì tuột tay. Đang nhảy hoặc click dồn
+    /// Người dùng click vào pet:    /// Người dùng click vào pet: phản ứng, đang ngủ thì thức dậy, đang leo thì tuột tay. Đang nhảy hoặc click dồn
     /// dập thì chỉ nhảy một lần: cú nhảy không bị bắt đầu lại, phải ngừng click một lúc mới nhảy tiếp.
     pub fn poke(&mut self) {
         // Bấm vào con đang nói thì tắt bubble (cả lời nhắc nghỉ, nhắc khuya).
@@ -535,7 +475,7 @@ impl PetMut<'_> {
     pub fn window_moved(&mut self, id: isize, from: &Rect, to: &Rect) {
         let me = self.me();
         // Đang vắt qua mép sang màn hình khác: đi nốt, không quay đầu giữa chừng.
-        if me.mount.is_some_and(|m| m.id == id) || !calm(me.state()) || me.crossing.is_some() || me.vanished > 0.0 {
+        if me.mount.is_some_and(|m| m.id == id) || !calm(me.state()) || me.crossing.is_some() {
             return;
         }
         if (from.width - to.width).abs() >= 1.0 || (from.height - to.height).abs() >= 1.0 {
@@ -552,7 +492,7 @@ impl PetMut<'_> {
     /// Cửa sổ `id` (khung cuối cùng `rect`) vừa bị đóng: ở gần thì quay về phía đó nhảy cẫng lên ăn mừng.
     pub fn window_closed(&mut self, id: isize, rect: &Rect) {
         let me = self.me();
-        if me.mount.is_some_and(|m| m.id == id) || !calm(me.state()) || me.vanished > 0.0 {
+        if me.mount.is_some_and(|m| m.id == id) || !calm(me.state()) {
             return;
         }
         if me.since_cheer < t::CHEER_COOLDOWN || gap(me, rect) > t::CHEER_RANGE {
@@ -575,7 +515,7 @@ impl PetMut<'_> {
     /// tính là người dùng đụng vào, nên không làm cả nhóm tỉnh ngủ lâu hơn.
     pub fn startle(&mut self) {
         let me = self.me();
-        if !calm(me.state()) || !me.grounded() || me.crossing.is_some() || me.vanished > 0.0 {
+        if !calm(me.state()) || !me.grounded() || me.crossing.is_some() {
             return;
         }
         self.p().hops = 0;
@@ -643,11 +583,6 @@ impl PetMut<'_> {
         pet.since_cheer += dt;
         pet.since_turn += dt;
         pet.since_meet += dt;
-        // Đang biến mất: đứng nguyên như lúc biến mất (câu đang nói để dành), hết giờ thì làm tiếp.
-        if pet.vanished > 0.0 {
-            pet.vanished = (pet.vanished - dt).max(0.0);
-            return;
-        }
         if let Some(speech) = &mut pet.speech {
             speech.left -= dt;
             if speech.left <= 0.0 {
@@ -1025,7 +960,7 @@ impl PetMut<'_> {
         // vòng lặp vẽ được nghỉ nhiều hơn. Chỉ đổi xác suất, không bốc thêm số ngẫu nhiên, nên một con thì sống y
         // như trước.
         let movers = (self.w.pets.iter().enumerate())
-            .filter(|&(j, other)| j != self.i && other.vanished == 0.0 && moving(other.state()))
+            .filter(|&(j, other)| j != self.i && moving(other.state()))
             .count();
         let quiet = if self.w.quiet { t::QUIET_CALM } else { 1.0 };
         let keep = (1.0 - group_calm() * movers as f64).max(0.0) * quiet;

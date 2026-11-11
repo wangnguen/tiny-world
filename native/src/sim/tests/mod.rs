@@ -1,7 +1,6 @@
 //! Test hành vi của pet, chuyển từ các file `*.test.ts` của packages/sim. Bước mô phỏng 1/30 giây và cách đếm thời
 //! gian như bản TS, nên cùng seed ra cùng kết quả.
 
-mod blink;
 mod cursor;
 mod group;
 mod pet;

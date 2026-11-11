@@ -13,7 +13,7 @@ desktop-pet/
 ├── assets/
 │   ├── icon.png          # the app's source logo
 │   ├── sprites/          # sprite packs the app runs: <pack>/pet.json + WebP
-│   └── sprite-sources/   # source atlases and prompts for each character, plus an animation viewer
+│   └── sprite-sources/   # four pose sheets and prompts for each character, plus an animation viewer
 ├── packages/
 │   ├── core/             # types shared by Rust and TS, event names, the vi/en text files, reading pet.json
 │   └── sim/              # TS helpers for Settings and the landing page: weather, lunar calendar, pet lines
@@ -22,16 +22,16 @@ desktop-pet/
 │   ├── backend/          # Rust without UI: settings, saved state, weather, screen time, chat, updates, window list
 │   ├── src/              # Settings and chat windows (React)
 │   └── src-tauri/        # tinyworld.exe: starts the overlay; `--ui` runs the Tauri process for those windows
-└── scripts/              # normalize sprites from source atlases, generate icons
+└── scripts/              # normalize sprites from source pose sheets, generate icons
 ```
 
 ## Characters
 
-22 original characters drawn for the project. Pick them in **Settings… → Pets** and click a tile to add or
+21 original characters drawn for the project. Pick them in **Settings… → Pets** and click a tile to add or
 remove that character: up to 3 can live on the screen at once, and at least one always stays (16
-characters per page; flip pages with the arrows, the page dots or the mouse wheel). They are Momo (the
-default), Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su, Bắp, Boggo, Gloop, Bẹp,
-Frobu, Long, Byte and Patch. Every character has all 12 animations: the 9 from Phase 1 plus climb, perch
+characters per page; flip pages with the arrows, the page dots or the mouse wheel). They are Boggo (the
+default), Momo, Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su, Bắp, Gloop, Bẹp,
+Frobu, Byte and Patch. Every character has all 12 animations: the 9 from Phase 1 plus climb, perch
 and jump. Watch them move in the [sprite studio](assets/sprite-sources/index.html) (open it straight in a
 browser); each character's design is in [assets/sprite-sources/README.md](assets/sprite-sources/README.md).
 
@@ -95,7 +95,6 @@ Interacting with the pets:
 | Two pets meet | They stop and face each other, sometimes say hello or walk together for a while; at bedtime they sleep side by side |
 | No pet touched for 3 minutes | The whole group comes down to the taskbar (jumping or climbing down from windows) and falls asleep one by one: clicking or dragging any pet counts for the whole group. Clicking anywhere on the screen or dragging a pet wakes everyone up |
 | Hold **Ctrl** while clicking | The click goes through the pet to the app underneath |
-| Hold **Shift** while clicking Long | Long lights up a fire aura for a few seconds. With other pets around, Long transforms, then blinks next to each one in turn and whips it once with its tail; a pet that gets hit jumps in fright, vanishes for 5 seconds and reappears in the same spot. If a pet is being dragged, climbing, jumping or chatting, Long waits a while and then skips it; picking Long up midway stops the combo. Shift + click on any other pet counts as a normal click |
 
 If you change the resolution, DPI scale, taskbar position or size, or plug in or unplug a monitor while the
 app is running, the overlay readjusts within about a second: pets stand on the new ground, a pet standing
@@ -250,13 +249,12 @@ tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (a
   shows hidden pets.
 - **Drawing** (`native/src/gfx.rs`, `view.rs`): one transparent window without its own bitmap
   (`WS_EX_NOREDIRECTIONBITMAP`); DWM composes a tree of DirectComposition visuals straight onto the screen.
-  Each pet has a few small visuals (sprite, dizzy stars, weather around it, speech bubble, Long's effects)
+  Each pet has a few small visuals (sprite, dizzy stars, weather around it, speech bubble)
   whose surfaces are redrawn with Direct2D only when they change: a new frame, a new line of text. Walking
   only moves a visual. Frames are uploaded to the GPU once (shrunk beforehand when the pet is drawn smaller
   than the frame, so thin lines don't break up); only the 1-bit alpha masks used for hit-testing stay in RAM.
   Text uses DirectWrite, the weather icon on the temperature tag is an SVG drawn by Direct2D, and a bubble
-  fades in with a DirectComposition animation. Sprites and Long's effect frames are embedded in the exe at
-  build time.
+  fades in with a DirectComposition animation. Sprites are embedded in the exe at build time.
 - **Loop** (`native/src/app.rs`): one thread handles window messages, reads the cursor about 60 times a
   second (`GetCursorPos`, plus Ctrl and the mouse buttons) and steps the simulation 30 times a second
   (`FixedStep`). While a pet walks, flies, is dragged or reels it draws at the rate picked under Smoothness
@@ -333,8 +331,8 @@ tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (a
     pet size, speed, language (`language`: `auto`, `vi`, `en`), city (name, coordinates, time zone), the
     World tab toggles and the event calendar (`occasions`, at most 30 events). If it's edited by hand with
     bad values, the app clamps them to the allowed range, drops duplicate names, drops pets beyond 3 and
-    events on dates that don't exist; missing packs are skipped, and if none are left the first pack is
-    used. Files from older versions (`pet`, a single character; no World tab entries yet) still load.
+    events on dates that don't exist; missing packs are skipped, and if none are left the default pet
+    (Boggo) is used. Files from older versions (`pet`, a single character; no World tab entries yet) still load.
   - `weather.json`: the last weather fetched, so starting the app offline can still use it if it's less
     than 3 hours old.
   - `stats.json`: per day for the last 30 days: screen time, the longest stretch (ms) and the number of
@@ -352,21 +350,21 @@ tinyworld.exe (overlay, always running)                    tinyworld.exe --ui (a
 
 ```bash
 pnpm typecheck
-pnpm test                                               # sprite packs, Long's effects, chat markdown, vi/en text files, weather, lunar and event calendar helpers
+pnpm test                                               # sprite packs, chat markdown, vi/en text files, weather, lunar and event calendar helpers
 cargo test -p tinyworld-backend -p tinyworld-native     # see below
 cargo test -p tinyworld                                 # the Tauri shell, on its own (sharing one build breaks the other tests' exe)
 ```
 
 `tinyworld-native` tests the pet simulation (FSM, World/Pet, pet groups and Quiet, window terrain, cursor,
-screen changes, world.json, Long's blink and vanish), pet.json and every sprite pack, mouse handling (drag,
-throw, double click, Shift skill), Long's combo, the ghost's flight, weather, lunar and event calendars and
+screen changes, world.json), pet.json and every sprite pack, mouse handling (drag, throw, double click), the
+ghost's flight, weather, lunar and event calendars and
 pet lines. `tinyworld-backend` tests DPI coordinates, neighboring screens, coordinate mapping between
 screens, the window list, saved state, settings, language, Open-Meteo parsing, screen time and reminders,
 Ctrl+S spam, chat send limits, chat window position, Gemini reply parsing, suggested questions, chat
 images, update parsing and installer SHA-256, the log file and the registry.
 
 `pnpm test` includes `pnpm test:sprites` (the sprite normalization script, `prepare-sprites.mjs --check`
-on all 22 packs and `prepare-aura.mjs --check` for Long's effects), `pnpm test:chat` (chat markdown and
+on all 21 packs), `pnpm test:chat` (chat markdown and
 message building) and the vitest suites in `packages/*`.
 
 To measure CPU and RAM over a long run (leak check) or on battery, start the app and run

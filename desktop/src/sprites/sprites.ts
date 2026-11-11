@@ -50,9 +50,19 @@ export function listPacks(): PackInfo[] {
   return packs.map((pack) => pack.info);
 }
 
-/** Pack sẽ được dùng cho `id`: đúng pack đó nếu còn, không thì pack đầu tiên; không có pack nào thì `null`. */
+/**
+ * Nhân vật mặc định khi chưa chọn gì hoặc pack đã chọn không còn. Giữ giống `DEFAULT_PACK` ở
+ * `native/src/sprites.rs` (`scripts/prepare-sprites.mjs --check` so cả hai).
+ */
+export const DEFAULT_PACK = "c-boggo";
+
+/**
+ * Pack sẽ được dùng cho `id`: đúng pack đó nếu còn, không thì `DEFAULT_PACK`, thiếu cả nó thì pack đầu tiên;
+ * không có pack nào thì `null`.
+ */
 export function resolvePack(id: string | null | undefined): string | null {
-  return (packs.find((pack) => pack.info.id === id) ?? packs[0])?.info.id ?? null;
+  const byId = (wanted: string | null | undefined) => packs.find((pack) => pack.info.id === wanted);
+  return (byId(id) ?? byId(DEFAULT_PACK) ?? packs[0])?.info.id ?? null;
 }
 
 /**

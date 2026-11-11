@@ -1,6 +1,6 @@
-// Normalize original atlases into detailed, bottom-aligned 192px sprite frames.
-// Source atlases (always PNG) are decoded with a built-in PNG reader; output
-// strips are encoded as WebP lossless via sharp for ~40% smaller sprites.
+// Normalize each pet's four imagegen pose sheets into bottom-aligned 192px sprite frames.
+// Sheets (always PNG) are decoded with a built-in PNG reader; output strips are
+// encoded as WebP lossless via sharp for ~40% smaller sprites.
 // Usage: node scripts/prepare-sprites.mjs [--check] [--only-new] [--pet=source]
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -11,17 +11,19 @@ import { inflateSync } from "node:zlib";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCES = join(ROOT, "assets/sprite-sources");
 const PACKS = join(ROOT, "assets/sprites");
-// At 200% each source pixel maps to one CSS pixel. Sample the original atlas,
+// At 200% each frame pixel maps to one CSS pixel. Sample the source sheets,
 // never upscale the reduced runtime strips. Keep the default 96 CSS px size.
 const SIZE = 192;
 const BASELINE = 179;
-// Largest pose allowed in a frame. Atlas poses that fit are copied 1:1: any
+// Largest pose allowed in a frame. A pose at factor 1 is copied exactly: any
 // fractional nearest-neighbor scale drops rows, breaking thin outlines/limbs.
 const MAX_WIDTH = SIZE - 6;
 const MAX_HEIGHT = BASELINE - 2;
 // Outline, pupil and mouth colours. Resampling favours them so lines survive.
 const DARK = 90;
 const DISPLAY_SIZE = 96;
+// Pack shown when nothing is picked; same constant in native/src/sprites.rs and desktop/src/sprites/sprites.ts.
+const DEFAULT_PACK = "c-boggo";
 const COLUMNS = 4;
 const ROWS = [
   ["idle", 5], ["walk", 8], ["run", 12], ["sleep", 3],
@@ -29,76 +31,43 @@ const ROWS = [
   ["land", 16, false], ["dizzy", 5],
   ["climb", 8], ["perch", 4], ["jump", 10, false],
 ];
-// Per-pet options: `atlas` source file; `locomotion` / `poses` (one sheet or a
-// list; 4 columns, one row per name in `rows`, `"ref"` = idle copy for size
-// only) / `overrides` imagegen sheets that redraw rows; `keep` rows that stay from the atlas even
-// when a sheet redraws them; `dizzy` the source column of the one dizzy pose
-// the app shows; `reuse` a row's column order, replaying good poses in place of
-// broken ones; `grid` cuts the atlas on its even 4x12 grid instead of at the
-// alpha gaps (poses that touch their cell edges); `poseScale` shrinks all
-// correction-sheet poses when their aspect ratio would otherwise exceed the
-// runtime frame; `recolor` palette swaps within some rows, optionally only some
-// `frames` and a `box` [left, top, right, bottom] in frame pixels; `fill` paints
-// the region enclosed by outline around `at` in one frame with one colour.
-// Recolor/fill colours resolve to the nearest pack colour, so a rule survives the
-// small palette shifts a regenerated sheet causes.
+// Per-pet fields: `source` folder under assets/sprite-sources/, `folder` pack
+// under assets/sprites/, `name`, `mouthY` (chat bubble row in the frame), and
+// `height`, the idle pose height in the 192px frame that every sheet is scaled
+// to. Options: `palette` a fixed palette file instead of a fresh one, so 1:1
+// sheets keep their exact colours; `singleSheet` one atlas.webp for all rows;
+// `dizzy` the source column of the one dizzy pose the app shows; `reuse` a
+// row's column order, replaying good poses in place of broken ones; `recolor`
+// palette swaps within some rows, optionally only some `frames` and a `box`
+// [left, top, right, bottom] in frame pixels; `fill` paints the region enclosed
+// by outline around `at` in one frame with one colour. Recolor/fill colours
+// resolve to the nearest pack colour, so a rule survives the small palette
+// shifts a regenerated sheet causes.
 const PETS = [
-  {
-    source: "momo", folder: "a-momo", mouthY: 127, name: "Momo — Axolotl",
-    poses: [{ image: "poses-v3.png", rows: ["idle", "fall", "land", "dizzy"] }, { image: "fix-v1.png", rows: ["ref", "react", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "dragged", "dizzy", "fall"] }],
-    palette: "pose-palette.json",
-    // Walk frame 2's far hind leg is gill coral and its lower gill is only an outline.
-    recolor: { rows: ["walk"], frames: [2], box: [44, 154, 70, 179], colors: { "#fd6159": "#bf646c", "#c53f41": "#883741" } },
-    fill: [{ row: "walk", frame: 2, at: [88, 131], box: [83, 121, 109, 141], color: "#fd6159" }],
-  },
-  {
-    source: "bong", folder: "b-bong", mouthY: 120, name: "Bông — Bunny", dizzy: 1,
-    poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "land"] }],
-    // The redrawn far legs are tan; both legs are cream in the design.
-    recolor: { rows: ["idle", "walk", "run", "fall"], colors: { "#b4967d": "#ebc6a3", "#d6a584": "#fbd5b7" } },
-  },
-  { source: "kitsu", folder: "b-kitsu", mouthY: 116, name: "Kitsu — Fox", poses: { image: "fix-v1.png", rows: ["ref", "walk", "run", "fall"] } },
-  { source: "mam", folder: "c-mam", mouthY: 110, name: "Mầm — Sprout", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "react", "dragged"] }], reuse: { climb: [2, 1, 2, 3] } },
-  { source: "bip", folder: "c-bip", mouthY: 112, name: "Bíp — Robot", poses: [{ image: "fix-v1.png", rows: ["ref", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "climb", "perch"] }] },
-  { source: "lumi", folder: "c-lumi", mouthY: 128, name: "Lumi — Star Spirit", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "climb"] }], reuse: { dragged: [0, 1, 0, 3] } },
-  { source: "nam", folder: "c-nam", mouthY: 130, name: "Nấm — Mushroom", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep", "fall", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "climb"] }] },
-  { source: "may", folder: "c-may", mouthY: 106, name: "Mây — Cloud", poses: { image: "fix-v3.png", rows: ["ref", "dragged", "climb"] }, reuse: { fall: [0, 1, 0, 3] } },
-  { source: "tan", folder: "c-tan", mouthY: 116, name: "Tàn — Ember", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "run"] }], reuse: { climb: [0, 3, 2, 3] } },
-  { source: "reu", folder: "c-reu", mouthY: 115, name: "Rêu — Leaf Dragon", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "land", "dragged"] }], reuse: { idle: [0, 1, 3, 3], fall: [0, 3, 0, 3] } },
-  { source: "cuc", folder: "c-cuc", mouthY: 107, name: "Cục — Pebble", atlas: "atlas-v2.png", poses: [{ image: "fix-v1.png", rows: ["ref", "fall", "dragged"] }, { image: "fix-v2.png", rows: ["ref", "land"] }] },
-  // The redrawn walk/run lose one or two of Mực's five tentacles; keep the atlas gait.
-  { source: "muc", folder: "c-muc", mouthY: 107, name: "Mực — Octopus", overrides: { dragged: "dragged-v2.png" }, keep: ["walk", "run"], poses: [{ image: "fix-v1.png", rows: ["ref", "idle", "fall"] }, { image: "fix-v2.png", rows: ["ref", "fall", "climb"] }] },
-  {
-    source: "dua", folder: "c-dua", mouthY: 120, name: "Dứa — Pineapple", poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "react"] }], reuse: { climb: [0, 0, 2, 2] },
-  },
-  { source: "su", folder: "c-su", mouthY: 115, name: "Su — Astronaut", dizzy: 1, poses: [{ image: "fix-v1.png", rows: ["ref", "fall"] }, { image: "fix-v2.png", rows: ["ref", "dizzy", "react"] }], reuse: { dragged: [0, 1, 2, 1] } },
-  { source: "bap", folder: "c-bap", mouthY: 117, name: "Bắp — Bumblebee", poses: [{ image: "fix-v1.png", rows: ["ref", "fall", "dragged", "dizzy"] }, { image: "fix-v2.png", rows: ["ref", "jump"] }] },
-  { source: "boggo", folder: "c-boggo", mouthY: 100, name: "Boggo — Coder Frog", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep", "fall", "dizzy"] }, { image: "fix-v2.png", rows: ["ref", "react", "climb"] }] },
-  { source: "gloop", folder: "c-gloop", mouthY: 100, name: "Gloop — Chaos Frog", poses: { image: "fix-v2.png", rows: ["ref", "land", "react"] } },
-  // fix-v2.png came back with its outer columns cropped (react 0 loses the back, react 3 half the face):
-  // react replays the two intact middle poses.
-  { source: "bep", folder: "c-bep", mouthY: 114, name: "Bẹp — Grumpy Toad", poses: [{ image: "fix-v1.png", rows: ["ref", "sleep"] }, { image: "fix-v2.png", rows: ["ref", "react"] }], reuse: { fall: [0, 1, 0, 3], react: [1, 1, 2, 2] } },
-  {
-    source: "frobu", folder: "c-frobu", mouthY: 110, name: "Frobu — Night Frog", poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "run", "land"] },
-    // A dark eye-like blot on the forehead in react frame 2.
-    // Paint it over with the head's shading: darker under the headphone band, lighter below.
-    recolor: [
-      { rows: ["react"], frames: [2], box: [111, 70, 122, 74], colors: { "#010202": "#8ca57d", "#0c0f0f": "#8ca57d", "#202e3f": "#8ca57d", "#464c3b": "#8ca57d", "#5a635e": "#8ca57d" } },
-      { rows: ["react"], frames: [2], box: [111, 75, 123, 81], colors: { "#010202": "#98b890", "#0c0f0f": "#98b890", "#202e3f": "#98b890", "#464c3b": "#98b890", "#5a635e": "#98b890", "#8ca57d": "#98b890" } },
-    ],
-  },
-  {
-    source: "long", folder: "c-long", mouthY: 127, name: "Long — Eastern Dragon", grid: true,
-    // The atlas poses overlap their fixed cells; redraw the affected actions separately.
-    poses: { image: "fix-v1.png", rows: ["ref", "dizzy", "climb"] }, poseScale: 0.95,
-  },
-  { source: "byte", folder: "c-byte", mouthY: 118, name: "Byte — Coder Penguin", singleSheet: true, poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "sleep", "fall"] }, reuse: { fall: [2, 1, 2, 3] } },
-  { source: "patch", folder: "c-patch", mouthY: 116, name: "Patch — Coder Red Panda", singleSheet: true, dizzy: 1, poses: [{ image: "fix-v1.png", rows: ["ref", "idle"] }, { image: "fix-v2.png", rows: ["ref", "run"] }], reuse: { dragged: [0, 2, 0, 2] } },
-].map((pet) => ({
-  ...pet,
-  // New packs can use their complete atlas alone; corrected locomotion is optional.
-  locomotion: existsSync(join(SOURCES, pet.source, "locomotion-v2.png")) ? "locomotion-v2.png" : undefined,
-}));
+  // The default pet. Its sheets are its accepted frames at 1:1 (idle frame 1 replays frame 2, whose eyes
+  // keep their pupils), so its fixed palette keeps every pixel.
+  { source: "boggo", folder: "c-boggo", mouthY: 100, name: "Boggo — Coder Frog", height: 128, palette: "palette.json" },
+  { source: "momo", folder: "a-momo", mouthY: 127, name: "Momo — Axolotl", height: 98 },
+  { source: "bong", folder: "b-bong", mouthY: 120, name: "Bông — Bunny", height: 151 },
+  { source: "kitsu", folder: "b-kitsu", mouthY: 116, name: "Kitsu — Fox", height: 136 },
+  { source: "mam", folder: "c-mam", mouthY: 110, name: "Mầm — Sprout", height: 153 },
+  { source: "bip", folder: "c-bip", mouthY: 112, name: "Bíp — Robot", height: 156 },
+  { source: "lumi", folder: "c-lumi", mouthY: 128, name: "Lumi — Star Spirit", height: 139 },
+  { source: "nam", folder: "c-nam", mouthY: 130, name: "Nấm — Mushroom", height: 137 },
+  { source: "may", folder: "c-may", mouthY: 106, name: "Mây — Cloud", height: 139 },
+  { source: "tan", folder: "c-tan", mouthY: 116, name: "Tàn — Ember", height: 150 },
+  { source: "reu", folder: "c-reu", mouthY: 115, name: "Rêu — Leaf Dragon", height: 133 },
+  { source: "cuc", folder: "c-cuc", mouthY: 107, name: "Cục — Pebble", height: 133 },
+  { source: "muc", folder: "c-muc", mouthY: 107, name: "Mực — Octopus", height: 135 },
+  { source: "dua", folder: "c-dua", mouthY: 120, name: "Dứa — Pineapple", height: 149 },
+  { source: "su", folder: "c-su", mouthY: 115, name: "Su — Astronaut", height: 146 },
+  { source: "bap", folder: "c-bap", mouthY: 117, name: "Bắp — Bumblebee", height: 141 },
+  { source: "gloop", folder: "c-gloop", mouthY: 100, name: "Gloop — Chaos Frog", height: 125 },
+  { source: "bep", folder: "c-bep", mouthY: 114, name: "Bẹp — Grumpy Toad", height: 114 },
+  { source: "frobu", folder: "c-frobu", mouthY: 110, name: "Frobu — Night Frog", height: 130 },
+  { source: "byte", folder: "c-byte", mouthY: 118, name: "Byte — Coder Penguin", height: 120, singleSheet: true },
+  { source: "patch", folder: "c-patch", mouthY: 116, name: "Patch — Coder Red Panda", height: 121, singleSheet: true },
+];
 
 // RGBA PNG decoding, including all five PNG scanline filters. Generated input
 // is 8-bit, non-interlaced RGBA; reject other encodings instead of guessing.
@@ -186,17 +155,17 @@ function emptyImage(width, height) {
   return { width, height, pixels: Buffer.alloc(width * height * 4) };
 }
 
-// Generated atlases have four columns, but their pose rows are not necessarily
+// Generated sheets have four columns, but their pose rows are not necessarily
 // evenly spaced. Find the transparent gaps before cutting, or a later row can
 // contain the previous pose's feet and lose its own head.
-function rowBoundaries(atlas, rowCount = ROWS.length, columnCount = COLUMNS) {
+function rowBoundaries(sheet, rowCount = ROWS.length, columnCount = COLUMNS) {
   const bands = [];
   let start = -1;
-  for (let y = 0; y <= atlas.height; y++) {
+  for (let y = 0; y <= sheet.height; y++) {
     let solid = 0;
-    if (y < atlas.height) {
-      for (let x = 0; x < atlas.width; x++) {
-        if (atlas.pixels[(y * atlas.width + x) * 4 + 3] >= 128) solid++;
+    if (y < sheet.height) {
+      for (let x = 0; x < sheet.width; x++) {
+        if (sheet.pixels[(y * sheet.width + x) * 4 + 3] >= 128) solid++;
       }
     }
     if (solid >= 3) {
@@ -204,49 +173,49 @@ function rowBoundaries(atlas, rowCount = ROWS.length, columnCount = COLUMNS) {
     } else if (start >= 0) {
       // Isolated speckles must not become extra animation rows. Crop boundaries
       // go in the gaps, rather than at the bands, to retain thin toes/antennae.
-      if (y - start >= atlas.width / columnCount / 4) bands.push({ top: start, bottom: y - 1 });
+      if (y - start >= sheet.width / columnCount / 4) bands.push({ top: start, bottom: y - 1 });
       start = -1;
     }
   }
-  assert.equal(bands.length, rowCount, `atlas: expected ${rowCount} distinct pose rows, found ${bands.length}`);
-  return [0, ...bands.slice(1).map((band, i) => Math.floor((bands[i].bottom + band.top + 1) / 2)), atlas.height];
+  assert.equal(bands.length, rowCount, `sheet: expected ${rowCount} distinct pose rows, found ${bands.length}`);
+  return [0, ...bands.slice(1).map((band, i) => Math.floor((bands[i].bottom + band.top + 1) / 2)), sheet.height];
 }
 
 // A wide tail or extended hand can also cross an evenly spaced column boundary.
 // Find each row's horizontal gaps separately, including those edge poses.
-function columnBoundaries(atlas, top, bottom, columnCount = COLUMNS) {
+function columnBoundaries(sheet, top, bottom, columnCount = COLUMNS) {
   const bands = [];
   let start = -1;
-  for (let x = 0; x <= atlas.width; x++) {
+  for (let x = 0; x <= sheet.width; x++) {
     let solid = 0;
-    if (x < atlas.width) {
+    if (x < sheet.width) {
       for (let y = top; y < bottom; y++) {
-        if (atlas.pixels[(y * atlas.width + x) * 4 + 3] >= 128) solid++;
+        if (sheet.pixels[(y * sheet.width + x) * 4 + 3] >= 128) solid++;
       }
     }
     if (solid >= 3) {
       if (start < 0) start = x;
     } else if (start >= 0) {
-      if (x - start >= atlas.width / columnCount / 4) bands.push({ left: start, right: x - 1 });
+      if (x - start >= sheet.width / columnCount / 4) bands.push({ left: start, right: x - 1 });
       start = -1;
     }
   }
-  assert.equal(bands.length, columnCount, `atlas band starting at y=${top}: expected ${columnCount} poses, found ${bands.length}`);
-  return [0, ...bands.slice(1).map((band, i) => Math.floor((bands[i].right + band.left + 1) / 2)), atlas.width];
+  assert.equal(bands.length, columnCount, `sheet band starting at y=${top}: expected ${columnCount} poses, found ${bands.length}`);
+  return [0, ...bands.slice(1).map((band, i) => Math.floor((bands[i].right + band.left + 1) / 2)), sheet.width];
 }
 
 // Ignore near-transparent fringes and tiny detached noise, while preserving
 // meaningful disconnected parts (ears, hands, antennae) as well as the body.
-function extractCell(atlas, column, row, boundaries = rowBoundaries(atlas), columns = columnBoundaries(atlas, boundaries[row], boundaries[row + 1]), allowBoundary = false) {
+function extractCell(sheet, column, row, boundaries = rowBoundaries(sheet), columns = columnBoundaries(sheet, boundaries[row], boundaries[row + 1]), allowBoundary = false) {
   const width = columns[column + 1] - columns[column];
   const height = boundaries[row + 1] - boundaries[row];
   const pixels = Buffer.alloc(width * height * 4);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const from = ((boundaries[row] + y) * atlas.width + columns[column] + x) * 4;
+      const from = ((boundaries[row] + y) * sheet.width + columns[column] + x) * 4;
       const to = (y * width + x) * 4;
-      if (atlas.pixels[from + 3] >= 128) {
-        atlas.pixels.copy(pixels, to, from, from + 3);
+      if (sheet.pixels[from + 3] >= 128) {
+        sheet.pixels.copy(pixels, to, from, from + 3);
         pixels[to + 3] = 255;
       }
     }
@@ -272,7 +241,7 @@ function extractCell(atlas, column, row, boundaries = rowBoundaries(atlas), colu
     components.push(connected);
     if (connected.length > largest.length) largest = connected;
   }
-  assert.ok(largest.length > atlas.width / (columns.length - 1), `row ${row}, column ${column}: empty or invalid pose`);
+  assert.ok(largest.length > sheet.width / (columns.length - 1), `row ${row}, column ${column}: empty or invalid pose`);
   const clean = Buffer.alloc(pixels.length);
   const minimum = Math.max(4, Math.round(width * height / 4096), largest.length * 0.002);
   for (const component of components) {
@@ -428,75 +397,52 @@ function applyPalette(frames, palette) {
 }
 
 // Median pose height of one sheet row.
-function rowHeight(sheet, rows, row, columnCount = COLUMNS) {
-  const columns = columnBoundaries(sheet, rows[row], rows[row + 1], columnCount);
-  const heights = Array.from({ length: columnCount }, (_, col) => extractCell(sheet, col, row, rows, columns).bounds.height);
-  return heights.sort((a, b) => a - b)[Math.floor(columnCount / 2)];
+function rowHeight(sheet, rows, row) {
+  const columns = columnBoundaries(sheet, rows[row], rows[row + 1]);
+  const heights = Array.from({ length: COLUMNS }, (_, col) => extractCell(sheet, col, row, rows, columns).bounds.height);
+  return heights.sort((a, b) => a - b)[Math.floor(COLUMNS / 2)];
 }
 
+// Every pet folder holds the same four imagegen pose sheets, 4 columns each,
+// one animation per row. The first sheet's idle row and the others' `ref` row
+// (an idle copy that is not exported) measure each sheet's drawing size.
+const SHEETS = [
+  { image: "idle-walk-run.png", rows: ["idle", "walk", "run"] },
+  { image: "sleep-react-fall.png", rows: ["ref", "sleep", "react", "fall"] },
+  { image: "dragged-land-dizzy.png", rows: ["ref", "dragged", "land", "dizzy"] },
+  { image: "climb-perch-jump.png", rows: ["ref", "climb", "perch", "jump"] },
+];
+
+// Cut the four sheets at their own resolution, then resample each pose once so
+// the idle is `pet.height` px tall in every sheet: the character keeps one size
+// across states. If a scaled pose would not fit the frame, the whole pack shrinks.
 function prepareFrames(pet) {
-  const atlas = decodePng(join(SOURCES, pet.source, pet.atlas ?? "atlas.png"));
-  assert.equal(atlas.width % COLUMNS, 0, "atlas columns");
-  const boundaries = pet.grid
-    ? Array.from({ length: ROWS.length + 1 }, (_, row) => row * atlas.height / ROWS.length)
-    : rowBoundaries(atlas);
-  const cells = ROWS.flatMap((_, row) => {
-    const columns = pet.grid
-      ? Array.from({ length: COLUMNS + 1 }, (_, column) => column * atlas.width / COLUMNS)
-      : columnBoundaries(atlas, boundaries[row], boundaries[row + 1]);
-    return Array.from({ length: COLUMNS }, (_, col) => extractCell(atlas, col, row, boundaries, columns, pet.grid));
-  });
-  // One scale for the whole pack, taken from the original atlas. It is 1 (an
-  // exact copy) whenever the largest pose fits the frame.
-  const scale = Math.min(1, MAX_WIDTH / Math.max(...cells.map((c) => c.bounds.width)),
-    MAX_HEIGHT / Math.max(...cells.map((c) => c.bounds.height)));
-  const factors = cells.map(() => scale);
-  const atlasIdle = pet.grid
-    ? cells.slice(0, COLUMNS).map((cell) => cell.bounds.height).sort((a, b) => a - b)[Math.floor(COLUMNS / 2)]
-    : rowHeight(atlas, boundaries, 0);
-  const keep = new Set((pet.keep ?? []).map((name) => rowIndex(name)));
-  // Imagegen edits are larger sheets. Cut them at their own resolution, then
-  // resample once: sheet cell to atlas cell, and, when the sheet has an idle
-  // row, by the atlas idle height over the edit's, so the character keeps the
-  // same size when switching between edited and original states.
-  const edit = (image, sheetColumns, sheetRows, targets, idleRow) => {
+  const cells = Array(ROWS.length * COLUMNS), factors = Array(cells.length);
+  for (const { image, rows: names } of SHEETS) {
     const sheet = decodePng(join(SOURCES, pet.source, image));
-    assert.ok(Math.abs(sheet.width / sheetColumns - sheet.height / sheetRows) <= 1,
-      `${image}: expected a ${sheetColumns}×${sheetRows} pose sheet`);
-    const rows = rowBoundaries(sheet, sheetRows, sheetColumns);
-    const cellRatio = atlas.width / COLUMNS / (sheet.width / sheetColumns);
-    const match = idleRow === undefined ? 1
-      : Math.min(1.15, Math.max(0.85, atlasIdle / (rowHeight(sheet, rows, idleRow, sheetColumns) * cellRatio)));
-    for (let row = 0; row < sheetRows; row++) {
-      const columns = columnBoundaries(sheet, rows[row], rows[row + 1], sheetColumns);
-      for (let col = 0; col < sheetColumns; col++) {
-        const target = targets[row * sheetColumns + col];
-        if (target < 0 || keep.has(Math.floor(target / COLUMNS))) continue;
-        cells[target] = extractCell(sheet, col, row, rows, columns);
-        factors[target] = scale * cellRatio * match * (pet.poseScale ?? 1);
-      }
-    }
-  };
-  const frameIndices = (name) => Array.from({ length: COLUMNS }, (_, col) => rowIndex(name) * COLUMNS + col);
-  // 2×2 sheets redraw one animation's four poses.
-  for (const [name, image] of Object.entries(pet.overrides ?? {})) edit(image, 2, 2, frameIndices(name));
-  // Four phases per row: idle, walk, run.
-  if (pet.locomotion) edit(pet.locomotion, COLUMNS, 3, ["idle", "walk", "run"].flatMap(frameIndices), 0);
-  // Apply action corrections after locomotion, so a corrected planted idle
-  // overrides that row without replacing the accepted walk/run frames. Later
-  // sheets win. A "ref" row is a copy of the idle pose used only for size.
-  for (const { image, rows: names } of [pet.poses ?? []].flat()) {
-    const targets = names.flatMap((name) => name === "ref" ? Array(COLUMNS).fill(-1) : frameIndices(name));
+    assert.ok(Math.abs(sheet.width / COLUMNS - sheet.height / names.length) <= 1,
+      `${pet.source}/${image}: expected a ${COLUMNS}×${names.length} pose sheet`);
+    const rows = rowBoundaries(sheet, names.length);
     const size = names.includes("ref") ? names.indexOf("ref") : names.indexOf("idle");
-    edit(image, COLUMNS, names.length, targets, size >= 0 ? size : undefined);
+    const factor = pet.height / rowHeight(sheet, rows, size);
+    names.forEach((name, row) => {
+      if (name === "ref") return;
+      const columns = columnBoundaries(sheet, rows[row], rows[row + 1]);
+      for (let col = 0; col < COLUMNS; col++) {
+        const target = rowIndex(name) * COLUMNS + col;
+        cells[target] = extractCell(sheet, col, row, rows, columns);
+        factors[target] = factor;
+      }
+    });
   }
-  // The app shows only the first dizzy slot; move the clearly dazed pose there.
+  const fit = Math.min(1, ...cells.map((cell, i) => Math.min(
+    MAX_WIDTH / (cell.bounds.width * factors[i]), MAX_HEIGHT / (cell.bounds.height * factors[i]))));
   if (pet.dizzy) {
     const first = rowIndex("dizzy") * COLUMNS, chosen = first + pet.dizzy;
     [cells[first], cells[chosen]] = [cells[chosen], cells[first]];
     [factors[first], factors[chosen]] = [factors[chosen], factors[first]];
   }
-  return cells.map((cell, i) => normalizeFrame(resampleCell(cell, factors[i])));
+  return cells.map((cell, i) => normalizeFrame(resampleCell(cell, factors[i] * fit)));
 }
 
 // Replay good poses of a row in place of broken ones. Runs after the palette is
@@ -564,7 +510,7 @@ function despeckle(frames, passes = 2) {
   }
 }
 
-// The atlas dizzy poses keep the generator's grainy shading: neighbouring pixels
+// Generated dizzy poses can keep grainy shading: neighbouring pixels
 // alternate between close palette colours. The app holds that one frame for the
 // whole state while swaying it, so the grain reads as noise. An edge-preserving
 // (Kuwahara) filter flattens it: each light pixel takes the mean of whichever of
@@ -621,10 +567,9 @@ function smooth(frames, palette) {
   }
 }
 
-// The original atlases have thin, partly faded outlines that disappear where the
+// Generated poses can have thin, partly faded outlines that disappear where the
 // alpha threshold drops them. Close the silhouette with the pack's own outline
-// colour (the most common dark edge colour), so every pose has an unbroken
-// edge like the redrawn walk/run sheets. Only light edge pixels are repainted.
+// colour (the most common dark edge colour), so every pose has an unbroken edge. Only light edge pixels are repainted.
 function closeOutline(frames) {
   const edge = (frame, p) => {
     const x = (p / 4) % SIZE, y = Math.floor(p / 4 / SIZE);
@@ -805,10 +750,14 @@ async function check(pets = PETS) {
     assert.ok(colors.size <= 24, `${pet.folder}: inconsistent palette`);
     console.log(`${pet.folder}: source silhouettes, manifest, 48 frames, binary alpha, 24-color palette and y=${BASELINE} baseline OK`);
   }
-  // The app defaults to the first pack folder (with a pet.json) by name.
-  const first = readdirSync(PACKS).filter((dir) => existsSync(join(PACKS, dir, "pet.json"))).sort()[0];
-  assert.equal(first, PETS[0].folder);
-  console.log(`Default pack: ${first}`);
+  // The overlay and the Settings window both fall back to DEFAULT_PACK; it must exist and match in both.
+  for (const file of ["native/src/sprites.rs", "desktop/src/sprites/sprites.ts"]) {
+    const declared = readFileSync(join(ROOT, file), "utf8").match(/DEFAULT_PACK(?::\s*&str)?\s*=\s*"([^"]+)"/)?.[1];
+    assert.equal(declared, DEFAULT_PACK, `${file}: DEFAULT_PACK`);
+  }
+  assert.ok(existsSync(join(PACKS, DEFAULT_PACK, "pet.json")), `default pack ${DEFAULT_PACK} is missing`);
+  assert.equal(PETS[0].folder, DEFAULT_PACK, "the default pet comes first in PETS (gallery order)");
+  console.log(`Default pack: ${DEFAULT_PACK}`);
 }
 
 async function main() {
@@ -844,6 +793,6 @@ async function main() {
   }
 }
 
-export { PETS, ROWS, boundsOf, columnBoundaries, decodePng, decodeWebp, emptyImage, extractCell, finishFrames, normalizeFrame, prepareFrames, resampleCell, rowBoundaries, smooth };
+export { PETS, ROWS, SHEETS, boundsOf, columnBoundaries, decodePng, decodeWebp, emptyImage, extractCell, finishFrames, normalizeFrame, prepareFrames, resampleCell, rowBoundaries, smooth };
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();

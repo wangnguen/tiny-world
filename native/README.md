@@ -5,7 +5,7 @@ Tiến trình chính của app: `tinyworld.exe` (desktop/src-tauri) gọi `tinyw
 tiến trình riêng (`tinyworld.exe --ui`), overlay chạy tiến trình đó lúc cần mở và nói chuyện qua `ipc.rs`.
 
 Cách vẽ: một cửa sổ trong suốt phủ vùng làm việc của một màn hình (`WS_EX_NOREDIRECTIONBITMAP`, DWM ghép thẳng cây
-visual). Mỗi pet một nhóm visual (sao choáng, aura của Long, sprite, thời tiết, cinematic của Long, bóng thoại), mỗi
+visual). Mỗi pet một nhóm visual (sao choáng, sprite, thời tiết, bóng thoại), mỗi
 visual một surface đúng cỡ. Đổi frame thì vẽ lại surface; đi lại chỉ đổi offset của visual rồi `Commit`.
 
 | File | Nội dung |
@@ -13,10 +13,10 @@ visual một surface đúng cỡ. Đổi frame thì vẽ lại surface; đi lạ
 | `src/sim/` | Mô phỏng pet (chuyển từ packages/sim): bước cố định, địa hình, FSM, nhóm pet, thời tiết, âm lịch, lịch sự kiện, câu pet nói; test ở `src/sim/tests/` |
 | `src/app.rs` | Vòng lặp chính: message, đọc con trỏ, bước mô phỏng, vẽ, nhiều màn hình, khay, lưu `world.json` |
 | `src/view.rs`, `bubble.rs`, `dizzy.rs` | Vẽ một pet: frame, phần bị cửa sổ che, lảo đảo, sao choáng, bóng thoại, vùng bắt chuột |
-| `src/weather.rs`, `tag.rs`, `ghost.rs`, `long.rs` | Thời tiết quanh pet, nhãn nhiệt độ, con ma, đồ diễn và combo của Long |
+| `src/weather.rs`, `tag.rs`, `ghost.rs` | Thời tiết quanh pet, nhãn nhiệt độ, con ma |
 | `src/ambience.rs` | Thời tiết thật hay giả lập, ban đêm, dịp lễ, lời nhắc, báo bản mới, mục Xem thử |
-| `src/interaction.rs` | Click, kéo, ném, bấm đúp, Shift + click |
-| `src/sprites.rs`, `assets.rs`, `build.rs` | Đọc pet.json, cắt frame, mặt nạ; sprite và effect của Long nhúng vào exe lúc build |
+| `src/interaction.rs` | Click, kéo, ném, bấm đúp |
+| `src/sprites.rs`, `assets.rs`, `build.rs` | Đọc pet.json, cắt frame, mặt nạ; sprite nhúng vào exe lúc build |
 | `src/ipc.rs`, `commands.rs` | Kết nối với tiến trình giao diện, command của Cài đặt và khung chat |
 | `src/gfx.rs`, `window.rs`, `screens.rs`, `tray.rs` | Direct2D/DirectComposition, cửa sổ overlay, danh sách màn hình, icon khay |
 

@@ -8,15 +8,15 @@ ra; thay file gốc ở đây rồi chạy lại lệnh tạo.
 | `icon.png` | Logo TinyWorld nền trong suốt: pet màu kem ôm hành tinh xanh, có mầm cây; dùng cho app, tray, setup và portable |
 | `branding/logo-prompt.txt` | Prompt gốc để tạo logo bằng imagegen |
 | `sprites/<pack>/` | Sprite pack chạy trong app: `pet.json` + ảnh WebP, do `scripts/prepare-sprites.mjs` tạo ra |
-| `sprite-sources/` | Atlas, prompt gốc của 22 nhân vật và trang xem animation ([README](sprite-sources/README.md)) |
-| `sprite-sources/long/aura.png`, `transform.png`, `tail-swipe.png` | Sheet gốc effect riêng của Long (aura, biến hình, quật đuôi): 4 frame bằng nhau xếp ngang, nền trong suốt |
-| `effects/` | Effect của Long chạy trong app: từng frame WebP lossless cao 384 px, do `scripts/prepare-aura.mjs` (`pnpm prepare:aura`) tạo ra |
+| `sprite-sources/` | Bốn sheet tư thế, prompt của 21 nhân vật và trang xem animation ([README](sprite-sources/README.md)) |
 
 ## Sprite pack
 
 Mỗi pack là một thư mục trong `sprites/`, có file `pet.json` mô tả các animation. Người dùng chọn
 nhân vật trong tray → **Cài đặt…** → **Nhân vật** (lưu tên thư mục vào `settings.json`). Chưa chọn,
-hoặc pack đã chọn không còn, thì dùng pack **đầu tiên theo tên thư mục** (`a-momo`). Pack có
+hoặc pack đã chọn không còn, thì dùng nhân vật **mặc định Boggo** (`c-boggo`, hằng `DEFAULT_PACK` trong
+`native/src/sprites.rs` và `desktop/src/sprites/sprites.ts`); thiếu cả pack này thì dùng pack đầu tiên
+theo tên thư mục. Pack có
 `pet.json` lỗi không hiện trong danh sách; chưa có pack nào (hoặc pack lỗi khi nạp) thì dùng pet tạm
 (cục blob 16×16 vẽ bằng code) và in lý do lỗi ra console (tray → **Mở DevTools** khi chạy dev).
 
@@ -28,14 +28,14 @@ assets/sprites/a-momo/
 └── ...              # đủ 12 animation (cả climb, perch, jump), mỗi file một dải 4 frame
 ```
 
-22 pack có sẵn đều do script tạo từ atlas trong `sprite-sources/`: mỗi animation 4 frame
+21 pack có sẵn đều do script tạo từ các sheet trong `sprite-sources/`: mỗi animation 4 frame
 **192×192**, alpha 0 hoặc 255, viền tối vẽ sẵn trong ảnh, chân cùng hàng y=179, quay sang phải.
 `scale: 0.5` cho khung 96×96 CSS pixel ở cỡ 100%; ở cỡ 200% một pixel ảnh là một CSS pixel. Byte
 và Patch gộp cả 12 hàng vào một `atlas.webp` 768×2304 và dùng `row` trong manifest.
 
 ## Thêm nhân vật
 
-- **Cùng kiểu với các nhân vật có sẵn** (nên dùng): đặt atlas 4 cột × 12 hàng vào
+- **Cùng kiểu với các nhân vật có sẵn** (nên dùng): đặt bốn sheet tư thế 4 cột vào
   `sprite-sources/<tên>/`, khai báo trong `PETS` của `scripts/prepare-sprites.mjs` rồi chạy script.
   Chi tiết: [sprite-sources/README.md](sprite-sources/README.md).
 - **Pack tự làm**: tạo `sprites/<tên-pack>/` gồm các ảnh PNG hoặc WebP và `pet.json` (xem bên dưới). Pack này

@@ -406,7 +406,7 @@ và Chat giữ React vì ít khi mở và nhiều giao diện.
 
 Còn phải thử tay:
 
-- Soát hình từng thứ so với bản WebView: pet, bóng thoại, thời tiết, nhãn nhiệt độ, con ma, Long
+- Soát hình từng thứ so với bản WebView: pet, bóng thoại, thời tiết, nhãn nhiệt độ, con ma
 - Kéo, ném bằng chuột thật; click-through; Ctrl xuyên pet; 2 màn hình; taskbar tự ẩn
 - Đo GPU lúc màn hình đang mở và chạy dài (`measure.ps1 -Minutes 480`)
 - Trong cuộc họp thật: chạm, kéo pet mà video người khác chia sẻ không đen

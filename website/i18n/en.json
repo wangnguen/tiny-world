@@ -20,7 +20,7 @@
     "title": "Tiny pets living right on your desktop",
     "lede": "A few little pets stroll along your taskbar, climb onto window edges, sit dangling off corners and curl up together at night. You keep working, they keep living next to you: no feeding, no fuss.",
     "download": "Download for free",
-    "meet": "Meet all 22 pets",
+    "meet": "Meet all 21 pets",
     "hint": "Try it: click a pet, drag it up and let go, fling it with the mouse, double-click to see the time. Drag a window's title bar while a pet is standing on it, or close the window and see what happens.",
     "deskLabel": "A tiny desktop with live pets you can click and drag"
   },
@@ -80,11 +80,10 @@
     "stageLabel": "A pet standing in the chosen weather"
   },
   "pets": {
-    "title": "22 pets, pick up to 3",
+    "title": "21 pets, pick up to 3",
     "lede": "Each one is drawn just for TinyWorld, with all 12 kinds of movement: walking, running, climbing, jumping, sitting on edges, sleeping... Click one to drop it onto the desktop at the top of the page.",
     "onScreen": "On screen",
-    "drop": "Drop {name} onto the desktop",
-    "long": "Hold Shift when clicking Long for a surprise :)))"
+    "drop": "Drop {name} onto the desktop"
   },
   "tips": {
     "title": "How to play with your pets",
@@ -95,7 +94,6 @@
       { "keys": ["Fling", "release"], "then": true, "text": "It flies with the momentum and bounces off the walls" },
       { "keys": ["Right-click"], "text": "Opens a chat right next to the pet" },
       { "keys": ["Ctrl", "click"], "text": "Clicks through the pet to the app underneath" },
-      { "keys": ["Shift", "click Long"], "text": "A secret :)))" },
       { "keys": ["System tray"], "text": "The TinyWorld icon next to the clock: pause, show or hide pets, open Settings" }
     ]
   },

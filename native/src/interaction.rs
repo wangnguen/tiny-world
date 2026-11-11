@@ -28,8 +28,6 @@ struct Press {
     offset: Point,
     dragging: bool,
     samples: VecDeque<Sample>,
-    /// Giữ Shift lúc bấm: dùng kỹ năng riêng của nhân vật (`Host::skill`).
-    skill: bool,
 }
 
 /// Những gì tương tác cần ở overlay.
@@ -56,9 +54,6 @@ pub trait Host {
     fn inside(&self, point: Point) -> bool;
     /// Bấm đúp vào `pet` (lần click thứ hai vẫn làm pet nhảy như click thường).
     fn double_click(&mut self, pet: u32);
-    /// Shift + click trái vào `pet`, không kéo: kỹ năng riêng của nhân vật. `false` nếu con đó không có, khi đó tính
-    /// như click thường.
-    fn skill(&mut self, pet: u32) -> bool;
 }
 
 #[derive(Debug, Default)]
@@ -98,7 +93,7 @@ impl Interaction {
         }
     }
 
-    pub fn down(&mut self, host: &mut impl Host, point: Point, shift: bool, time: f64) {
+    pub fn down(&mut self, host: &mut impl Host, point: Point, time: f64) {
         if self.press.is_some() {
             return;
         }
@@ -114,7 +109,6 @@ impl Interaction {
             offset: Point { x: foot.x - point.x, y: foot.y - point.y },
             dragging: false,
             samples: VecDeque::from([Sample { x: point.x, y: point.y, t: time }]),
-            skill: shift,
         });
         host.hold(true);
     }
@@ -150,10 +144,6 @@ impl Interaction {
             self.last_click = None;
             let (vx, vy) = throw_velocity(&press.samples, time);
             host.release(pet, vx, vy);
-            return;
-        }
-        if press.skill && host.skill(pet) {
-            self.last_click = None;
             return;
         }
         host.poke(pet);
@@ -204,9 +194,6 @@ mod tests {
         releases: Vec<(f64, f64)>,
         pokes: Vec<u32>,
         doubles: Vec<u32>,
-        skills: Vec<u32>,
-        /// Con nào có kỹ năng riêng (Shift + click).
-        skilled: bool,
         raised: Vec<u32>,
         captured: bool,
         outside: Vec<Point>,
@@ -258,10 +245,6 @@ mod tests {
         fn double_click(&mut self, pet: u32) {
             self.doubles.push(pet);
         }
-        fn skill(&mut self, pet: u32) -> bool {
-            self.skills.push(pet);
-            self.skilled
-        }
     }
 
     fn at(x: f64, y: f64) -> Point {
@@ -270,7 +253,7 @@ mod tests {
 
     /// Bấm vào con 1 rồi kéo đi một đoạn.
     fn drag(interaction: &mut Interaction, host: &mut Fake) {
-        interaction.down(host, at(50.0, 190.0), false, 0.0);
+        interaction.down(host, at(50.0, 190.0), 0.0);
         interaction.moved(host, at(70.0, 100.0), 20.0);
         assert_eq!(host.dragging, Some(1));
     }
@@ -292,30 +275,12 @@ mod tests {
     #[test]
     fn click_thuong_van_cham_mot_lan() {
         let (mut interaction, mut host) = (Interaction::default(), Fake::default());
-        interaction.down(&mut host, at(50.0, 190.0), false, 0.0);
+        interaction.down(&mut host, at(50.0, 190.0), 0.0);
         interaction.up(&mut host, 20.0);
         assert_eq!(host.pokes, [1]);
         assert!(!host.captured);
         assert_eq!(host.holds, [true, false]);
         assert!(host.releases.is_empty());
-    }
-
-    #[test]
-    fn shift_click_goi_ky_nang_thay_vi_cham_hay_bam_dup() {
-        let (mut interaction, mut host) = (Interaction::default(), Fake { skilled: true, ..Fake::default() });
-        interaction.down(&mut host, at(50.0, 190.0), true, 100.0);
-        interaction.up(&mut host, 120.0);
-        assert_eq!(host.skills, [1]);
-        assert!(host.pokes.is_empty());
-    }
-
-    #[test]
-    fn shift_click_vao_con_khong_co_ky_nang_la_click_thuong() {
-        let (mut interaction, mut host) = (Interaction::default(), Fake::default());
-        interaction.down(&mut host, at(50.0, 190.0), true, 100.0);
-        interaction.up(&mut host, 120.0);
-        assert_eq!(host.skills, [1]);
-        assert_eq!(host.pokes, [1]);
     }
 
     #[test]
@@ -333,7 +298,7 @@ mod tests {
     #[test]
     fn bat_pet_dang_bay_giu_dung_cho_dang_ve() {
         let (mut interaction, mut host) = (Interaction::default(), Fake { foot: Some(at(80.0, 170.0)), ..Fake::default() });
-        interaction.down(&mut host, at(50.0, 190.0), false, 0.0);
+        interaction.down(&mut host, at(50.0, 190.0), 0.0);
         interaction.moved(&mut host, at(70.0, 100.0), 20.0);
         assert_eq!(host.positions[&1], (100.0, 80.0));
     }
@@ -341,7 +306,7 @@ mod tests {
     #[test]
     fn bam_vao_pet_thi_dua_no_len_tren_cac_con_khac() {
         let (mut interaction, mut host) = (Interaction::default(), Fake::default());
-        interaction.down(&mut host, at(150.0, 50.0), false, 0.0);
+        interaction.down(&mut host, at(150.0, 50.0), 0.0);
         assert_eq!(host.raised, [2]);
         assert_eq!(interaction.held(), Some(2));
     }
@@ -349,10 +314,10 @@ mod tests {
     #[test]
     fn nhieu_pet_chi_bat_con_duoi_con_tro_cho_trong_thi_di_xuyen() {
         let (mut interaction, mut host) = (Interaction::default(), Fake::default());
-        interaction.down(&mut host, at(150.0, 50.0), false, 0.0);
+        interaction.down(&mut host, at(150.0, 50.0), 0.0);
         interaction.up(&mut host, 10.0);
         assert_eq!(host.pokes, [2]);
-        interaction.down(&mut host, at(300.0, 50.0), false, 20.0);
+        interaction.down(&mut host, at(300.0, 50.0), 20.0);
         assert_eq!(interaction.held(), None);
         interaction.up(&mut host, 30.0);
         assert_eq!(host.pokes, [2]);
@@ -362,7 +327,7 @@ mod tests {
     fn hai_lan_click_nhanh_la_bam_dup_lan_ba_tinh_lai() {
         let (mut interaction, mut host) = (Interaction::default(), Fake::default());
         let mut click = |time: f64| {
-            interaction.down(&mut host, at(10.0, 10.0), false, time);
+            interaction.down(&mut host, at(10.0, 10.0), time);
             interaction.up(&mut host, time);
         };
         click(0.0);

@@ -127,7 +127,7 @@ export interface Settings {
   fps: number;
   /**
    * Các nhân vật đang hiện (tối đa `MAX_PETS`, không trùng), theo thứ tự chọn: tên thư mục sprite pack
-   * trong `assets/sprites/`. Rỗng (hoặc không pack nào còn) là pack đầu tiên theo tên thư mục.
+   * trong `assets/sprites/`. Rỗng (hoặc không pack nào còn) là nhân vật mặc định Boggo (`c-boggo`).
    */
   pets: string[];
   /** Thành phố để lấy thời tiết thật; `null` là thời tiết giả lập, không gọi mạng. */

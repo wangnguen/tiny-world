@@ -396,9 +396,14 @@ pub fn pack(id: &str) -> Option<&'static PackInfo> {
     PACKS.iter().find(|p| p.id == id)
 }
 
-/// Pack sẽ được dùng cho `id`: đúng pack đó nếu còn, không thì pack đầu tiên; không có pack nào thì `None`.
+/// Nhân vật mặc định khi chưa chọn gì hoặc pack đã chọn không còn. Giữ giống `DEFAULT_PACK` ở
+/// `desktop/src/sprites/sprites.ts` (`scripts/prepare-sprites.mjs --check` so cả hai).
+pub const DEFAULT_PACK: &str = "c-boggo";
+
+/// Pack sẽ được dùng cho `id`: đúng pack đó nếu còn, không thì `DEFAULT_PACK`, thiếu cả nó thì pack đầu tiên;
+/// không có pack nào thì `None`.
 pub fn resolve_pack(id: Option<&str>) -> Option<String> {
-    id.and_then(pack).or_else(|| PACKS.first()).map(|p| p.id.clone())
+    id.and_then(pack).or_else(|| pack(DEFAULT_PACK)).or_else(|| PACKS.first()).map(|p| p.id.clone())
 }
 
 /// Các pack sẽ hiện cho `Settings::pets`: bỏ pack không còn và pack trùng, tối đa `MAX_PETS`, giữ thứ tự chọn. Không
@@ -758,10 +763,14 @@ mod tests {
     }
 
     #[test]
-    fn pack_khong_con_thi_dung_pack_dau_tien() {
+    fn pack_khong_con_thi_dung_pack_mac_dinh() {
+        assert!(pack(DEFAULT_PACK).is_some(), "thiếu pack mặc định {DEFAULT_PACK}");
+        let default = Some(DEFAULT_PACK.to_owned());
+        assert_eq!(resolve_pack(None), default);
+        assert_eq!(resolve_pack(Some("khong-co")), default);
+        assert_eq!(resolve_packs(&["khong-co".into()]), resolve_packs(&[]));
+        assert_eq!(resolve_packs(&[]), [default]);
         let first = PACKS[0].id.clone();
-        assert_eq!(resolve_pack(Some("khong-co")), Some(first.clone()));
-        assert_eq!(resolve_packs(&[]), [Some(first.clone())]);
         let second = PACKS[1].id.clone();
         let chosen = resolve_packs(&[second.clone(), second.clone(), "khong-co".into(), first.clone()]);
         assert_eq!(chosen, [Some(second), Some(first)]);

@@ -167,19 +167,12 @@ impl Ambience {
         self.ghost.flying()
     }
 
-    /// Vòng lặp phải vẽ lại trong vòng chừng này ms (hiệu ứng thời tiết, aura, con ma); vô cùng nếu không cần.
-    pub fn frame_ms(&self, members: &[Member], now: f64) -> f64 {
+    /// Vòng lặp phải vẽ lại trong vòng chừng này ms (hiệu ứng thời tiết, con ma); vô cùng nếu không cần.
+    pub fn frame_ms(&self, members: &[Member]) -> f64 {
         if self.ghost.flying() {
             return 0.0;
         }
-        let mut ms = f64::INFINITY;
-        for member in members {
-            ms = ms.min(member.effect.frame_ms());
-            if let Some(kit) = &member.kit {
-                ms = ms.min(kit.frame_ms(now));
-            }
-        }
-        ms
+        members.iter().map(|member| member.effect.frame_ms()).fold(f64::INFINITY, f64::min)
     }
 
     /// Lúc nào phải tính lại (mỗi phút, hết xem thử).
@@ -277,21 +270,13 @@ impl Ambience {
                 continue;
             };
             let pet = &ctx.world.pets[i];
-            let visible = pet.state() != PetState::Sleep && !member.view.sprite_hidden();
-            let foot = member.view.foot.unwrap_or(Point { x: pet.x, y: pet.y });
-            let size = (member.view.width, member.view.height);
-            let mut aura_on = false;
-            if let Some(kit) = &mut member.kit {
-                kit.aura.update(ctx.gfx, foot, size, now, visible, ctx.px)?;
-                aura_on = kit.aura.animating(now);
-            }
+            let visible = pet.state() != PetState::Sleep;
             let Some(body) = member.view.body() else {
                 continue;
             };
             let mouth = member.view.mouth_at();
-            // Aura của Long thay thế thời tiết quanh chính Long; pet khác vẫn theo thời tiết chung.
-            member.effect.update(ctx.gfx, body, now, visible && !aura_on, mouth, effort(pet.state()), ctx.px)?;
-            if !tagged && !member.view.sprite_hidden() {
+            member.effect.update(ctx.gfx, body, now, visible, mouth, effort(pet.state()), ctx.px)?;
+            if !tagged {
                 self.tag.place(ctx.gfx, Some(body), pet.facing, &bounds, ctx.px)?;
                 tagged = true;
             }
@@ -326,10 +311,7 @@ impl Ambience {
         let targets: Vec<Point> = (ctx.members.iter())
             .filter_map(|m| {
                 let pet = &ctx.world.pets[ctx.world.index_of(m.uid)?];
-                (pet.vanished == 0.0).then(|| Point {
-                    x: pet.x,
-                    y: pet.y - m.view.height * GHOST_HEIGHT - ghost::HEIGHT / 2.0,
-                })
+                Some(Point { x: pet.x, y: pet.y - m.view.height * GHOST_HEIGHT - ghost::HEIGHT / 2.0 })
             })
             .collect();
         let ghost = self.ghost.update(ctx.gfx, now, &targets, ctx.px)?;
@@ -343,7 +325,7 @@ impl Ambience {
                 for member in ctx.members.iter() {
                     let Some(i) = ctx.world.index_of(member.uid) else { continue };
                     let pet = &ctx.world.pets[i];
-                    if self.scared.contains(&member.uid) || pet.vanished > 0.0 {
+                    if self.scared.contains(&member.uid) {
                         continue;
                     }
                     // Con ma bay ngang qua ngay trên pet (từ ngang thân tới hơn đầu một chút) thì mới giật mình.
@@ -641,11 +623,11 @@ fn same_city(a: Option<&City>, b: Option<&City>) -> bool {
     a.map(|c| (c.latitude, c.longitude)) == b.map(|c| (c.latitude, c.longitude))
 }
 
-/// Một con đang thức (và đang hiện) bất kỳ, `None` nếu cả nhóm ngủ.
+/// Một con đang thức bất kỳ, `None` nếu cả nhóm ngủ.
 fn pick_awake(ctx: &Ctx) -> Option<usize> {
     let awake: Vec<usize> = (ctx.members.iter())
         .filter_map(|m| ctx.world.index_of(m.uid))
-        .filter(|&i| ctx.world.pets[i].state() != PetState::Sleep && ctx.world.pets[i].vanished == 0.0)
+        .filter(|&i| ctx.world.pets[i].state() != PetState::Sleep)
         .collect();
     (!awake.is_empty()).then(|| awake[(random() * awake.len() as f64).floor() as usize % awake.len()])
 }

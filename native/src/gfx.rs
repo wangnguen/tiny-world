@@ -361,10 +361,6 @@ impl Layer {
         Ok(())
     }
 
-    pub fn visible(&self) -> bool {
-        self.visible
-    }
-
     pub fn set_opacity(&self, opacity: f32) -> Result<()> {
         let visual: IDCompositionVisual3 = self.visual.cast()?;
         unsafe { visual.SetOpacity2(opacity)? };

@@ -29,21 +29,19 @@ pnpm build:desktop
 - `desktop/backend/`: phần Rust không có giao diện (cài đặt, lưu trạng thái, thời tiết, giờ ngồi máy, chat, cập nhật, danh sách cửa sổ). Không thay đổi hành vi Windows mà không kiểm tra trên Windows.
 - `desktop/src-tauri/`: `tinyworld.exe`, chạy overlay hoặc (với `--ui`) cửa sổ Cài đặt/Chat; `desktop/src/settings/` và `desktop/src/chat/` là React.
 - `packages/sim/`: phần TypeScript dùng chung cho Cài đặt và trang giới thiệu (thời tiết, âm lịch, lịch sự kiện, câu pet nói).
-- `assets/sprite-sources/<source>/`: file nguồn của nhân vật, gồm `atlas.png` 4 cột x 12 hàng và các prompt/sheet sửa nếu có.
+- `assets/sprite-sources/<source>/`: file nguồn của nhân vật, đúng bốn sheet tư thế 4 cột (`idle-walk-run.png`, `sleep-react-fall.png`, `dragged-land-dizzy.png`, `climb-perch-jump.png`), `prompt.txt` và `palette.json`; không lưu bản `-v2`.
 - `assets/sprites/<pack>/`: output chạy app (`pet.json` và WebP); không chỉnh trực tiếp vì script sẽ ghi đè.
 
 ## Thêm hoặc sửa nhân vật
 
-Đọc `CREATE_PET.md` và `assets/README.md` trước. Thêm atlas nguồn, khai báo nhân vật trong `PETS` của `scripts/prepare-sprites.mjs`, sau đó chạy:
+Đọc `CREATE_PET.md` và `assets/README.md` trước. Thêm bốn sheet nguồn, khai báo nhân vật trong `PETS` của `scripts/prepare-sprites.mjs`, sau đó chạy:
 
 ```powershell
 node scripts/prepare-sprites.mjs --pet=<source>
 pnpm test:sprites
 ```
 
-Atlas thông thường được cắt bằng các khoảng alpha. Nếu atlas là lưới đều nhưng pose chạm nhau ở mép ô, dùng `grid: true` trong khai báo `PETS`; chỉ dùng khi kích thước mỗi ô là chính xác. Mỗi pack cần 12 animation theo thứ tự: `idle`, `walk`, `run`, `sleep`, `react`, `fall`, `dragged`, `land`, `dizzy`, `climb`, `perch`, `jump`.
-
-Effect riêng của Long (aura, biến hình, quật đuôi) có sheet nguồn trong `assets/sprite-sources/long/`; sửa sheet rồi chạy `pnpm prepare:aura` để tạo lại `assets/effects/`. Effect được nhúng vào exe lúc build. Combo Shift + click nằm ở `native/src/long.rs`, chỉ điều khiển pet qua `hold`, `blink_to`, `vanish` của `native/src/sim/pet.rs`; không gán thẳng `x`/`y` của pet từ phần vẽ.
+Sheet được cắt bằng các khoảng alpha giữa các pose, nên pose không được chạm nhau hay chạm mép ảnh. Sinh lại sheet thì soát từng frame xem đủ tay chân trước khi nhận: `--check` không bắt được lỗi giải phẫu. Mỗi pack cần 12 animation theo thứ tự: `idle`, `walk`, `run`, `sleep`, `react`, `fall`, `dragged`, `land`, `dizzy`, `climb`, `perch`, `jump`.
 
 ## CI và Git
 
