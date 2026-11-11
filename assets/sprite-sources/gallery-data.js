@@ -2414,5 +2414,1270 @@ window.SPRITE_PETS = [
         "image": "../sprites/c-patch/atlas.webp"
       }
     ]
+  },
+  {
+    "name": "Mướp — Tabby Cat",
+    "folder": "c-muop",
+    "source": "muop",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-muop/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Bơ — Capybara",
+    "folder": "c-bo",
+    "source": "bo",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-bo/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Nhím — Hedgehog",
+    "folder": "c-nhim",
+    "source": "nhim",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nhim/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Vịt — Duckling",
+    "folder": "c-vit",
+    "source": "vit",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-vit/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Quác — Honk Goose",
+    "folder": "c-quac",
+    "source": "quac",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-quac/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Trôi — Rice Ball",
+    "folder": "c-troi",
+    "source": "troi",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-troi/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Lu — Smug Shiba",
+    "folder": "c-lu",
+    "source": "lu",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-lu/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Tèo — Trash Raccoon",
+    "folder": "c-teo",
+    "source": "teo",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-teo/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Cú — Owl",
+    "folder": "c-cu",
+    "source": "cu",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-cu/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Len — Lamb",
+    "folder": "c-len",
+    "source": "len",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-len/jump.webp"
+      }
+    ]
+  },
+  {
+    "name": "Nai — Fawn",
+    "folder": "c-nai",
+    "source": "nai",
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 5,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/idle.webp"
+      },
+      {
+        "name": "walk",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/walk.webp"
+      },
+      {
+        "name": "run",
+        "fps": 12,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/run.webp"
+      },
+      {
+        "name": "sleep",
+        "fps": 3,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/sleep.webp"
+      },
+      {
+        "name": "react",
+        "fps": 8,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/react.webp"
+      },
+      {
+        "name": "fall",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/fall.webp"
+      },
+      {
+        "name": "dragged",
+        "fps": 6,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/dragged.webp"
+      },
+      {
+        "name": "land",
+        "fps": 16,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/land.webp"
+      },
+      {
+        "name": "dizzy",
+        "fps": 1,
+        "frames": 1,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/dizzy.webp"
+      },
+      {
+        "name": "climb",
+        "fps": 8,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/climb.webp"
+      },
+      {
+        "name": "perch",
+        "fps": 4,
+        "frames": 4,
+        "loop": true,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/perch.webp"
+      },
+      {
+        "name": "jump",
+        "fps": 10,
+        "frames": 4,
+        "loop": false,
+        "frameSize": 192,
+        "row": 0,
+        "image": "../sprites/c-nai/jump.webp"
+      }
+    ]
   }
 ];

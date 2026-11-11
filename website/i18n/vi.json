@@ -20,7 +20,7 @@
     "title": "Pet tí hon sống ngay trên desktop của bạn",
     "lede": "Vài bé pet đi dạo trên taskbar, leo lên mép cửa sổ, ngồi vắt vẻo ở góc, tối đến thì nằm ngủ cạnh nhau. Bạn cứ làm việc, pet tự sống bên cạnh: không cần chăm, không làm phiền.",
     "download": "Tải về miễn phí",
-    "meet": "Gặp 21 nhân vật",
+    "meet": "Gặp 32 nhân vật",
     "hint": "Thử đi: bấm vào pet, kéo lên rồi thả, vung chuột để ném, bấm đúp để xem giờ. Kéo thanh tiêu đề cửa sổ lúc có pet đứng trên đó, hoặc đóng cửa sổ xem sao.",
     "deskLabel": "Màn hình thu nhỏ có pet đang sống, bấm và kéo được"
   },
@@ -80,7 +80,7 @@
     "stageLabel": "Pet đứng giữa thời tiết đang chọn"
   },
   "pets": {
-    "title": "21 nhân vật, chọn tối đa 3",
+    "title": "32 nhân vật, chọn tối đa 3",
     "lede": "Mỗi con được vẽ riêng cho TinyWorld, con nào cũng đủ 12 kiểu chuyển động: đi, chạy, leo, nhảy, ngồi mép, ngủ... Bấm vào một con để thả nó xuống màn hình ở đầu trang.",
     "onScreen": "Trên màn hình",
     "drop": "Thả {name} xuống màn hình"

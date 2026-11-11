@@ -8,7 +8,7 @@ ra; thay file gốc ở đây rồi chạy lại lệnh tạo.
 | `icon.png` | Logo TinyWorld nền trong suốt: pet màu kem ôm hành tinh xanh, có mầm cây; dùng cho app, tray, setup và portable |
 | `branding/logo-prompt.txt` | Prompt gốc để tạo logo bằng imagegen |
 | `sprites/<pack>/` | Sprite pack chạy trong app: `pet.json` + ảnh WebP, do `scripts/prepare-sprites.mjs` tạo ra |
-| `sprite-sources/` | Bốn sheet tư thế, prompt của 21 nhân vật và trang xem animation ([README](sprite-sources/README.md)) |
+| `sprite-sources/` | Bốn sheet tư thế, prompt của 32 nhân vật và trang xem animation ([README](sprite-sources/README.md)) |
 
 ## Sprite pack
 
@@ -28,7 +28,7 @@ assets/sprites/a-momo/
 └── ...              # đủ 12 animation (cả climb, perch, jump), mỗi file một dải 4 frame
 ```
 
-21 pack có sẵn đều do script tạo từ các sheet trong `sprite-sources/`: mỗi animation 4 frame
+32 pack có sẵn đều do script tạo từ các sheet trong `sprite-sources/`: mỗi animation 4 frame
 **192×192**, alpha 0 hoặc 255, viền tối vẽ sẵn trong ảnh, chân cùng hàng y=179, quay sang phải.
 `scale: 0.5` cho khung 96×96 CSS pixel ở cỡ 100%; ở cỡ 200% một pixel ảnh là một CSS pixel. Byte
 và Patch gộp cả 12 hàng vào một `atlas.webp` 768×2304 và dùng `row` trong manifest.

@@ -1,7 +1,7 @@
 # Nhân vật TinyWorld
 
-21 nhân vật được tạo riêng cho dự án bằng công cụ **imagegen tích hợp** ngày 2026-09-28 (cách tạo nhân vật
-mới: [CREATE_PET.md](../../CREATE_PET.md)). Ngày 2026-11-11 các
+21 nhân vật đầu được tạo riêng cho dự án bằng công cụ **imagegen tích hợp** ngày 2026-09-28; Mướp, Bơ, Nhím, Vịt,
+Quác, Trôi, Lu, Tèo, Cú, Len, Nai được thêm ngày 2026-11-11 (cách tạo nhân vật mới: [CREATE_PET.md](../../CREATE_PET.md)). Ngày 2026-11-11 các
 tư thế được vẽ lại theo một bố cục chung: mỗi nhân vật có đúng bốn sheet, vẽ theo hàng `idle`/`walk`/`run`
 làm mẫu nhận diện, để mọi trạng thái cùng nét vẽ, cùng cỡ và đủ tay chân. Ảnh nguồn đặt ở đây, ngoài
 `assets/sprites/`, để Vite không nhúng ảnh lớn vào app.
@@ -29,6 +29,17 @@ làm mẫu nhận diện, để mọi trạng thái cùng nét vẽ, cùng cỡ 
 | Frobu | Ếch thức khuya, hoodie xanh navy, tai nghe tím nhạt | `../sprites/c-frobu/` |
 | Byte | Chim cánh cụt coder xanh đen, mỏ/chân vàng, kính tròn, hoodie teal | `../sprites/c-byte/` |
 | Patch | Gấu trúc đỏ coder, tai nghe/hoodie tím, đuôi sọc cuộn ngắn | `../sprites/c-patch/` |
+| Mướp | Mèo mướp xám vằn đậm, mắt xanh lá, vòng cổ đỏ có chuông vàng | `../sprites/c-muop/` |
+| Bơ | Chuột lang nước nâu caramel, mắt lim dim, quả quýt trên đầu | `../sprites/c-bo/` |
+| Nhím | Nhím gai nâu hạt dẻ, mặt/bụng kem, quả táo đỏ trên lưng | `../sprites/c-nhim/` |
+| Vịt | Vịt con vàng chanh, mỏ/chân cam, mũ tai bèo xanh da trời | `../sprites/c-vit/` |
+| Quác | Ngỗng trắng hề, mắt trợn, cổ áo xếp nếp đỏ/vàng/xanh, mũ chóp chấm bi | `../sprites/c-quac/` |
+| Trôi | Viên bánh trôi trắng, mắt chấm, má hồng, hạt vừng trên đầu, hay há miệng hét vui | `../sprites/c-troi/` |
+| Lu | Chó shiba cam kem, mặt liếc xéo tự mãn, kính râm đẩy lên trán | `../sprites/c-lu/` |
+| Tèo | Gấu mèo xám xanh, mặt nạ đen, cười nhe răng, vương miện giấy vàng | `../sprites/c-teo/` |
+| Cú | Cú nâu ấm, đĩa mặt kem, mắt hổ phách, chỏm tai, nơ xanh rêu | `../sprites/c-cu/` |
+| Len | Cừu non lông xoăn kem, mặt/chân xám than, nơ xanh mòng két trên tai | `../sprites/c-len/` |
+| Nai | Nai con nâu vàng, đốm trắng trên lưng, sừng nhú, bông cúc trắng sau tai | `../sprites/c-nai/` |
 
 Nhân vật mặc định (chưa chọn gì, hoặc pack đã chọn không còn) là Boggo: hằng `DEFAULT_PACK` trong
 `native/src/sprites.rs` và `desktop/src/sprites/sprites.ts`, `--check` so cả hai.
@@ -68,7 +79,7 @@ Trang đọc thẳng ảnh trong `../sprites/` theo `gallery-data.js`, file này
 Từ thư mục gốc dự án:
 
 ```powershell
-node scripts/prepare-sprites.mjs              # tạo lại cả 21 pack và gallery-data.js
+node scripts/prepare-sprites.mjs              # tạo lại cả 32 pack và gallery-data.js
 node scripts/prepare-sprites.mjs --pet=gloop  # một nhân vật, theo tên thư mục nguồn
 node scripts/prepare-sprites.mjs --only-new   # chỉ các pack chưa có pet.json
 node scripts/prepare-sprites.mjs --check      # chỉ kiểm tra, không ghi file
