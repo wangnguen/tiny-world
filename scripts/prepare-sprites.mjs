@@ -75,6 +75,13 @@ const PETS = [
   { source: "troi", folder: "c-troi", mouthY: 126, name: "Trôi — Rice Ball", height: 100 },
   { source: "lu", folder: "c-lu", mouthY: 123, name: "Lu — Smug Shiba", height: 122 },
   { source: "teo", folder: "c-teo", mouthY: 129, name: "Tèo — Trash Raccoon", height: 120 },
+  { source: "cu", folder: "c-cu", mouthY: 117, name: "Cú — Owl", height: 116 },
+  // The dizzy spiral is drawn dark on the dark face; paint it cream so the app's one dizzy frame reads.
+  { source: "len", folder: "c-len", mouthY: 123, name: "Len — Lamb", height: 112, recolor: {
+    rows: ["dizzy"], frames: [0], box: [110, 112, 129, 126],
+    colors: { "#281718": "#f8e8e0", "#2f1b1e": "#f8e8e0", "#372325": "#f8e8e0", "#3e2e30": "#f8e8e0", "#1b1213": "#f8e8e0", "#433d3e": "#f8e8e0", "#564546": "#f8e8e0" },
+  } },
+  { source: "nai", folder: "c-nai", mouthY: 119, name: "Nai — Fawn", height: 124 },
 ];
 
 // RGBA PNG decoding, including all five PNG scanline filters. Generated input
