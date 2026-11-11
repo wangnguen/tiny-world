@@ -126,7 +126,7 @@ impl World {
             return false;
         }
         let pet = &mut self.pets[i];
-        if pet.state() == PetState::Sleep || pet.vanished > 0.0 {
+        if pet.state() == PetState::Sleep {
             return false;
         }
         self.since_chat = 0.0;

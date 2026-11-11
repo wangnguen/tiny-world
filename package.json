@@ -8,8 +8,7 @@
     "icons:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-icons.ps1",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm test:sprites && pnpm test:chat && pnpm -r test",
-    "test:sprites": "node --test scripts/prepare-sprites.test.mjs && node scripts/prepare-sprites.mjs --check && node scripts/prepare-aura.mjs --check",
-    "prepare:aura": "node scripts/prepare-aura.mjs",
+    "test:sprites": "node --test scripts/prepare-sprites.test.mjs && node scripts/prepare-sprites.mjs --check",
     "prepare:website": "node scripts/prepare-website.mjs",
     "test:chat": "node --test scripts/chat.test.mjs"
   },

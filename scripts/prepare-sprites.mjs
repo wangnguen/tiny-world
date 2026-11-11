@@ -87,11 +87,6 @@ const PETS = [
       { rows: ["react"], frames: [2], box: [111, 75, 123, 81], colors: { "#010202": "#98b890", "#0c0f0f": "#98b890", "#202e3f": "#98b890", "#464c3b": "#98b890", "#5a635e": "#98b890", "#8ca57d": "#98b890" } },
     ],
   },
-  {
-    source: "long", folder: "c-long", mouthY: 127, name: "Long — Eastern Dragon", grid: true,
-    // The atlas poses overlap their fixed cells; redraw the affected actions separately.
-    poses: { image: "fix-v1.png", rows: ["ref", "dizzy", "climb"] }, poseScale: 0.95,
-  },
   { source: "byte", folder: "c-byte", mouthY: 118, name: "Byte — Coder Penguin", singleSheet: true, poses: { image: "fix-v1.png", rows: ["ref", "idle", "walk", "sleep", "fall"] }, reuse: { fall: [2, 1, 2, 3] } },
   { source: "patch", folder: "c-patch", mouthY: 116, name: "Patch — Coder Red Panda", singleSheet: true, dizzy: 1, poses: [{ image: "fix-v1.png", rows: ["ref", "idle"] }, { image: "fix-v2.png", rows: ["ref", "run"] }], reuse: { dragged: [0, 2, 0, 2] } },
 ].map((pet) => ({

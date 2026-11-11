@@ -31,7 +31,7 @@ struct Drawn {
     size: (u32, u32),
 }
 
-/// Các lớp của một pet theo thứ tự từ dưới lên, do `Member` tạo (giữa chúng có lớp aura, thời tiết...).
+/// Các lớp của một pet theo thứ tự từ dưới lên, do `Member` tạo (giữa chúng có lớp thời tiết).
 pub struct ViewLayers {
     pub stars_back: Layer,
     pub sprite: Layer,
@@ -82,10 +82,6 @@ pub struct PetView {
     occluders: Vec<Rect>,
     /// Khoảng từ điểm chân tới tường lúc leo (CSS pixel), đo theo tay nhân vật trong animation `climb`.
     pub reach: f64,
-    /// Có cinematic đang vẽ thay sprite (`set_covered`).
-    covered: bool,
-    /// Pet đang biến mất (`Pet::vanished`), theo lần `update` gần nhất.
-    gone: bool,
 }
 
 impl PetView {
@@ -121,8 +117,6 @@ impl PetView {
             lean: 0.0,
             occluders: Vec::new(),
             reach: 0.0,
-            covered: false,
-            gone: false,
         };
         view.layout(gfx, frames)?;
         Ok(view)
@@ -180,21 +174,6 @@ impl PetView {
         Ok(())
     }
 
-    /// Một cinematic vẽ thay sprite (Long biến hình, quật đuôi): ẩn riêng sprite, các lớp effect vẫn vẽ.
-    pub fn set_covered(&mut self, covered: bool) -> Result<()> {
-        self.covered = covered;
-        self.sync_hidden()
-    }
-
-    /// Sprite đang ẩn (bị cinematic thay, hoặc pet đang biến mất): không bắt chuột, không hiện bubble.
-    pub fn sprite_hidden(&self) -> bool {
-        !self.layer.visible()
-    }
-
-    fn sync_hidden(&mut self) -> Result<()> {
-        self.layer.set_visible(!(self.covered || self.gone))
-    }
-
     /// Bề ngang surface (CSS pixel): một frame cộng phần chừa hai bên.
     fn canvas_width(&self) -> f64 {
         self.width + 2.0 * self.pad * self.scale
@@ -245,8 +224,6 @@ impl PetView {
         lag: f64,
         pace: f64,
     ) -> Result<()> {
-        self.gone = pet.vanished > 0.0;
-        self.sync_hidden()?;
         let state = pet.state();
         let slot = self.sprite.slot_of(state);
         let animation = self.sprite.animation(state);
@@ -317,8 +294,7 @@ impl PetView {
 
     /// Speech bubble ngay trên đầu, luôn nằm trong màn hình; đuôi bubble chỉ vào giữa đầu.
     fn place_bubble(&mut self, gfx: &Gfx, pet: &Pet, flip: bool, bounds: &Bounds) -> Result<()> {
-        // Sprite đang ẩn thì cất bubble; câu chưa hết giờ thì hiện lại cùng pet.
-        let text = if self.sprite_hidden() { "" } else { pet.speech.as_ref().map_or("", |s| s.text.as_str()) };
+        let text = pet.speech.as_ref().map_or("", |s| s.text.as_str());
         self.bubble.set_text(gfx, text, self.px)?;
         if text.is_empty() {
             return Ok(());

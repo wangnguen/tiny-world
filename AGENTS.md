@@ -43,8 +43,6 @@ pnpm test:sprites
 
 Atlas thông thường được cắt bằng các khoảng alpha. Nếu atlas là lưới đều nhưng pose chạm nhau ở mép ô, dùng `grid: true` trong khai báo `PETS`; chỉ dùng khi kích thước mỗi ô là chính xác. Mỗi pack cần 12 animation theo thứ tự: `idle`, `walk`, `run`, `sleep`, `react`, `fall`, `dragged`, `land`, `dizzy`, `climb`, `perch`, `jump`.
 
-Effect riêng của Long (aura, biến hình, quật đuôi) có sheet nguồn trong `assets/sprite-sources/long/`; sửa sheet rồi chạy `pnpm prepare:aura` để tạo lại `assets/effects/`. Effect được nhúng vào exe lúc build. Combo Shift + click nằm ở `native/src/long.rs`, chỉ điều khiển pet qua `hold`, `blink_to`, `vanish` của `native/src/sim/pet.rs`; không gán thẳng `x`/`y` của pet từ phần vẽ.
-
 ## CI và Git
 
 - Workflow Build chạy khi push vào `main` hoặc `test`, xuất installer và portable `.exe` dưới dạng Actions artifacts.

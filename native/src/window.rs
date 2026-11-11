@@ -12,7 +12,7 @@ use tinyworld_backend::geometry::PhysicalRect;
 use windows::core::{w, PCWSTR};
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, ReleaseCapture, SetCapture, VK_SHIFT};
+use windows::Win32::UI::Input::KeyboardAndMouse::{ReleaseCapture, SetCapture};
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, FindWindowW, GetMessageTime, GetWindowLongPtrW, LoadCursorW, PostMessageW,
     PostQuitMessage, RegisterClassExW, RegisterWindowMessageW, SetLayeredWindowAttributes,
@@ -35,7 +35,7 @@ const WM_WAKE: u32 = WM_APP + 1;
 /// Sự kiện chuột và hệ thống, toạ độ là pixel của cửa sổ (có thể âm hoặc vượt cửa sổ lúc đang giữ chuột).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Input {
-    Down { x: i32, y: i32, shift: bool, time: u32 },
+    Down { x: i32, y: i32, time: u32 },
     Move { x: i32, y: i32, time: u32 },
     Up { x: i32, y: i32, time: u32 },
     /// Mất quyền giữ chuột (cửa sổ khác lấy), như `pointercancel`.
@@ -178,8 +178,7 @@ extern "system" fn window_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPA
         WM_MOUSEACTIVATE => LRESULT(MA_NOACTIVATE as isize),
         WM_LBUTTONDOWN => {
             let (x, y) = point(lparam);
-            let shift = unsafe { GetKeyState(i32::from(VK_SHIFT.0)) } < 0;
-            push(Input::Down { x, y, shift, time: time() });
+            push(Input::Down { x, y, time: time() });
             LRESULT(0)
         }
         WM_MOUSEMOVE => {

@@ -12,7 +12,6 @@ use crate::ghost::Ghost;
 use crate::gfx::Gfx;
 use crate::interaction::{self, Interaction};
 use crate::ipc::{self, Ipc, Writer};
-use crate::long::{Action, LongCombo, Stage, LONG_PACK};
 use crate::member::Member;
 use crate::said::Said;
 use crate::screens;
@@ -169,8 +168,6 @@ pub struct App {
     members: Vec<Member>,
     ambience: Ambience,
     interaction: Interaction,
-    /// Combo quật đuôi Long đang diễn (Shift + click vào Long), `None` nếu không có.
-    combo: Option<LongCombo>,
     step: FixedStep,
     blend: StepBlend,
     settings: Arc<SettingsStore>,
@@ -326,7 +323,6 @@ impl App {
             members: Vec::new(),
             ambience,
             interaction: Interaction::default(),
-            combo: None,
             step: FixedStep::new(1.0 / FPS, MAX_STEPS),
             blend: StepBlend::default(),
             settings,
@@ -521,13 +517,11 @@ impl App {
         }
     }
 
-    /// Có gì đang chuyển động: con nào không đứng yên (đi, chạy, leo, bay, bị kéo, lảo đảo...), Long đang diễn combo,
-    /// hay con ma đang bay. Đứng yên, ngồi mép, ngủ thì chỉ đổi frame vài lần mỗi giây (`next_delay`).
+    /// Có gì đang chuyển động: con nào không đứng yên (đi, chạy, leo, bay, bị kéo, lảo đảo...) hay con ma đang bay.
+    /// Đứng yên, ngồi mép, ngủ thì chỉ đổi frame vài lần mỗi giây (`next_delay`).
     fn fast(&self) -> bool {
-        self.combo.is_some()
-            || self.ambience.flying()
-            || (self.world.pets.iter())
-                .any(|p| p.vanished == 0.0 && !matches!(p.state(), PetState::Idle | PetState::Perch | PetState::Sleep))
+        self.ambience.flying()
+            || (self.world.pets.iter()).any(|p| !matches!(p.state(), PetState::Idle | PetState::Perch | PetState::Sleep))
     }
 
     fn message(&mut self, message: Message) -> Result<()> {
@@ -655,12 +649,6 @@ impl App {
         if let Some(leaving) = self.world.pets.iter().find_map(|p| p.leaving(&bounds)) {
             self.move_overlay(leaving)?;
         }
-        if let Some(mut combo) = self.combo.take() {
-            combo.update(&mut self.stage(), ms);
-            if !combo.done() {
-                self.combo = Some(combo);
-            }
-        }
         self.redraw()?;
         self.flush_ambience();
         // Cả nhóm ngủ thì dừng hẳn vòng lặp (trừ lúc con ma còn đang bay); click hoặc kéo sẽ chạy lại.
@@ -682,21 +670,12 @@ impl App {
     /// Cả nhóm đứng yên thì chờ tới lúc có con đổi frame; có con đi lại thì vẽ 30 lần mỗi giây (chọn nhịp cao hơn thì
     /// `sleep` vẽ sớm hơn, theo nhịp màn hình).
     fn next_delay(&self) -> Duration {
-        // Long đang diễn combo (cinematic, vệt tốc biến): vẽ đủ nhịp.
-        if self.combo.is_some() {
-            return FRAME;
-        }
-        let ms = now_ms();
         // Đang mưa, tuyết quanh pet hay con ma đang bay thì vẽ đủ nhịp của hiệu ứng.
-        let mut wait = self.ambience.frame_ms(&self.members, ms) / 1000.0;
+        let mut wait = self.ambience.frame_ms(&self.members) / 1000.0;
         let pace = self.world.pace();
         for member in &self.members {
             let Some(i) = self.world.index_of(member.uid) else { continue };
             let pet = &self.world.pets[i];
-            // Con đang biến mất đứng nguyên một chỗ, không cần vẽ; chờ lâu nhất `CALM_MAX` nên hiện lại kịp.
-            if pet.vanished > 0.0 {
-                continue;
-            }
             if !matches!(pet.state(), PetState::Idle | PetState::Perch | PetState::Sleep) {
                 return FRAME;
             }
@@ -713,17 +692,12 @@ impl App {
         let alpha = self.step.alpha();
         // Vẽ trễ mô phỏng một bước, nội suy theo `alpha` (`StepBlend`).
         let lag = (1.0 - alpha) * self.step.dt;
-        let px = self.px();
         for member in &mut self.members {
             let Some(i) = self.world.index_of(member.uid) else { continue };
             let pet = &self.world.pets[i];
             let occluders = self.world.occluders(i);
             let at = self.blend.at(member.uid, Point { x: pet.x, y: pet.y }, alpha);
             member.view.update(&self.gfx, pet, &bounds, &occluders, at, lag, pace)?;
-            if let Some(kit) = &mut member.kit {
-                let foot = member.view.foot.unwrap_or(at);
-                kit.update(&self.gfx, foot, (member.view.width, member.view.height), ms, px)?;
-            }
         }
         self.with_ambience(|ambience, ctx| ambience.place(ctx, ms))?;
         self.gfx.commit()?;
@@ -737,7 +711,7 @@ impl App {
     fn pick(&self, point: Point) -> Option<u32> {
         self.members
             .iter()
-            .filter(|m| !m.view.sprite_hidden() && m.view.hit_test(point))
+            .filter(|m| m.view.hit_test(point))
             .max_by_key(|m| self.depths.get(&m.uid).copied().unwrap_or(0))
             .map(|m| m.uid)
     }
@@ -810,9 +784,9 @@ impl App {
         let css = |x: i32, y: i32| Point { x: f64::from(x) / px, y: f64::from(y) / px };
         let mut interaction = std::mem::take(&mut self.interaction);
         match input {
-            Input::Down { x, y, shift, time } => {
+            Input::Down { x, y, time } => {
                 if !self.paused && !self.hidden {
-                    interaction.down(self, css(x, y), shift, f64::from(time));
+                    interaction.down(self, css(x, y), f64::from(time));
                 }
             }
             Input::Move { x, y, time } => interaction.moved(self, css(x, y), f64::from(time)),
@@ -1128,9 +1102,6 @@ impl App {
     /// Mất thiết bị GPU (driver cập nhật hay khởi động lại): tạo thiết bị mới và vẽ lại mọi con ở đúng chỗ cũ. Mô
     /// phỏng không đổi gì.
     fn recreate_graphics(&mut self) -> Result<()> {
-        if let Some(mut combo) = self.combo.take() {
-            combo.stop(&mut self.stage());
-        }
         // Gỡ hết visual cũ khỏi cây rồi mới bỏ: còn treo trong cây thì cả thiết bị cũ không được giải phóng.
         let old: Vec<(Option<String>, u32)> = (self.members.drain(..))
             .map(|m| {
@@ -1282,13 +1253,6 @@ impl App {
         if self.interaction.held() == Some(member.uid) {
             self.cancel_interaction();
         }
-        // Bỏ Long giữa combo thì dừng combo; bỏ con đang bị nhắm thì Long sang con khác.
-        if let Some(mut combo) = self.combo.take() {
-            combo.drop(&mut self.stage(), member.uid);
-            if !combo.done() {
-                self.combo = Some(combo);
-            }
-        }
         member.destroy(&self.gfx);
         self.depths.remove(&member.uid);
         if self.listening == Some(member.uid) {
@@ -1390,38 +1354,7 @@ impl App {
         Ok(())
     }
 
-    /// Shift + click vào Long: aura; có con khác thì diễn combo quật đuôi. Con khác chưa có kỹ năng riêng.
-    fn skill(&mut self, uid: u32) -> bool {
-        let ms = now_ms();
-        let Some(long) = self.members.iter_mut().find(|m| m.uid == uid && m.pack.as_deref() == Some(LONG_PACK)) else {
-            return false;
-        };
-        let Some(kit) = &mut long.kit else {
-            return false;
-        };
-        kit.aura.activate(ms);
-        // Tính là có đụng tới như click: cả nhóm không lăn ra ngủ ngay sau màn diễn.
-        if let Some(i) = self.world.index_of(uid) {
-            self.world.pets[i].since_interaction = 0.0;
-        }
-        let targets: Vec<u32> = (self.members.iter())
-            .filter(|m| m.uid != uid)
-            .filter(|m| self.world.index_of(m.uid).is_some_and(|i| self.world.pets[i].vanished == 0.0))
-            .map(|m| m.uid)
-            .collect();
-        if self.combo.is_none() && !targets.is_empty() {
-            let combo = LongCombo::start(&mut self.stage(), uid, targets, ms);
-            self.combo = Some(combo);
-        }
-        self.wake();
-        true
-    }
-
-    fn stage(&mut self) -> ComboStage<'_> {
-        ComboStage { gfx: &self.gfx, world: &mut self.world, members: &mut self.members, px: self.current.scale_factor }
-    }
-
-    // Command của cửa sổ giao diện.
+    // Command của cửa sổ giao diện.    // Command của cửa sổ giao diện.
 
     fn call(&mut self, id: u64, name: &str, args: Value, writer: Writer) -> Result<()> {
         crate::commands::call(self, id, name, args, writer);
@@ -1495,11 +1428,9 @@ impl App {
                     "facing": p.facing,
                     "mount": p.mount.map(|m| m.id),
                     "speech": p.speech.as_ref().map(|s| s.text.clone()),
-                    "vanished": p.vanished,
                     "sinceInteraction": p.since_interaction,
                     "bounds": member.and_then(|m| m.view.bounds()),
                     "body": member.and_then(|m| m.view.body()),
-                    "hidden": member.is_some_and(|m| m.view.sprite_hidden()),
                 })
             })
             .collect();
@@ -1514,7 +1445,6 @@ impl App {
             "cursor": self.cursor.map(|c| [c.x, c.y]),
             "night": self.world.night,
             "quiet": self.world.quiet,
-            "combo": self.combo.is_some(),
             "ghost": self.ambience.flying(),
             "pets": pets,
         })
@@ -1558,7 +1488,7 @@ impl App {
         Ok(self.debug_state())
     }
 
-    /// Bản dev: làm gì đó với con thứ `index` (`debug_pet`): click, nhấc lên, kéo, thả, nói, buồn ngủ, kỹ năng, bấm đúp.
+    /// Bản dev: làm gì đó với con thứ `index` (`debug_pet`): click, nhấc lên, kéo, thả, nói, buồn ngủ, bấm đúp.
     #[cfg(debug_assertions)]
     pub(crate) fn debug_pet(&mut self, args: &Value) -> tinyworld_backend::error::AppResult<Value> {
         use tinyworld_backend::error::AppError;
@@ -1574,9 +1504,6 @@ impl App {
             "release" => self.world.pet(index).release(num("vx"), num("vy")),
             "say" => self.world.pets[index].say(args["text"].as_str().unwrap_or_default(), num("seconds").max(1.0)),
             "sleepy" => self.world.pets[index].since_interaction = 1e6,
-            "skill" => {
-                self.skill(uid);
-            }
             "double" => interaction::Host::double_click(self, uid),
             other => return Err(AppError::bad_request(format!("không hiểu {other}"))),
         }
@@ -1682,107 +1609,6 @@ impl interaction::Host for App {
         if let Some(i) = self.world.index_of(pet) {
             self.ambience.tell_time(&mut self.world, i);
             self.wake();
-        }
-    }
-
-    fn skill(&mut self, pet: u32) -> bool {
-        App::skill(self, pet)
-    }
-}
-
-/// Phần overlay combo của Long dùng tới.
-struct ComboStage<'a> {
-    gfx: &'a Gfx,
-    world: &'a mut World,
-    members: &'a mut [Member],
-    px: f64,
-}
-
-impl ComboStage<'_> {
-    fn member(&mut self, pet: u32) -> Option<&mut Member> {
-        self.members.iter_mut().find(|m| m.uid == pet)
-    }
-
-    fn kit(&mut self) -> Option<&mut crate::long::LongKit> {
-        self.members.iter_mut().find_map(|m| m.kit.as_mut())
-    }
-}
-
-impl Stage for ComboStage<'_> {
-    fn state(&self, pet: u32) -> Option<PetState> {
-        self.world.index_of(pet).map(|i| self.world.pets[i].state())
-    }
-
-    fn position(&self, pet: u32) -> Option<Point> {
-        self.world.index_of(pet).map(|i| Point { x: self.world.pets[i].x, y: self.world.pets[i].y })
-    }
-
-    fn facing(&self, pet: u32) -> Facing {
-        self.world.index_of(pet).map_or(1, |i| self.world.pets[i].facing)
-    }
-
-    fn set_facing(&mut self, pet: u32, facing: Facing) {
-        if let Some(i) = self.world.index_of(pet) {
-            self.world.pets[i].facing = facing;
-        }
-    }
-
-    fn hold(&mut self, pet: u32, facing: Facing, seconds: f64) -> bool {
-        self.world.index_of(pet).is_some_and(|i| self.world.pet(i).hold(facing, seconds))
-    }
-
-    fn blink_to(&mut self, pet: u32, target: u32, x: f64, seconds: f64) {
-        if let (Some(i), Some(j)) = (self.world.index_of(pet), self.world.index_of(target)) {
-            self.world.pet(i).blink_to(j, x, seconds);
-        }
-    }
-
-    fn startle(&mut self, pet: u32) {
-        if let Some(i) = self.world.index_of(pet) {
-            self.world.pet(i).startle();
-        }
-    }
-
-    fn vanish(&mut self, pet: u32, seconds: f64) {
-        if let Some(i) = self.world.index_of(pet) {
-            self.world.pets[i].vanish(seconds);
-        }
-    }
-
-    fn size(&self, pet: u32) -> (f64, f64) {
-        self.members.iter().find(|m| m.uid == pet).map_or((0.0, 0.0), |m| (m.view.width, m.view.height))
-    }
-
-    fn set_covered(&mut self, pet: u32, covered: bool) {
-        if let Some(member) = self.member(pet) {
-            if let Err(e) = member.view.set_covered(covered) {
-                log!("Không ẩn được sprite: {e}");
-            }
-        }
-    }
-
-    fn play(&mut self, action: Action, now: f64, facing: Facing) {
-        if let Some(kit) = self.kit() {
-            if let Err(e) = kit.action.play(action, now, facing) {
-                log!("Không diễn được cinematic của Long: {e}");
-            }
-        }
-    }
-
-    fn stop_action(&mut self) {
-        if let Some(kit) = self.kit() {
-            if let Err(e) = kit.action.stop() {
-                log!("Không dừng được cinematic của Long: {e}");
-            }
-        }
-    }
-
-    fn teleport(&mut self, at: Point, size: (f64, f64), direction: Facing, reverse: bool, now: f64, duration: f64) {
-        let (gfx, px) = (self.gfx, self.px);
-        if let Some(kit) = self.kit() {
-            if let Err(e) = kit.teleport.play(gfx, at, size, direction, reverse, now, duration, px) {
-                log!("Không vẽ được vệt tốc biến: {e}");
-            }
         }
     }
 }
