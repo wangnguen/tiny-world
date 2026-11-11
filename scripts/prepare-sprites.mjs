@@ -71,6 +71,10 @@ const PETS = [
   { source: "bo", folder: "c-bo", mouthY: 112, name: "Bơ — Capybara", height: 118 },
   { source: "nhim", folder: "c-nhim", mouthY: 128, name: "Nhím — Hedgehog", height: 108 },
   { source: "vit", folder: "c-vit", mouthY: 117, name: "Vịt — Duckling", height: 120 },
+  { source: "quac", folder: "c-quac", mouthY: 113, name: "Quác — Honk Goose", height: 124 },
+  { source: "troi", folder: "c-troi", mouthY: 126, name: "Trôi — Rice Ball", height: 100 },
+  { source: "lu", folder: "c-lu", mouthY: 123, name: "Lu — Smug Shiba", height: 122 },
+  { source: "teo", folder: "c-teo", mouthY: 129, name: "Tèo — Trash Raccoon", height: 120 },
 ];
 
 // RGBA PNG decoding, including all five PNG scanline filters. Generated input

@@ -27,11 +27,11 @@ desktop-pet/
 
 ## Characters
 
-25 original characters drawn for the project. Pick them in **Settings… → Pets** and click a tile to add or
+29 original characters drawn for the project. Pick them in **Settings… → Pets** and click a tile to add or
 remove that character: up to 3 can live on the screen at once, and at least one always stays (16
 characters per page; flip pages with the arrows, the page dots or the mouse wheel). They are Boggo (the
 default), Momo, Bông, Kitsu, Mầm, Bíp, Lumi, Nấm, Mây, Tàn, Rêu, Cục, Mực, Dứa, Su, Bắp, Gloop, Bẹp,
-Frobu, Byte, Patch, Mướp, Bơ, Nhím and Vịt. Every character has all 12 animations: the 9 from Phase 1 plus climb, perch
+Frobu, Byte, Patch, Mướp, Bơ, Nhím, Vịt, Quác, Trôi, Lu and Tèo. Every character has all 12 animations: the 9 from Phase 1 plus climb, perch
 and jump. Watch them move in the [sprite studio](assets/sprite-sources/index.html) (open it straight in a
 browser); each character's design is in [assets/sprite-sources/README.md](assets/sprite-sources/README.md).
 
@@ -364,7 +364,7 @@ Ctrl+S spam, chat send limits, chat window position, Gemini reply parsing, sugge
 images, update parsing and installer SHA-256, the log file and the registry.
 
 `pnpm test` includes `pnpm test:sprites` (the sprite normalization script, `prepare-sprites.mjs --check`
-on all 25 packs), `pnpm test:chat` (chat markdown and
+on all 29 packs), `pnpm test:chat` (chat markdown and
 message building) and the vitest suites in `packages/*`.
 
 To measure CPU and RAM over a long run (leak check) or on battery, start the app and run
