@@ -67,21 +67,23 @@ const PETS = [
   { source: "frobu", folder: "c-frobu", mouthY: 110, name: "Frobu — Night Frog", height: 130 },
   { source: "byte", folder: "c-byte", mouthY: 118, name: "Byte — Coder Penguin", height: 120, singleSheet: true },
   { source: "patch", folder: "c-patch", mouthY: 116, name: "Patch — Coder Red Panda", height: 121, singleSheet: true },
-  { source: "muop", folder: "c-muop", mouthY: 117, name: "Mướp — Tabby Cat", height: 124 },
-  { source: "bo", folder: "c-bo", mouthY: 112, name: "Bơ — Capybara", height: 118 },
-  { source: "nhim", folder: "c-nhim", mouthY: 128, name: "Nhím — Hedgehog", height: 108 },
-  { source: "vit", folder: "c-vit", mouthY: 117, name: "Vịt — Duckling", height: 120 },
-  { source: "quac", folder: "c-quac", mouthY: 113, name: "Quác — Honk Goose", height: 124 },
-  { source: "troi", folder: "c-troi", mouthY: 126, name: "Trôi — Rice Ball", height: 100 },
-  { source: "lu", folder: "c-lu", mouthY: 123, name: "Lu — Smug Shiba", height: 122 },
-  { source: "teo", folder: "c-teo", mouthY: 129, name: "Tèo — Trash Raccoon", height: 120 },
-  { source: "cu", folder: "c-cu", mouthY: 117, name: "Cú — Owl", height: 116 },
+  // The pets below had their sleep/climb rows redrawn after release. A fixed palette keeps the colours
+  // of the rows that were not redrawn (a fresh one turned Mướp's red collar pink).
+  { source: "muop", folder: "c-muop", mouthY: 117, name: "Mướp — Tabby Cat", height: 124, palette: "palette.json" },
+  { source: "bo", folder: "c-bo", mouthY: 112, name: "Bơ — Capybara", height: 118, palette: "palette.json" },
+  { source: "nhim", folder: "c-nhim", mouthY: 128, name: "Nhím — Hedgehog", height: 108, palette: "palette.json" },
+  { source: "vit", folder: "c-vit", mouthY: 117, name: "Vịt — Duckling", height: 120, palette: "palette.json" },
+  { source: "quac", folder: "c-quac", mouthY: 113, name: "Quác — Honk Goose", height: 124, palette: "palette.json" },
+  { source: "troi", folder: "c-troi", mouthY: 126, name: "Trôi — Rice Ball", height: 100, palette: "palette.json" },
+  { source: "lu", folder: "c-lu", mouthY: 123, name: "Lu — Smug Shiba", height: 122, palette: "palette.json" },
+  { source: "teo", folder: "c-teo", mouthY: 129, name: "Tèo — Trash Raccoon", height: 120, palette: "palette.json" },
+  { source: "cu", folder: "c-cu", mouthY: 117, name: "Cú — Owl", height: 116, palette: "palette.json" },
   // The dizzy spiral is drawn dark on the dark face; paint it cream so the app's one dizzy frame reads.
-  { source: "len", folder: "c-len", mouthY: 123, name: "Len — Lamb", height: 112, recolor: {
+  { source: "len", folder: "c-len", mouthY: 123, name: "Len — Lamb", height: 112, palette: "palette.json", recolor: {
     rows: ["dizzy"], frames: [0], box: [110, 112, 129, 126],
     colors: { "#281718": "#f8e8e0", "#2f1b1e": "#f8e8e0", "#372325": "#f8e8e0", "#3e2e30": "#f8e8e0", "#1b1213": "#f8e8e0", "#433d3e": "#f8e8e0", "#564546": "#f8e8e0" },
   } },
-  { source: "nai", folder: "c-nai", mouthY: 119, name: "Nai — Fawn", height: 124 },
+  { source: "nai", folder: "c-nai", mouthY: 119, name: "Nai — Fawn", height: 124, palette: "palette.json" },
 ];
 
 // RGBA PNG decoding, including all five PNG scanline filters. Generated input

@@ -530,7 +530,7 @@
    "x": 141,
    "y": 112
   },
-  "reach": 39,
+  "reach": 50,
   "animations": {
    "idle": {
     "frames": 4,
@@ -785,7 +785,7 @@
    "x": 142,
    "y": 117
   },
-  "reach": 46,
+  "reach": 56,
   "animations": {
    "idle": {
     "frames": 4,
@@ -1210,7 +1210,7 @@
    "x": 147,
    "y": 123
   },
-  "reach": 47,
+  "reach": 54,
   "animations": {
    "idle": {
     "frames": 4,
@@ -1287,15 +1287,15 @@
   },
   "body": {
    "x": 34,
-   "y": 59,
-   "width": 125,
-   "height": 121
+   "y": 58,
+   "width": 124,
+   "height": 122
   },
   "mouth": {
-   "x": 156,
+   "x": 155,
    "y": 123
   },
-  "reach": 55,
+  "reach": 62,
   "animations": {
    "idle": {
     "frames": 4,
@@ -1720,7 +1720,7 @@
    "x": 159,
    "y": 117
   },
-  "reach": 57,
+  "reach": 70,
   "animations": {
    "idle": {
     "frames": 4,
@@ -1805,7 +1805,7 @@
    "x": 142,
    "y": 119
   },
-  "reach": 53,
+  "reach": 59,
   "animations": {
    "idle": {
     "frames": 4,
@@ -1975,7 +1975,7 @@
    "x": 147,
    "y": 128
   },
-  "reach": 50,
+  "reach": 58,
   "animations": {
    "idle": {
     "frames": 4,
@@ -2145,7 +2145,7 @@
    "x": 135,
    "y": 113
   },
-  "reach": 43,
+  "reach": 53,
   "animations": {
    "idle": {
     "frames": 4,
@@ -2485,7 +2485,7 @@
    "x": 148,
    "y": 129
   },
-  "reach": 52,
+  "reach": 60,
   "animations": {
    "idle": {
     "frames": 4,
@@ -2570,7 +2570,7 @@
    "x": 141,
    "y": 126
   },
-  "reach": 44,
+  "reach": 54,
   "animations": {
    "idle": {
     "frames": 4,
@@ -2655,7 +2655,7 @@
    "x": 141,
    "y": 117
   },
-  "reach": 45,
+  "reach": 52,
   "animations": {
    "idle": {
     "frames": 4,

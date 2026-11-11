@@ -130,13 +130,19 @@ Sửa một nhóm tư thế:
    `prompt.txt`.
 3. Chạy `node scripts/prepare-sprites.mjs --pet=<nhân vật>`, mở `index.html` để so từng frame.
 
+Chỉ một hàng hỏng thì không cần vẽ lại cả sheet: sinh một sheet 4 cột × 2 hàng (hàng `ref` rồi hàng cần
+sửa, cùng ảnh mẫu nhận diện), rồi chạy `node scripts/replace-row.mjs <sheet.png> <số hàng> <sheet 4 × 2>`
+(hàng tính từ 0, ví dụ `climb` là 1). Script thu pose mới theo tỉ lệ hai hàng `ref`, đặt vào chỗ pose cũ và
+giữ nguyên từng pixel các hàng khác. Thêm `palette: "palette.json"` cho nhân vật đó để các hàng cũ cũng giữ
+màu: bảng màu tính lại có thể làm lệch màu nhỏ như vòng cổ, mắt.
+
 Lỗi nhỏ thì sửa bằng tùy chọn trong `PETS` thay vì sinh lại. Các trường của mỗi nhân vật:
 
 | Trường | Tác dụng |
 |---|---|
 | `source`, `folder`, `name`, `mouthY` | Thư mục nguồn, thư mục pack, tên hiển thị, hàng miệng (bong bóng chat) |
 | `height` | Chiều cao tư thế đứng yên trong khung 192px; mọi sheet được thu về cỡ này |
-| `palette` | Bảng màu cố định thay vì tính lại, để các hàng không đổi giữ nguyên từng byte (Boggo) |
+| `palette` | Bảng màu cố định thay vì tính lại, để các hàng không đổi giữ nguyên từng byte (Boggo, và 11 nhân vật thêm ngày 2026-11-11 từ khi vẽ lại hàng `climb`/`sleep`) |
 | `singleSheet` | Gộp 12 hàng vào một `atlas.webp` trong pack (Byte, Patch) |
 | `dizzy` | Cột có pose choáng rõ nhất, được đưa vào slot đầu |
 | `reuse` | Thứ tự cột của một hàng để thay frame hỏng bằng frame tốt cùng hàng, ví dụ `{ fall: [0, 3, 0, 3] }` |
