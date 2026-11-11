@@ -13,7 +13,7 @@ desktop-pet/
 ├── assets/
 │   ├── icon.png          # the app's source logo
 │   ├── sprites/          # sprite packs the app runs: <pack>/pet.json + WebP
-│   └── sprite-sources/   # source atlases and prompts for each character, plus an animation viewer
+│   └── sprite-sources/   # four pose sheets and prompts for each character, plus an animation viewer
 ├── packages/
 │   ├── core/             # types shared by Rust and TS, event names, the vi/en text files, reading pet.json
 │   └── sim/              # TS helpers for Settings and the landing page: weather, lunar calendar, pet lines
@@ -22,7 +22,7 @@ desktop-pet/
 │   ├── backend/          # Rust without UI: settings, saved state, weather, screen time, chat, updates, window list
 │   ├── src/              # Settings and chat windows (React)
 │   └── src-tauri/        # tinyworld.exe: starts the overlay; `--ui` runs the Tauri process for those windows
-└── scripts/              # normalize sprites from source atlases, generate icons
+└── scripts/              # normalize sprites from source pose sheets, generate icons
 ```
 
 ## Characters

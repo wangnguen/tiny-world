@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-  PETS, ROWS, boundsOf, columnBoundaries, decodePng, emptyImage, extractCell, finishFrames, prepareFrames, resampleCell, rowBoundaries, smooth,
+  PETS, ROWS, SHEETS, boundsOf, columnBoundaries, decodePng, emptyImage, extractCell, finishFrames, prepareFrames, resampleCell, rowBoundaries, smooth,
 } from "./prepare-sprites.mjs";
 
 const SOURCES = fileURLToPath(new URL("../assets/sprite-sources/", import.meta.url));
@@ -80,49 +81,38 @@ test("source clipping is rejected before normalization can conceal it", () => {
   assert.throws(() => extractCell(atlas, 0, 0, rowBoundaries(atlas, 1)), /source pose touches crop boundary/);
 });
 
-test("Lumi, Nấm and Bắp keep complete heads in every dragged frame", () => {
-  for (const source of ["lumi", "nam", "bap"]) {
-    const pet = PETS.find((pet) => pet.source === source);
-    const atlas = decodePng(join(SOURCES, source, "atlas.png"));
-    const boundaries = rowBoundaries(atlas);
-    for (let col = 0; col < 4; col++) {
-      assert.ok(extractCell(atlas, col, 6, boundaries).bounds.height >= 130, `${source}: full dragged pose ${col}`);
-    }
+test("every source folder holds only the four pose sheets, prompt.txt and palette.json", () => {
+  for (const pet of PETS) {
+    const files = readdirSync(join(SOURCES, pet.source)).sort();
+    const expected = [...SHEETS.map((sheet) => sheet.image), "palette.json", "prompt.txt"].sort();
+    assert.deepEqual(files, expected, `${pet.source}: overwrite a sheet when redrawing it instead of keeping -v2 copies`);
+  }
+});
+
+test("every sheet draws its poses at the idle's size", () => {
+  // A sheet whose ref row came out smaller than its poses would blow those states up in the app.
+  const median = (frames) => frames.map((f) => boundsOf(f).height).sort((a, b) => a - b)[2];
+  for (const pet of PETS) {
     const frames = prepareFrames(pet);
-    for (let col = 0; col < 4; col++) {
-      assert.ok(boundsOf(frames[6 * 4 + col]).height >= 30, `${source}: normalized dragged pose ${col}`);
+    const idle = median(frames.slice(0, 4));
+    assert.ok(idle <= pet.height && idle >= pet.height * 0.8, `${pet.source}: idle ${idle}px, expected about ${pet.height}px`);
+    for (const [row, [name]] of ROWS.entries()) {
+      const height = median(frames.slice(row * 4, row * 4 + 4));
+      assert.ok(height >= idle * 0.5 && height <= idle * 1.5, `${pet.source}: ${name} is ${height}px next to a ${idle}px idle`);
     }
   }
 });
 
-test("Mực's dragged edit changes only the four dragged source frames", () => {
-  const pet = PETS.find((pet) => pet.source === "muc");
-  const edited = prepareFrames({ ...pet, locomotion: undefined });
-  const original = prepareFrames({ ...pet, locomotion: undefined, overrides: undefined });
-  for (let frame = 0; frame < edited.length; frame++) {
-    if (frame >= 24 && frame < 28) assert.ok(!samePixels(edited[frame], original[frame]), `edited dragged ${frame}`);
-    else assert.ok(samePixels(edited[frame], original[frame]), `untouched ${frame}`);
-  }
-});
-
-test("consistent idle and alternating gait edits preserve every other silhouette and scale", () => {
-  for (const pet of PETS.filter((pet) => pet.locomotion)) {
-    const edited = prepareFrames({ ...pet, poses: undefined });
-    const original = prepareFrames({ ...pet, poses: undefined, locomotion: undefined });
-    const kept = new Set((pet.keep ?? []).map((name) => ROWS.findIndex(([row]) => row === name)));
-    for (let frame = 0; frame < edited.length; frame++) {
-      if (frame < 12 && !kept.has(Math.floor(frame / 4))) assert.ok(!samePixels(edited[frame], original[frame]), `${pet.source}: motion frame ${frame}`);
-      else assert.ok(samePixels(edited[frame], original[frame]), `${pet.source}: untouched frame ${frame}`);
-    }
-  }
-});
-
-test("redrawn walk/run sheets keep the character at the atlas idle height", () => {
-  for (const pet of PETS.filter((pet) => pet.locomotion)) {
-    const edited = prepareFrames({ ...pet, poses: undefined });
-    const original = prepareFrames({ ...pet, poses: undefined, locomotion: undefined });
-    const idle = (frames) => frames.slice(0, 4).map((f) => boundsOf(f).height).sort((a, b) => a - b)[2];
-    assert.ok(Math.abs(idle(edited) - idle(original)) <= 2, `${pet.source}: idle ${idle(edited)}px vs atlas ${idle(original)}px`);
+test("a 1:1 sheet reproduces its poses exactly", () => {
+  // Rows baked from an accepted pack (factor 1) must not be resampled.
+  const pet = PETS.find((p) => p.source === "boggo");
+  const sheet = decodePng(join(SOURCES, "boggo", "idle-walk-run.png"));
+  const rows = rowBoundaries(sheet, 3);
+  const frames = prepareFrames({ ...pet, palette: undefined });
+  for (let col = 0; col < 4; col++) {
+    const cell = extractCell(sheet, col, 1, rows, columnBoundaries(sheet, rows[1], rows[2]));
+    assert.equal(boundsOf(frames[4 + col]).height, cell.bounds.height, `walk ${col}: height`);
+    assert.equal(boundsOf(frames[4 + col]).width, cell.bounds.width, `walk ${col}: width`);
   }
 });
 
@@ -186,33 +176,6 @@ test("dizzy smoothing flattens grain but keeps outlines and high-contrast detail
     assert.deepEqual(at(x, 110), outline, `dark line at ${x}`);
   }
   assert.ok(frames[0].pixels.equals(idle), "other rows are untouched");
-});
-
-test("Momo's pose corrections preserve accepted gait and other states", () => {
-  const pet = PETS.find((pet) => pet.source === "momo");
-  const edited = prepareFrames(pet);
-  const original = prepareFrames({ ...pet, poses: undefined });
-  // idle, react, fall, dragged, land and dizzy come from the pose sheets.
-  const correctedRows = new Set(["idle", "react", "fall", "dragged", "land", "dizzy"].map((name) => ROWS.findIndex(([row]) => row === name)));
-  for (let frame = 0; frame < edited.length; frame++) {
-    if (correctedRows.has(Math.floor(frame / 4))) {
-      assert.ok(!samePixels(edited[frame], original[frame]), `corrected pose ${frame}`);
-    } else {
-      assert.ok(samePixels(edited[frame], original[frame]), `preserved pose ${frame}`);
-    }
-  }
-});
-
-test("a regenerated pose sheet with a ref row is sized like the idle and leaves idle untouched", () => {
-  // Reuse Bông's 4×3 idle/walk/run sheet as if it were a regenerated fix sheet.
-  const pet = PETS.find((p) => p.source === "bong");
-  const base = prepareFrames(pet);
-  const fixed = prepareFrames({ ...pet, poses: { image: "locomotion-v2.png", rows: ["ref", "sleep", "react"] } });
-  for (let col = 0; col < 4; col++) {
-    assert.ok(samePixels(fixed[col], base[col]), `idle ${col}`);
-    assert.ok(samePixels(fixed[12 + col], base[4 + col]), `sleep ${col}`);
-    assert.ok(samePixels(fixed[16 + col], base[8 + col]), `react ${col}`);
-  }
 });
 
 test("reused poses replay exactly without shifting the pack palette", () => {
