@@ -1,4 +1,4 @@
-// Sinh từ desktop/src/overlay/weather.ts bằng scripts/prepare-website.mjs, không sửa tay.
+// Sinh từ website/src/weather.ts bằng scripts/prepare-website.mjs, không sửa tay.
 /**
  * Mưa, tuyết, cánh hoa rơi nhanh, khói thở bay nhanh: vẽ 12 lần mỗi giây. Nắng, sao, mây, sương, hơi nóng
  * trôi chậm: 8 lần là đủ, đỡ tốn CPU.
